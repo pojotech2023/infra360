@@ -1,0 +1,85 @@
+
+class ProfileUpdateSuccessfullyModel {
+  int? responseCode;
+  Data? data;
+  bool? status;
+  String? message;
+
+  ProfileUpdateSuccessfullyModel(
+      {this.responseCode, this.data, this.status, this.message});
+
+  ProfileUpdateSuccessfullyModel.fromJson(Map<String, dynamic> json) {
+    responseCode = json['response code'];
+    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+    status = json['status'];
+    message = json['message'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['response code'] = this.responseCode;
+    if (this.data != null) {
+      data['data'] = this.data!.toJson();
+    }
+    data['status'] = this.status;
+    data['message'] = this.message;
+    return data;
+  }
+}
+
+class Data {
+  int? id;
+  String? name;
+  String? mobileNo;
+  String? email;
+  dynamic emailVerifiedAt;
+  dynamic image;
+  String? createdAt;
+  String? updatedAt;
+  int? createdBy;
+  int? updatedBy;
+  String? role;
+
+  Data(
+      {this.id,
+        this.name,
+        this.mobileNo,
+        this.email,
+        this.emailVerifiedAt,
+        this.image,
+        this.createdAt,
+        this.updatedAt,
+        this.createdBy,
+        this.updatedBy,
+        this.role});
+
+  Data.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    mobileNo = json['mobile_no'];
+    email = json['email'];
+    emailVerifiedAt = json['email_verified_at'];
+    image = json['image'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+    createdBy = json['created_by'];
+    updatedBy = json['updated_by'];
+    role = json['role'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    data['mobile_no'] = this.mobileNo;
+    data['email'] = this.email;
+    data['email_verified_at'] = this.emailVerifiedAt;
+    data['image'] = this.image;
+    data['created_at'] = this.createdAt;
+    data['updated_at'] = this.updatedAt;
+    data['created_by'] = this.createdBy;
+    data['updated_by'] = this.updatedBy;
+    data['role'] = this.role;
+    return data;
+  }
+}
