@@ -24,6 +24,8 @@ import 'package:raptor_pro/model/vendor_management_model.dart';
 import 'package:raptor_pro/model/vendor_model.dart';
 import 'package:raptor_pro/model/vendor_payment_details_model.dart';
 import 'package:raptor_pro/model/vendor_payment_history_model.dart';
+import 'package:raptor_pro/model/site_payment_summary_model.dart';
+import 'package:raptor_pro/model/site_payment_history_model.dart';
 import 'package:raptor_pro/service/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:raptor_pro/service/shared_preference_service.dart';
@@ -91,6 +93,43 @@ class ApiData {
 
     return null;
   }
+
+  Future<SitePaymentSummaryModel?> sitePaymentSummaryApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "site-payment-summary/$siteId", null, true);
+    if (response != null) {
+      print("SITE SUMMARY RESPONSE: ${response.body}");
+      final Map<String, dynamic> body = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return SitePaymentSummaryModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
+  Future<SitePaymentHistoryModel?> sitePaymentHistoryApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "site-payment-history/$siteId", null, true);
+    if (response != null) {
+      print("SITE HISTORY RESPONSE: ${response.body}");
+      final Map<String, dynamic> body = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return SitePaymentHistoryModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> sitePaymentAddApi(Map<String, dynamic> postData) async {
+    final response = await ApiService().sendAsync("POST", "site-payment-add", postData, true);
+    if (response != null) {
+      print("SITE ADD PAYMENT RESPONSE: ${response.body}");
+      final Map<String, dynamic> body = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
 
 
   Future<CommonSuccessResponseModel?> deleteSiteApi(int siteID) async {
@@ -1372,6 +1411,7 @@ print("REQUEST HEADER ${request.headers}");
     await ApiService().sendAsync("GET", "checklists/$siteId", null, true);
 
     if (response != null) {
+      print("CHECKLIST RESPONSE: ${response.body}");
       final Map<String, dynamic> body = json.decode(response.body);
 
 

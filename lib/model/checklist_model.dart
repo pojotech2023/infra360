@@ -69,6 +69,8 @@ class Tasks {
   String? updateBy;
   String? image;
   String? video;
+  List<String>? images;
+  List<String>? videos;
 
   Tasks(
       {this.taskId,
@@ -81,7 +83,9 @@ class Tasks {
         this.statusLabel,
         this.remarks,
         this.image,
-        this.video});
+        this.video,
+        this.images,
+        this.videos});
 
   Tasks.fromJson(Map<String, dynamic> json) {
     canOpen = json['canOpen'];
@@ -93,8 +97,30 @@ class Tasks {
     remarks = json['remarks'];
     adminRemarks = json['admin_remark'];
     supervisorRemarks = json['supervisor_remarks'];
-    image = json['image'];
-    video = json['video'];
+
+    // Parse images
+    if (json['images'] is List) {
+      images = (json['images'] as List).map((e) => e.toString()).toList();
+    } else if (json['image'] is List) {
+      images = (json['image'] as List).map((e) => e.toString()).toList();
+    } else if (json['image'] is String && (json['image'] as String).isNotEmpty) {
+      images = (json['image'] as String).split(',');
+    } else {
+      images = [];
+    }
+    image = images!.isNotEmpty ? images![0] : json['image'];
+
+    // Parse videos
+    if (json['videos'] is List) {
+      videos = (json['videos'] as List).map((e) => e.toString()).toList();
+    } else if (json['video'] is List) {
+      videos = (json['video'] as List).map((e) => e.toString()).toList();
+    } else if (json['video'] is String && (json['video'] as String).isNotEmpty) {
+      videos = (json['video'] as String).split(',');
+    } else {
+      videos = [];
+    }
+    video = videos!.isNotEmpty ? videos![0] : json['video'];
   }
 
   Map<String, dynamic> toJson() {

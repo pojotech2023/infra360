@@ -14,6 +14,7 @@ import '../check_list/check_list_screen.dart';
 import '../darwing/drawing_list_screen.dart';
 import '../subcontractor_details/subcontractor_sitewise_screen.dart';
 import '../tickets/ticket_list_screen.dart';
+import '../payment_status/payment_status_screen.dart';
 
 class MaterialCategoryScreen extends StatefulWidget{
   @override
@@ -65,6 +66,12 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
         "title": "Drawing",
         "image": Images.drawing,
         "onTap": () => Get.to(() => DrawingListScreen(),
+            arguments: siteManagementList.id),
+      },
+       {
+        "title": "Payment Status",
+        "image": Images.paymentStatus,
+        "onTap": () => Get.to(() => const PaymentStatusScreen(),
             arguments: siteManagementList.id),
       },
     ];

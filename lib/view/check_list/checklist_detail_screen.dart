@@ -15,6 +15,7 @@ import '../../utils/text_form_style.dart';
 import '../widgets/common_app_bar.dart';
 import '../widgets/common_button.dart';
 import '../widgets/common_loader.dart';
+import '../../utils/file_download.dart';
 import 'check_list_controller.dart';
 
 class ChecklistDetailScreen extends StatefulWidget {
@@ -129,14 +130,14 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
         Text("Supervisor Attached",
             style: AppTextStyle.textFieldHeadingStyle),
         VerticalSpacing.d5px(),
-      Row(
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          if(widget.tasks.image != null)
-            _imagePreview(),
-          if(widget.tasks.image != null)
-          SizedBox(width: 8,),
-          if(widget.tasks.video != null)
-            _videoPreview(widget.tasks.video ??''),
+          if(widget.tasks.images != null)
+            ...widget.tasks.images!.map((img) => img.isNotEmpty ? _imagePreview(img) : const SizedBox()),
+          if(widget.tasks.videos != null)
+            ...widget.tasks.videos!.map((vid) => vid.isNotEmpty ? _videoPreview(vid) : const SizedBox()),
         ],
       ),
         VerticalSpacing.d15px(),
@@ -207,12 +208,12 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
               text: 'Submit',
               onTap: () {
                 if (supervisorFormKey.currentState!.validate()) {
+                  print("🚀 Submitting checklist with ${attachments.length} attachments");
                   controller.supervisorAprroved(
                     tasks:widget.tasks,
                     taskId: widget.tasks.taskId ?? 0,
                     remarks: supervisorRemarkController.text,
                     files: attachments,
-
                   );
                 }
               },
@@ -252,14 +253,14 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
               Text("Supervisor Attached",
                   style: AppTextStyle.textFieldHeadingStyle),
               VerticalSpacing.d5px(),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  if(widget.tasks.image != null)
-                    _imagePreview(),
-                  if(widget.tasks.image != null)
-                    SizedBox(width: 8,),
-                  if(widget.tasks.video != null)
-                    _videoPreview(widget.tasks.video ??''),
+                  if(widget.tasks.images != null)
+                    ...widget.tasks.images!.map((img) => img.isNotEmpty ? _imagePreview(img) : const SizedBox()),
+                  if(widget.tasks.videos != null)
+                    ...widget.tasks.videos!.map((vid) => vid.isNotEmpty ? _videoPreview(vid) : const SizedBox()),
                 ],
               ),
               VerticalSpacing.d15px(),
@@ -336,10 +337,11 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
             spacing: 10,
             runSpacing: 10,
             children: attachments.map((file) {
-              return _filePreview(file, isImage: true);
+              final ext = file.path.split('.').last.toLowerCase();
+              final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+              return _filePreview(file, isImage: isImage);
             }).toList(),
           ),
-
       ],
     );
   }
@@ -386,30 +388,92 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
   }
 
   /// ✅ Image Preview (from network)
-  Widget _imagePreview() {
-
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.blue, width: 2),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.network(
-            '$imageUrl/${widget.tasks.image}',
-    fit: BoxFit.cover,
-    loadingBuilder: (context, child, progress) {
-    if (progress == null) return child;
-    return const Center(child: CircularProgressIndicator());
-    },
-    errorBuilder: (context, error, stackTrace){
-      print("❌ IMAGE LOAD FAILED → $error");
-              return placeHolder();},
-
-    ))
+  Widget _imagePreview(String url) {
+    String fullImageUrl = '$imageUrl/$url';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _showZoomedImage(fullImageUrl),
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue, width: 2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                fullImageUrl,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  print("❌ IMAGE LOAD FAILED → $error");
+                  return placeHolder();
+                },
+              ),
+            ),
+          ),
+        ),
+        VerticalSpacing.d5px(),
+        ElevatedButton.icon(
+          onPressed: () {
+            CommonFileDownloader.downloadAndOpen(
+              urls: fullImageUrl,
+              context: context,
+            );
+          },
+          icon: const Icon(Icons.download, size: 16, color: Colors.white),
+          label: const Text("Download", style: TextStyle(fontSize: 12, color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2196F3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  void _showZoomedImage(String imageUrl) {
+    Get.to(() => Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return const Center(
+                child: Text("Error loading image", style: TextStyle(color: Colors.white)),
+              );
+            },
+          ),
+        ),
+      ),
+    ));
   }
 
   /// ✅ Image Preview (from network)
@@ -457,8 +521,10 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                   title: const Text('Pick Image'),
                   onTap: () async {
                     Navigator.pop(context);
-                    final file = await FilePickerHelper.pickImage();
-                    if (file != null) setState(() => attachments.add(file));
+                    final files = await FilePickerHelper.pickMultiImage();
+                    if (files.isNotEmpty) {
+                      setState(() => attachments.addAll(files));
+                    }
                   },
                 ),
                 ListTile(

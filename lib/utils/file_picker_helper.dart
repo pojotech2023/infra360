@@ -19,6 +19,19 @@ class FilePickerHelper {
     return null;
   }
 
+  /// Pick Multiple Images from gallery
+  static Future<List<File>> pickMultiImage() async {
+    try {
+      final List<XFile> pickedFiles = await _picker.pickMultiImage(
+        imageQuality: 70,
+      );
+      return pickedFiles.map((xFile) => File(xFile.path)).toList();
+    } catch (e) {
+      print('Error picking multiple images: $e');
+    }
+    return [];
+  }
+
   /// Pick Video from gallery or camera
   static Future<File?> pickVideo({bool fromCamera = false}) async {
     try {

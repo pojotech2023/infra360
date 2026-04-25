@@ -47,4 +47,5 @@ class Images {
   static const String painter = "assets/images/painter.png";
   static const String others = "assets/images/others.svg";
   static const String totalWages = "assets/images/totalWages.svg";
+  static const String paymentStatus = "assets/images/Payment Status.png";
 }
