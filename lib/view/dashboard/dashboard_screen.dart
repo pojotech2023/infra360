@@ -278,11 +278,21 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueAccent,
-        child: Icon(Icons.add),
-        onPressed: () => controller.checkSiteLimitAndNavigate(),
-      ),
+      floatingActionButton: Obx(() {
+        bool canAdd = false;
+        if (controller.profileRole.value.toLowerCase() == 'admin') {
+          canAdd = true;
+        } else {
+          canAdd = controller.supervisorPermissions.value?.siteManagement?.addSite == 1;
+        }
+        return canAdd
+            ? FloatingActionButton(
+                backgroundColor: Colors.blueAccent,
+                child: Icon(Icons.add),
+                onPressed: () => controller.checkSiteLimitAndNavigate(),
+              )
+            : Container();
+      }),
 
       // ----------------- BODY -----------------
       body: GetBuilder<DashboardController>(
@@ -295,9 +305,33 @@ class DashboardScreen extends StatelessWidget {
               // ---------------- SEARCH BOX ----------------
 
               // --------------- SITE LIST ----------------
-        ListView.builder(
-          shrinkWrap: true,
-          primary: false,
+              Builder(builder: (context) {
+                bool canViewSiteList = true;
+                if (controller.profileRole.value.toLowerCase() == 'supervisor') {
+                  final perms = controller.supervisorPermissions.value;
+                  if (perms != null) {
+                    canViewSiteList = perms.siteManagement?.viewSite == 1;
+                  }
+                }
+
+                if (!canViewSiteList) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 60),
+                      child: Text(
+                        "You do not have permission to view sites.",
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  primary: false,
           physics: NeverScrollableScrollPhysics(),
           itemCount: controller.siteManagementList.length,
 
@@ -471,42 +505,53 @@ class DashboardScreen extends StatelessWidget {
 
                               SizedBox(width: 12),
 
-                              // Right side - Details button
-                             InkWell(onTap: () {
-                               showCustomerDetailsBottomSheet(
-                                   context,
-                                   site,
-                                   controller);
-                             },
-                               child:  Container(
-                                 padding:
-                                 EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                 decoration: BoxDecoration(
-                                   borderRadius: BorderRadius.circular(14),
-                                   gradient: LinearGradient(
-                                     colors: [
-                                       Colors.blueAccent.withOpacity(.2),
-                                       Colors.blueAccent.withOpacity(.1),
-                                     ],
-                                   ),
-                                 ),
-                                 child: Row(
-                                   mainAxisSize: MainAxisSize.min,
-                                   children: [
-                                     Icon(Icons.info_outline,
-                                         size: 18, color: Colors.blueAccent),
-                                     SizedBox(width: 6),
-                                     Text(
-                                       "Details",
-                                       style: TextStyle(
-                                         color: Colors.blueAccent,
-                                         fontWeight: FontWeight.w700,
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                               ),
-                             )
+                               // Right side - Details button
+                                Builder(builder: (context) {
+                                  bool canViewDetails = false;
+                                  if (controller.profileRole.value.toLowerCase() == 'admin') {
+                                    canViewDetails = true;
+                                  } else {
+                                    final p = controller.supervisorPermissions.value?.siteManagement;
+                                    canViewDetails = (p?.editSite == 1 || p?.deleteSite == 1);
+                                  }
+
+                                  if (!canViewDetails) return SizedBox();
+
+                                  return InkWell(
+                                    onTap: () {
+                                      showCustomerDetailsBottomSheet(
+                                          context, site, controller);
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(14),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.blueAccent.withOpacity(.2),
+                                            Colors.blueAccent.withOpacity(.1),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.info_outline,
+                                              size: 18, color: Colors.blueAccent),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            "Details",
+                                            style: TextStyle(
+                                              color: Colors.blueAccent,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                })
                             ],
                           ),
 
@@ -520,7 +565,8 @@ class DashboardScreen extends StatelessWidget {
 
 
           },
-        )
+        );
+      })
 
         ],
           ),

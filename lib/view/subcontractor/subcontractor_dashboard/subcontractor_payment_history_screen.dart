@@ -6,6 +6,7 @@ import 'package:raptor_pro/view/subcontractor/subcontractor_dashboard/subcontrac
 import 'package:raptor_pro/view/subcontractor/subcontractor_dashboard/subcontractor_payment_history_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class SubContractorPaymentHistoryScreen extends StatefulWidget {
   const SubContractorPaymentHistoryScreen({super.key});
@@ -19,6 +20,17 @@ class _SubContractorPaymentHistoryScreenState
     extends State<SubContractorPaymentHistoryScreen> {
   final SubContractorPaymentHistoryController controller =
   Get.put(SubContractorPaymentHistoryController());
+  DashboardController dashboardController = Get.find<DashboardController>();
+
+  bool canAddPayment() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.addPayment == 1;
+  }
+  
+  bool canViewPaymentHistory() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.paymentHistory == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +39,7 @@ class _SubContractorPaymentHistoryScreenState
         title: "Payment History",
         onTap: () => Get.back(),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: Obx(() => canAddPayment() ? FloatingActionButton(
         backgroundColor: AppColor.buttonLightBlue,
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
@@ -36,7 +48,7 @@ class _SubContractorPaymentHistoryScreenState
             arguments: controller.argData,
           );
         },
-      ),
+      ) : const SizedBox.shrink()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -45,6 +57,13 @@ class _SubContractorPaymentHistoryScreenState
 
             /// 🔹 Payment History List
             Obx(() {
+              if (!canViewPaymentHistory()) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 30),
+                  child: Text("You do not have permission to view payment history."),
+                );
+              }
+
               if (controller.isLoading.value) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),

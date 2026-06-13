@@ -9,6 +9,7 @@ import 'package:raptor_pro/view/customer/customer_list_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 import 'customer_mangement_screen.dart';
 
@@ -20,7 +21,22 @@ class CustomerListScreen extends StatefulWidget{
 class _CustomerListScreenState extends State<CustomerListScreen> {
 
   CustomerListController controller = Get.put(CustomerListController());
+  DashboardController dashboardController = Get.find<DashboardController>();
 
+  bool canAdd() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.customerManagement?.addCustomer == 1;
+  }
+  
+  bool canEdit() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.customerManagement?.editCustomer == 1;
+  }
+
+  bool canDelete() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.customerManagement?.deleteCustomer == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,31 +85,33 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                mainAxisSize: MainAxisSize.min,
                                children: [
 
-                                 InkWell(
-                                   onTap: (){
-                                     Get.to(() => CustomerMangementScreen(), arguments: customerData);
+                                 if (canEdit())
+                                   InkWell(
+                                     onTap: (){
+                                       Get.to(() => CustomerMangementScreen(), arguments: customerData);
 
-                                   },
-                                   child: Align(
-                                     alignment: Alignment.topRight,
-                                     child: Icon(Icons.edit,
-                                       color: Colors.blueAccent,),
+                                     },
+                                     child: Align(
+                                       alignment: Alignment.topRight,
+                                       child: Icon(Icons.edit,
+                                         color: Colors.blueAccent,),
+                                     ),
                                    ),
-                                 ),
-                                 SizedBox(width: 16,),
-                                 InkWell(
-                                   onTap: (){
-                                     deleteDialog(context,(){
-                                       controller.deleteCustomer(customerData.id!);
+                                 if (canEdit() && canDelete()) SizedBox(width: 16,),
+                                 if (canDelete())
+                                   InkWell(
+                                     onTap: (){
+                                       deleteDialog(context,(){
+                                         controller.deleteCustomer(customerData.id!);
 
-                                     });
-                                   },
-                                   child: Align(
-                                     alignment: Alignment.topRight,
-                                     child: Icon(Icons.delete,
-                                       color: Colors.redAccent,),
+                                       });
+                                     },
+                                     child: Align(
+                                       alignment: Alignment.topRight,
+                                       child: Icon(Icons.delete,
+                                         color: Colors.redAccent,),
+                                     ),
                                    ),
-                                 ),
                                ],
                              )
 
@@ -125,7 +143,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               ],
             ),
           );
-        })
+        }),
+        floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
+            backgroundColor: Colors.blueAccent,
+            child: Icon(Icons.add, color: Colors.white),
+            onPressed: (){
+              Get.to(() => CustomerMangementScreen(), arguments: null);
+            }) : SizedBox.shrink()),
     );
   }
   textWidget(String title,String value){

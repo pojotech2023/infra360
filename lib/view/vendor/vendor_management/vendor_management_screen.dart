@@ -11,6 +11,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class VendorManagementScreen extends StatefulWidget{
   @override
@@ -20,8 +21,22 @@ class VendorManagementScreen extends StatefulWidget{
 class _VendorManagementScreenState extends State<VendorManagementScreen> {
 
   VendorManagementController controller = Get.put(VendorManagementController());
+  DashboardController dashboardController = Get.find<DashboardController>();
 
+  bool canAdd() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.addVendor == 1;
+  }
+  
+  bool canEdit() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.editVendor == 1;
+  }
 
+  bool canDelete() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.deleteVendor == 1;
+  }
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -68,32 +83,34 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
 
                               Row(
                           children:[
-                            InkWell(
-                              onTap: (){
-                                Get.to(AddVendorScreen(),arguments: vendorManagementData);
-
-                              },
-                              child: Icon(Icons.edit_note,
-                                size: 30,
-                                color: AppColor.buttonLightBlue,),
-                            ),
-                              HorizontalSpacing.d10px(),
+                            if (canEdit())
                               InkWell(
-                              onTap: (){
+                                onTap: (){
+                                  Get.to(AddVendorScreen(),arguments: vendorManagementData);
 
-                        deleteDialog(context,(){
-                          controller.deleteVendor(vendorManagementData.id!);
+                                },
+                                child: Icon(Icons.edit_note,
+                                  size: 30,
+                                  color: AppColor.buttonLightBlue,),
+                              ),
+                              if (canEdit() && canDelete()) HorizontalSpacing.d10px(),
+                              if (canDelete())
+                                InkWell(
+                                onTap: (){
 
-                        });
-                      },
-                      child: Align(
-                      alignment: Alignment.topRight,
-                      child: Icon(Icons.delete,
-                      color: Colors.redAccent,),
-                      ),
-                      ),
-                          ]
-                      )
+                          deleteDialog(context,(){
+                            controller.deleteVendor(vendorManagementData.id!);
+
+                          });
+                        },
+                        child: Align(
+                        alignment: Alignment.topRight,
+                        child: Icon(Icons.delete,
+                        color: Colors.redAccent,),
+                        ),
+                        ),
+                            ]
+                        )
                               ],
                             ),
 
@@ -133,7 +150,8 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
             ),
           );
         })),
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
+            backgroundColor: Colors.blueAccent,
             child: Icon(Icons.add, color: Colors.white),
             onPressed: (){
               VendorManagementController controller = Get.find<VendorManagementController>();
@@ -142,7 +160,7 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
               Get.to(AddVendorScreen(),arguments: null);
 
 
-            })
+            }) : SizedBox.shrink())
     );
 
   }

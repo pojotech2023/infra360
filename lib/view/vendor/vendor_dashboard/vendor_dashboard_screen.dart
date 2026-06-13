@@ -9,6 +9,7 @@ import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_dashboard_control
 import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_payment_details.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class VendorDashboardScreen extends StatefulWidget{
   @override
@@ -18,6 +19,12 @@ class VendorDashboardScreen extends StatefulWidget{
 class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
 
   VendorDashboardController controller = Get.put(VendorDashboardController());
+  DashboardController dashboardController = Get.find<DashboardController>();
+
+  bool canViewAmount() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.viewAmount == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +79,16 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                              ),
 
 
-                             VerticalSpacing.d5px(),
+                             if (canViewAmount()) ...[
+                               VerticalSpacing.d5px(),
 
-                             textWidget("Total Amount : ",vendorData.totalAmount.toString()??""),
-                             VerticalSpacing.d5px(),
-                             textWidget("Paid Amount : ",vendorData.paidAmount??""),
+                               textWidget("Total Amount : ",vendorData.totalAmount.toString()??""),
+                               VerticalSpacing.d5px(),
+                               textWidget("Paid Amount : ",vendorData.paidAmount??""),
 
-                             VerticalSpacing.d5px(),
-                             textWidget("Pending Amount : ",vendorData.pendingAmount??""),
+                               VerticalSpacing.d5px(),
+                               textWidget("Pending Amount : ",vendorData.pendingAmount??""),
+                             ]
 
 
                            ],

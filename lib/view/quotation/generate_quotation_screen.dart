@@ -12,6 +12,7 @@ import '../../utils/res/spacing.dart';
 import '../../utils/text_form_style.dart';
 import '../widgets/common_app_bar.dart';
 import '../widgets/common_button.dart';
+import '../dashboard/dashboard_controller.dart';
 import 'generate_quotation_controller.dart';
 
 
@@ -19,7 +20,13 @@ class GenerateQuotationScreen extends StatelessWidget {
    GenerateQuotationScreen({super.key});
 
   GenerateQuotationController controller = Get.put(GenerateQuotationController());
+  DashboardController dashboardController = Get.find<DashboardController>();
    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+   bool canAdd() {
+     if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+     return dashboardController.supervisorPermissions.value?.quotation?.addQuotation == 1;
+   }
    
 
   @override
@@ -313,7 +320,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                    spacing: 12,
                    runSpacing: 12,
                    children: [
-                     SizedBox(
+                     if (canAdd()) SizedBox(
                        width: 180,
                        child: CommonButton(
                          customColor: Colors.green,
@@ -332,6 +339,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                          text: 'Add Particulars',
                        ),
                      ),
+                     if (!canAdd()) SizedBox(),
                      Container(
                        padding: const EdgeInsets.all(12),
                        decoration: BoxDecoration(
@@ -355,7 +363,7 @@ class GenerateQuotationScreen extends StatelessWidget {
 
                     SizedBox(height: 8,),
 
-                    GetBuilder<GenerateQuotationController>(builder: (controller){
+                     if (canAdd()) GetBuilder<GenerateQuotationController>(builder: (controller){
                       return  controller.issubmitLoading.value ? CircularProgressIndicator()  :
                       CommonButton(
                         onTap: () {
@@ -384,6 +392,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                         text: 'Submit',
                       );
                     })
+                    else Center(child: Text("You do not have permission to add quotations.", style: TextStyle(color: Colors.red))),
 
                   ],
                 ))

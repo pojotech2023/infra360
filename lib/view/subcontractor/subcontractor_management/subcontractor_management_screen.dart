@@ -13,6 +13,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 import 'add_subcontractor_management.dart';
 
@@ -24,8 +25,22 @@ class SubcontractorManagementScreen extends StatefulWidget{
 class _SubcontractorManagementScreenState extends State<SubcontractorManagementScreen> {
 
   SubcontractorManagementController controller = Get.put(SubcontractorManagementController());
+  DashboardController dashboardController = Get.find<DashboardController>();
 
+  bool canAdd() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.addSubcontractor == 1;
+  }
+  
+  bool canEdit() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.editSubcontractor == 1;
+  }
 
+  bool canDelete() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.deleteSubcontractor == 1;
+  }
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -36,13 +51,14 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
             Get.back();
 
           }),
-    floatingActionButton: FloatingActionButton(
+    floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
+        backgroundColor: Colors.blueAccent,
         child: Icon(Icons.add, color: Colors.white),
         onPressed: (){
 
           Get.to(AddSubcontractorManagementScreen());
 
-    }),
+    }) : SizedBox.shrink()),
     body: Obx((){
       return controller.isLoading.value?Center(
         child: CommonLoader(),
@@ -78,29 +94,31 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
                           textWidget("Name : ",subcontractorData.name??""),
                         Row(
                           children: [
-                            InkWell(
-                              onTap: (){
-                                Get.to(AddSubcontractorManagementScreen(),arguments: subcontractorData);
+                            if (canEdit())
+                              InkWell(
+                                onTap: (){
+                                  Get.to(AddSubcontractorManagementScreen(),arguments: subcontractorData);
 
-                              },
-                              child: Icon(Icons.edit_note,
-                                size: 30,
-                                color: AppColor.buttonLightBlue,),
-                            ),
-                            HorizontalSpacing.d10px(),
-                            InkWell(
-                              onTap: (){
-                                deleteDialog(context,(){
-                                  controller.deleteSupervisor(subcontractorData.id!);
-
-                                });
-                              },
-                              child: Align(
-                                alignment: Alignment.topRight,
-                                child: Icon(Icons.delete,
-                                  color: Colors.redAccent,),
+                                },
+                                child: Icon(Icons.edit_note,
+                                  size: 30,
+                                  color: AppColor.buttonLightBlue,),
                               ),
-                            ),
+                            if (canEdit() && canDelete()) HorizontalSpacing.d10px(),
+                            if (canDelete())
+                              InkWell(
+                                onTap: (){
+                                  deleteDialog(context,(){
+                                    controller.deleteSupervisor(subcontractorData.id!);
+
+                                  });
+                                },
+                                child: Align(
+                                  alignment: Alignment.topRight,
+                                  child: Icon(Icons.delete,
+                                    color: Colors.redAccent,),
+                                ),
+                              ),
                           ],
                         )
                         ],

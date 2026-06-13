@@ -9,6 +9,7 @@ import 'package:raptor_pro/utils/res/spacing.dart';
 import 'package:raptor_pro/view/subcontractor/subcontractor_dashboard/subcontractor_dashboard_controller.dart';
 import 'package:raptor_pro/view/subcontractor/subcontractor_dashboard/subcontractor_payment_history_screen.dart';import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class SubContractorDashboardScreen extends StatefulWidget{
   @override
@@ -18,6 +19,12 @@ class SubContractorDashboardScreen extends StatefulWidget{
 class _SubContractorDashboardScreenState extends State<SubContractorDashboardScreen> {
 
   SubContractorDashboardController controller = Get.put(SubContractorDashboardController());
+  DashboardController dashboardController = Get.find<DashboardController>();
+
+  bool canViewAmount() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.viewAmount == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,14 +77,16 @@ class _SubContractorDashboardScreenState extends State<SubContractorDashboardScr
                              ),
 
 
-                             VerticalSpacing.d5px(),
+                             if (canViewAmount()) ...[
+                               VerticalSpacing.d5px(),
 
-                             textWidget("Total Amount : ",data.totalAmount.toString()??""),
-                             VerticalSpacing.d5px(),
-                             textWidget("Paid Amount : ",data.paidAmount.toString()??""),
+                               textWidget("Total Amount : ",data.totalAmount.toString()??""),
+                               VerticalSpacing.d5px(),
+                               textWidget("Paid Amount : ",data.paidAmount.toString()??""),
 
-                             VerticalSpacing.d5px(),
-                             textWidget("Pending Amount : ",data.pendingAmount.toString()??""),
+                               VerticalSpacing.d5px(),
+                               textWidget("Pending Amount : ",data.pendingAmount.toString()??""),
+                             ]
 
 
                            ],

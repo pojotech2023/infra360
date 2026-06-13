@@ -11,6 +11,7 @@ import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_payment_history/v
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class VendorPaymentDetails extends StatefulWidget{
   @override
@@ -20,10 +21,17 @@ class VendorPaymentDetails extends StatefulWidget{
 class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
 
   VendorPaymentDetailsController controller = Get.put(VendorPaymentDetailsController());
+  DashboardController dashboardController = Get.find<DashboardController>();
 
-
-
-
+  bool canAddPayment() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.addPayment == 1;
+  }
+  
+  bool canViewPaymentHistory() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.paymentHistory == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,25 +53,27 @@ class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(width: 150,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (canAddPayment())
+                    SizedBox(width: 150,
 
-                  child: CommonButton(customColor: AppColor.buttonLightBlue, onTap: () {
-                    Get.to(AddVendorPaymentScreen(),arguments: controller.vendorDataList.value.vendor?.id);
-                  },
-                    text: 'Add Payment',),),
-                HorizontalSpacing.d5px(),
+                      child: CommonButton(customColor: AppColor.buttonLightBlue, onTap: () {
+                        Get.to(AddVendorPaymentScreen(),arguments: controller.vendorDataList.value.vendor?.id);
+                      },
+                        text: 'Add Payment',),),
+                  if (canAddPayment() && canViewPaymentHistory()) HorizontalSpacing.d5px(),
 
 
-                SizedBox(width: 150,
-                child: CommonButton(customColor: AppColor.buttonGreen, onTap: () {
-                  Get.to(VendorPaymentHistoryScreen(),arguments: controller.vendorDataList.value.vendor?.id);
-                },
-                  text: 'Payment History',),)
-              ],
-            ),
+                  if (canViewPaymentHistory())
+                    SizedBox(width: 150,
+                    child: CommonButton(customColor: AppColor.buttonGreen, onTap: () {
+                      Get.to(VendorPaymentHistoryScreen(),arguments: controller.vendorDataList.value.vendor?.id);
+                    },
+                      text: 'Payment History',),)
+                ],
+              ),
 
             VerticalSpacing.d15px(),
             Text("Opening Balance",style: AppTextStyle.textFieldHeadingStyle,),

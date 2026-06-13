@@ -18,6 +18,7 @@ import 'package:raptor_pro/model/site_management_model.dart';
 import 'package:raptor_pro/model/subcontractor_dashboard_model.dart';
 import 'package:raptor_pro/model/subcontractor_payment_history_model.dart';
 import 'package:raptor_pro/model/supervisor_list_model.dart';
+import 'package:raptor_pro/model/supervisor_permissions_model.dart';
 import 'package:raptor_pro/model/user_profile_model.dart';
 import 'package:raptor_pro/model/vendor_dashboard_model.dart';
 import 'package:raptor_pro/model/vendor_management_model.dart';
@@ -1830,6 +1831,60 @@ print("REQUEST HEADER ${request.headers}");
   }
 
 
+
+  // ─── Supervisor Permissions ───────────────────────────────────────────────
+  /// Fetches the permission config the admin has set for this supervisor.
+  /// Endpoint: GET supervisor-permissions/{supervisorId}
+  /// Each value: 1 = visible/enabled, 0 = hidden/disabled.
+  Future<SupervisorPermissionsModel?> getSupervisorPermissions(int supervisorId) async {
+    final endpoint = "supervisor-permissions/$supervisorId";
+    print("🔐 [PERMISSIONS] Calling API: $endpoint");
+
+    final response = await ApiService().sendAsync("GET", endpoint, null, true);
+
+    if (response == null) {
+      print("⚠️ [PERMISSIONS] No response received from API");
+      return null;
+    }
+
+    print("🔐 [PERMISSIONS] Status Code : ${response.statusCode}");
+    print("🔐 [PERMISSIONS] Raw Response: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> body = json.decode(response.body);
+      final model = SupervisorPermissionsModel.fromJson(body);
+      final p = model.permissions;
+
+      print("✅ [PERMISSIONS] Supervisor: ${model.supervisor} (id=${model.supervisorId})");
+
+      if (p != null) {
+        final s = p.siteManagement;
+        print("── site_management ──────────────────────────────");
+        print("   view_today_attendance = ${s?.viewTodayAttendance} → ${s?.canViewAttendance == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_materials        = ${s?.viewMaterials}       → ${s?.canViewMaterials == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_subcontractor    = ${s?.viewSubcontractor}   → ${s?.canViewSubcontractor == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_checklist        = ${s?.viewChecklist}       → ${s?.canViewChecklist == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_tickets          = ${s?.viewTickets}         → ${s?.canViewTickets == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_drawing          = ${s?.viewDrawing}         → ${s?.canViewDrawing == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("   view_payment_status   = ${s?.viewPaymentStatus}   → ${s?.canViewPaymentStatus == true ? 'VISIBLE' : 'HIDDEN'}");
+        print("── quotation ─────────────────────────────────────");
+        print("   canAccessQuotation    = ${p.quotation?.canAccessQuotation}");
+        print("── customer_management ──────────────────────────");
+        print("   canAccessCustomer     = ${p.customerManagement?.canAccessCustomer}");
+        print("── vendor_management ────────────────────────────");
+        print("   canAccessVendor       = ${p.vendorManagement?.canAccessVendor}");
+        print("── subcontractor_management ─────────────────────");
+        print("   canAccessSubcontractor= ${p.subcontractorManagement?.canAccessSubcontractor}");
+      } else {
+        print("⚠️ [PERMISSIONS] 'permissions' field is null in API response");
+      }
+
+      return model;
+    } else {
+      print("❌ [PERMISSIONS] API returned error: ${response.statusCode} — ${response.body}");
+      return null;
+    }
+  }
 
 }
 

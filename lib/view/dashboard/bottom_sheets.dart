@@ -58,31 +58,37 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                   _sectionTitle('Site Details'),
                   Row(
                     children: [
-                      SizedBox(
-                          width: 100,
-                          child: CommonButton(
-                              onTap: () {
-                                Navigator.pop(context);
-                                Get.to(() => SiteAddScreen(
-                                    siteData: siteManagementList));
-                              },
-                              customColor: Colors.blue,
-                              text: "Edit")),
-                      SizedBox(
-                        width: 16,
-                      ),
-                      SizedBox(
-                          width: 100,
-                          child: CommonButton(
-                              onTap: () {
-                                Navigator.pop(context);
-                                deleteDialog(context, () {
-                                  controller
-                                      .deleteSite(siteManagementList.id!);
-                                });
-                              },
-                              customColor: Colors.red,
-                              text: "Delete")),
+                      if (controller.profileRole.value.toLowerCase() == 'admin' ||
+                          controller.supervisorPermissions.value?.siteManagement?.editSite == 1)
+                        SizedBox(
+                            width: 100,
+                            child: CommonButton(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Get.to(() => SiteAddScreen(
+                                      siteData: siteManagementList));
+                                },
+                                customColor: Colors.blue,
+                                text: "Edit")),
+                      if ((controller.profileRole.value.toLowerCase() == 'admin' ||
+                              controller.supervisorPermissions.value?.siteManagement?.editSite == 1) &&
+                          (controller.profileRole.value.toLowerCase() == 'admin' ||
+                              controller.supervisorPermissions.value?.siteManagement?.deleteSite == 1))
+                        SizedBox(width: 16),
+                      if (controller.profileRole.value.toLowerCase() == 'admin' ||
+                          controller.supervisorPermissions.value?.siteManagement?.deleteSite == 1)
+                        SizedBox(
+                            width: 100,
+                            child: CommonButton(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  deleteDialog(context, () {
+                                    controller
+                                        .deleteSite(siteManagementList.id!);
+                                  });
+                                },
+                                customColor: Colors.red,
+                                text: "Delete")),
                     ],
                   )
                 ],
