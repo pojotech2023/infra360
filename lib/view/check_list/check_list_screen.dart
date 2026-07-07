@@ -2,29 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../model/checklist_model.dart';
 import '../widgets/common_app_bar.dart';
+import 'add_checklist_screen.dart';
 import 'check_list_controller.dart';
 import 'checklist_detail_screen.dart';
-
-
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../widgets/common_app_bar.dart';
-import 'check_list_controller.dart';
-import 'checklist_detail_screen.dart';
-
-
-
-
-
-
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../widgets/common_app_bar.dart';
-import 'check_list_controller.dart';
-import 'checklist_detail_screen.dart';
-
-
-
 
 
 
@@ -62,14 +42,51 @@ class _CheckListScreenState extends State<CheckListScreen> {
       appBar: CommonAppBar.appBar(
         title: "Check List",
         onTap: () => Get.back(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GetBuilder<CheckListController>(
+              builder: (ctrl) => SizedBox(
+                height: 32,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final result = await Get.to(
+                      () => const AddChecklistScreen(),
+                      arguments: ctrl.siteId,
+                    );
+                    if (result == true) {
+                      ctrl.init();
+                    }
+                  },
+                  icon: const Icon(Icons.add, color: Colors.white, size: 14),
+                  label: const Text(
+                    'Add Checklist',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11),
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: GetBuilder<CheckListController>(
-        builder: (controller) {
-          if (controller.checkListManagement.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: GetBuilder<CheckListController>(
+          builder: (controller) {
+            if (controller.checkListManagement.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          return ListView.builder(
+            return ListView.builder(
             itemCount: controller.checkListManagement.length,
             itemBuilder: (context, index) {
               var data = controller.checkListManagement[index];
@@ -167,6 +184,7 @@ print("statusColor $statusColor");
             },
           );
         },
+      ),
       ),
     );
   }

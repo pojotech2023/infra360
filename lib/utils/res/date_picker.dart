@@ -54,6 +54,11 @@ String convertMonthFormat(String input) {
   final parts = input.split('-');
   if (parts.length != 2) return input; // invalid format safeguard
 
+  // If the first part is a year (e.g., 2026), it's already in YYYY-MM format
+  if (parts[0].length == 4 && int.tryParse(parts[0]) != null) {
+    return input;
+  }
+
   final monthName = parts[0];
   final year = parts[1];
 

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:raptor_pro/model/bricks_model.dart';
 import 'package:raptor_pro/model/vendor_model.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/const_data.dart';
@@ -18,9 +20,10 @@ import '../../../utils/res/colors.dart';
 import '../../../utils/res/date_picker.dart';
 
 class NewRequestScreen extends StatefulWidget {
-  const NewRequestScreen({super.key,required this.type});
+  const NewRequestScreen({super.key, required this.type, this.editItem});
 
   final int type;
+  final BricksList? editItem;
 
   @override
   State<NewRequestScreen> createState() => _NewRequestScreenState();
@@ -41,29 +44,65 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
     super.initState();
     controller.materialUnitsListApi();
 
-
-   role = controller.userDetails.data!.role!.toLowerCase();
+    role = controller.userDetails.data!.role!.toLowerCase();
     type = widget.type;
 
-  canShow =
+    canShow =
         (role == 'admin' && (type == 1 || type == 2)) ||
             (role == 'supervisor' && type == 2);
+
+    // Pre-fill form if editing
+    if (widget.editItem != null) {
+      final item = widget.editItem!;
+      controller.quantityController.text = item.quantity ?? '';
+      controller.amountController.text = item.price?.toString() ?? '';
+      controller.gstController.text = item.gst?.toString() ?? '';
+      // Format date from yyyy-MM-dd to dd-MM-yyyy
+      try {
+        if (item.date != null && item.date!.isNotEmpty) {
+          final dt = DateTime.parse(item.date!);
+          controller.dateController.text = DateFormat('dd-MM-yyyy').format(dt);
+        }
+      } catch (_) {
+        controller.dateController.text = item.date ?? '';
+      }
+      // Pre-select vendor if available
+      if (item.vendorId != null) {
+        final vendor = controller.getBricksLists.firstWhereOrNull(
+          (v) => v.id == item.vendorId,
+        );
+        if (vendor != null) {
+          controller.selectedVendorData = vendor;
+          controller.mobileNoController.text = vendor.mobileNo ?? '';
+          controller.addressController.text = vendor.address ?? '';
+        }
+      }
+      // Pre-select unit if available
+      if (item.unit != null && item.unit!.isNotEmpty) {
+        controller.selectedUnit.value = item.unit!;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:CommonAppBar.appBar(
-        title :  widget.type == 1 ? "Add ${controller.itemKey} Request" : "Add ${controller.itemKey} Order",
+      appBar: CommonAppBar.appBar(
+        title: widget.editItem != null
+            ? "Edit ${controller.itemKey} Order"
+            : widget.type == 1
+                ? "Add ${controller.itemKey} Request"
+                : "Add ${controller.itemKey} Order",
         onTap: () => Get.back(),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
 
               if (canShow) ...[
@@ -79,12 +118,14 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
 
               _buildDate(),
                _buildAmountField(),
+               _buildGstField(),
               _buildSupervisorNameField(),
               _buildSupervisorMobField(),
               _buildSubmitButton(),
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -175,6 +216,14 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
     controller: controller.amountController,
     hint: "Enter Price",
     keyboardType: TextInputType.number,
+  );
+
+  Widget _buildGstField() => _textField(
+    label: "GST",
+    controller: controller.gstController,
+    hint: "Enter GST %",
+    keyboardType: TextInputType.number,
+    validator: (text) => null, // GST might be optional
   );
 
   Widget _buildRemarksField() => _textField(

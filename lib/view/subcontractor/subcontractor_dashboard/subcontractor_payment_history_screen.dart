@@ -49,10 +49,11 @@ class _SubContractorPaymentHistoryScreenState
           );
         },
       ) : const SizedBox.shrink()),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
             _buildTableHeader(),
 
             /// 🔹 Payment History List
@@ -137,6 +138,8 @@ class _SubContractorPaymentHistoryScreenState
             }),
           ],
         ),
+        );
+      }),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/service/shared_preference_service.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,12 @@ void showLogoutDialog(BuildContext context) {
         ),
         TextButton(
           onPressed: () {
+            // Stop permission polling before logout
+            if (Get.isRegistered<DashboardController>()) {
+              final controller = Get.find<DashboardController>();
+              controller.stopPermissionPolling();
+            }
+            
             PreferenceUtils().init();
             PreferenceUtils().clear();
             Navigator.of(context).pop(); // Close dialog

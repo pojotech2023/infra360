@@ -34,6 +34,20 @@ class _OtherMaterialScreenState extends State<OtherMaterialScreen> {
     super.initState();
   }
 
+  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (pickedDate != null) {
+      setState(() {
+        controller.text = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -73,6 +87,24 @@ class _OtherMaterialScreenState extends State<OtherMaterialScreen> {
             ),
             VerticalSpacing.d20px(),
 
+            Text("Date",style: AppTextStyle.textFieldHeadingStyle,),
+            VerticalSpacing.d5px(),
+            TextFormField(
+              controller: otherMaterialController.dateController,
+              readOnly: true,
+              decoration: textBoxDecoration(
+                hint: "Select Date",
+                suffixIcon: Icon(Icons.calendar_month, color: Colors.grey),
+              ),
+              onTap: () => _selectDate(context, otherMaterialController.dateController),
+              validator: (text) {
+                if (text == null || text.isEmpty) {
+                  return 'Required';
+                }
+                return null;
+              },
+            ),
+            VerticalSpacing.d16px(),
 
             Text("Amount",style: AppTextStyle.textFieldHeadingStyle,),
             VerticalSpacing.d5px(),

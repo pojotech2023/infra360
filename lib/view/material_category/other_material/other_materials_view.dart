@@ -27,7 +27,6 @@ class _OtherMaterialViewState extends State<OtherMaterialView> {
   }
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Others",
@@ -37,64 +36,242 @@ class _OtherMaterialViewState extends State<OtherMaterialView> {
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Obx(()
-            {return
-             ListView.builder(
-               shrinkWrap: true,
-                 primary: false,
-                 itemCount: othersMaterialController.otherUtilitiesData.length,
-                 itemBuilder: (BuildContext context,int index){
-                  OtherUtilitiesData data= othersMaterialController.otherUtilitiesData[index];
-                 return Container(
-                   margin: EdgeInsets.only(bottom: 16),
-                   padding: EdgeInsets.all(10),
-                   decoration: BoxDecoration(
-                       borderRadius: BorderRadius.circular(10),
-                       border:
-                       Border.all(color: Color(0xFFDCE1EF), width: 1)),
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       if(data.image!=null)
-                       ClipRRect(
-                         borderRadius: BorderRadius.only(
-                           topLeft: Radius.circular(14),
-                           topRight: Radius.circular(14),
-                         ),
-                         child: Image.network(
-                           UrlHelper.getFullImageUrl(data.image),
-                           width: double.infinity,
-                           height: 120,
-                           fit: BoxFit.fitWidth,
-                         ),
-                       ),
-                       VerticalSpacing.d5px(),
-                       Text(
-                         "Amount : ${data.amount}",
-                         style: AppTextStyle.textMedium,
-                       ),
-                       VerticalSpacing.d10px(),
-                       Text(
-                         "Remarks",
-                         style: AppTextStyle.textMedium.
-                         copyWith(color: AppColor.buttonBlue),
-                       ),
-                       VerticalSpacing.d5px(),
-                       Text(
-                         "${data.remarks}",
-                         style: AppTextStyle.textMedium,
-                       ),
-                     ],
-                   ),
-                 );
-
-             });
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    othersMaterialController.otherUtilitiesExcelDownload(context, siteId!);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  child: Text('Export', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
+                ),
+              ],
+            ),
+            VerticalSpacing.d20px(),
+            Obx(() {
+              return ListView.builder(
+                shrinkWrap: true,
+                primary: false,
+                itemCount: othersMaterialController.otherUtilitiesData.length,
+                itemBuilder: (context, index) {
+                  final data = othersMaterialController.otherUtilitiesData[index];
+                  return _buildCard(
+                    id: (index + 1).toString(),
+                    date: data.createdAt != null ? data.createdAt!.split('T').first : '',
+                    amount: data.amount ?? '0',
+                    remarks: data.remarks ?? '',
+                    imageUrl: data.image,
+                    dataItem: data,
+                  );
+                },
+              );
             }),
-
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCard({
+    required String id,
+    required String date,
+    required String amount,
+    required String remarks,
+    String? imageUrl,
+    OtherUtilitiesData? dataItem,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'S.No: $id',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF252C58),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                date,
+                style: TextStyle(
+                  color: Color(0xFF6E6B7B),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          _buildCardRow('Amount', amount),
+          SizedBox(height: 8),
+          _buildCardRow('Remarks', remarks.isEmpty ? 'N/A' : remarks),
+          SizedBox(height: 12),
+          if (imageUrl != null && imageUrl.isNotEmpty)
+            Container(
+              height: 100,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  UrlHelper.getFullImageUrl(imageUrl),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          if (imageUrl != null && imageUrl.isNotEmpty) SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: () {
+                  if (dataItem != null) {
+                    final amountCtrl = TextEditingController(text: dataItem.amount);
+                    final remarksCtrl = TextEditingController(text: dataItem.remarks);
+                    final dateCtrl = TextEditingController(text: dataItem.createdAt?.split('T').first ?? '');
+                    
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text("Edit Record"),
+                        content: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (YYYY-MM-DD)")),
+                              TextField(controller: amountCtrl, decoration: InputDecoration(labelText: "Amount"), keyboardType: TextInputType.number),
+                              TextField(controller: remarksCtrl, decoration: InputDecoration(labelText: "Remarks"), maxLines: 3),
+                            ],
+                          ),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text("Cancel")),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              othersMaterialController.updateOtherUtility(dataItem.id!, siteId!, amountCtrl.text, remarksCtrl.text, dateCtrl.text);
+                            }, 
+                            child: Text("Save")
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.edit, size: 18, color: Colors.blue),
+                ),
+              ),
+              SizedBox(width: 12),
+              InkWell(
+                onTap: () {
+                  if (dataItem?.id != null) {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text("Confirm Delete"),
+                        content: Text("Are you sure you want to delete this record?"),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.blue.shade400,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: Text("Cancel"),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.red.shade400,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              othersMaterialController.deleteOtherUtility(dataItem!.id!, siteId!);
+                            },
+                            child: Text("Delete"),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.delete, size: 18, color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Color(0xFF5E5873),
+            fontSize: 13,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF252C58),
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

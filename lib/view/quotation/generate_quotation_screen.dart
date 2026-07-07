@@ -122,6 +122,14 @@ class GenerateQuotationScreen extends StatelessWidget {
 
 
               ),
+              VerticalSpacing.d15px(),
+              Text("Email (for Send Mail)",style: AppTextStyle.textFieldHeadingStyle,),
+
+              TextFormField(
+                controller: controller.emailEditingController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: textBoxDecoration(hint: "Enter Customer Email (optional)"),
+              ),
 
               VerticalSpacing.d15px(),
 
@@ -365,31 +373,68 @@ class GenerateQuotationScreen extends StatelessWidget {
 
                      if (canAdd()) GetBuilder<GenerateQuotationController>(builder: (controller){
                       return  controller.issubmitLoading.value ? CircularProgressIndicator()  :
-                      CommonButton(
-                        onTap: () {
-                          if (_formKey.currentState!.validate()) {
-                            if (controller.quotationList.isEmpty) {
-                              Get.snackbar(
-                                "Add Particulars",
-                                "Please add at least one quotation item.",
-                                backgroundColor: Colors.orangeAccent,
-                                colorText: Colors.white,
-                              );
-                              return;
-                            }
-
-                            _formKey.currentState!.save();
-                            controller.genrateQuotationApi();
-                          } else {
-                            Get.snackbar(
-                              "Validation Error",
-                              "Please fill all required fields before submitting.",
-                              backgroundColor: Colors.redAccent.withOpacity(0.8),
-                              colorText: Colors.white,
-                            );
-                          }
-                        },
-                        text: 'Submit',
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 150,
+                            child: CommonButton(
+                              customColor: Colors.blue,
+                              onTap: () {
+                                if (_formKey.currentState!.validate()) {
+                                  if (controller.quotationList.isEmpty) {
+                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    return;
+                                  }
+                                  _formKey.currentState!.save();
+                                  controller.sendWhatsAppAction();
+                                } else {
+                                  Get.snackbar("Validation Error", "Please fill all required fields before submitting.", backgroundColor: Colors.redAccent.withOpacity(0.8), colorText: Colors.white);
+                                }
+                              },
+                              text: 'Send WhatsApp',
+                            ),
+                          ),
+                          SizedBox(
+                            width: 150,
+                            child: CommonButton(
+                              customColor: Colors.green,
+                              onTap: () {
+                                if (_formKey.currentState!.validate()) {
+                                  if (controller.quotationList.isEmpty) {
+                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    return;
+                                  }
+                                  _formKey.currentState!.save();
+                                  controller.sendMailAction();
+                                } else {
+                                  Get.snackbar("Validation Error", "Please fill all required fields before submitting.", backgroundColor: Colors.redAccent.withOpacity(0.8), colorText: Colors.white);
+                                }
+                              },
+                              text: 'Send Mail',
+                            ),
+                          ),
+                          SizedBox(
+                            width: 180,
+                            child: CommonButton(
+                              onTap: () {
+                                if (_formKey.currentState!.validate()) {
+                                  if (controller.quotationList.isEmpty) {
+                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    return;
+                                  }
+                                  _formKey.currentState!.save();
+                                  controller.downloadPdfAction();
+                                } else {
+                                  Get.snackbar("Validation Error", "Please fill all required fields before submitting.", backgroundColor: Colors.redAccent.withOpacity(0.8), colorText: Colors.white);
+                                }
+                              },
+                              text: 'Download PDF',
+                            ),
+                          ),
+                        ],
                       );
                     })
                     else Center(child: Text("You do not have permission to add quotations.", style: TextStyle(color: Colors.red))),

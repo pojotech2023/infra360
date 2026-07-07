@@ -7,10 +7,48 @@ class MaterialDetailsController extends GetxController{
 
   var data = <String, MaterialItem>{}.obs;
 
+  RxnInt selectedWeek = RxnInt();
+  RxString selectedMonthText = ''.obs;
+  RxString displayMonthText = ''.obs;
+  RxInt selectedYear = DateTime.now().year.obs;
+  RxInt selectedMonth = DateTime.now().month.obs;
+  RxInt totalWeeks = 1.obs;
+  int? currentSiteId;
+
+  final List<String> monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
   @override
   void onInit() {
-    // TODO: implement onInit
+    updateMonthText();
+    totalWeeks.value = ConstantData.getWeeksInMonth(selectedYear.value, selectedMonth.value);
     super.onInit();
+  }
+
+  void onWeekSelected(int week) {
+    selectedWeek.value = week;
+    if (currentSiteId != null) {
+      init(currentSiteId!);
+    }
+  }
+
+  void onMonthSelected(int year, int month) {
+    selectedYear.value = year;
+    selectedMonth.value = month;
+    updateMonthText();
+    selectedWeek.value = null; // Reset week on month change
+    totalWeeks.value = ConstantData.getWeeksInMonth(year, month);
+    if (currentSiteId != null) {
+      init(currentSiteId!);
+    }
+  }
+
+  void updateMonthText() {
+    final mm = selectedMonth.value.toString().padLeft(2, '0');
+    selectedMonthText.value = "${selectedYear.value}-$mm";
+    displayMonthText.value = "${monthNames[selectedMonth.value - 1]}-${selectedYear.value}";
   }
 
 
@@ -31,8 +69,13 @@ class MaterialDetailsController extends GetxController{
 
    init(int siteId) async {
     print("🚀 Initializing MaterialDetailsController for site: $siteId");
+    currentSiteId = siteId;
     /// 1) Call API
-    MaterialResponse? materialModel = await ApiData().materialListApi(siteId);
+    MaterialResponse? materialModel = await ApiData().materialListApi(
+      siteId,
+      monthYear: selectedMonthText.value,
+      week: selectedWeek.value,
+    );
 
     /// 2) Temporary map using LOWERCASE keys for safe merging
     final Map<String, MaterialItem> temp = {};

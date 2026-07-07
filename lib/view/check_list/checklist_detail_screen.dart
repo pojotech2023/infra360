@@ -59,13 +59,14 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
         title: "Check List Detail",
         onTap: () => Get.back(),
       ),
-      body: GetBuilder<CheckListController>(
-          builder: (controller) =>
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      body: SafeArea(
+        child: GetBuilder<CheckListController>(
+            builder: (controller) =>
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
 
 
 
@@ -90,7 +91,9 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
 
                   ],
                 ),
-              )),
+              ),
+            ),
+          ),
     );
   }
 

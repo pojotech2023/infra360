@@ -42,12 +42,12 @@ class _DrawingListScreenState extends State<DrawingListScreen> {
         Get.to(() => DrawingAddScreen());
 
       },child: Icon(Icons.add),) : SizedBox(),
-      body:
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: GetBuilder<DrawingController>(
-          builder: (controller) {
-            final drawings = controller.drawingList;
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: GetBuilder<DrawingController>(
+            builder: (controller) {
+              final drawings = controller.drawingList;
 
           return  controller.isLoading.value ?
           Center(child:  CircularProgressIndicator() ):
@@ -79,9 +79,9 @@ class _DrawingListScreenState extends State<DrawingListScreen> {
           },
         ),
       ),
-
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildGridItem(
       BuildContext context, {

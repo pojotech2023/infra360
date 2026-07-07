@@ -17,6 +17,7 @@ import '../../../model/units_model.dart';
 import '../../../service/shared_preference_service.dart';
 import '../../../utils/const_data.dart';
 import '../../../utils/res/sendWhatsAppMessage.dart';
+import '../bricks_details_controller.dart';
 
 class NewRequestController extends GetxController{
 
@@ -40,6 +41,7 @@ var selectedUnit = ''.obs;
 
   TextEditingController supervisorNameController = TextEditingController();
   TextEditingController supervisorMobController = TextEditingController();
+  TextEditingController gstController = TextEditingController();
 
   List<String> units = List<String>.empty(growable: true);
   List<String> categories = List<String>.empty(growable: true);
@@ -182,6 +184,10 @@ var selectedUnit = ''.obs;
     final itemKey = args.itemKey.toString().toLowerCase();
     final role = userDetails.data!.role!.toLowerCase();
 
+    // Check if this is an edit operation
+    final isEdit = Get.arguments is MaterialDetailsArgs && 
+                   (Get.arguments as MaterialDetailsArgs).editItem != null;
+    final editItem = isEdit ? (Get.arguments as MaterialDetailsArgs).editItem : null;
 
    var requestMaterialDateForamte =  DateFormat('yyyy-MM-dd')
         .format(DateFormat('dd-MM-yyyy').parse( dateController.text));
@@ -197,6 +203,7 @@ var selectedUnit = ''.obs;
       "unit": selectedUnit.value,
       "date_of_delivery": requestMaterialDateForamte,
       "amount": amountController.text,
+      "gst": gstController.text,
       //"remarks": reMarksController.text,
     };
 
@@ -219,6 +226,7 @@ var selectedUnit = ''.obs;
       "date": dateController.text,
       "unit": selectedUnit.value,
       "price": amountController.text,
+      "gst": gstController.text,
     };
 
 
@@ -229,6 +237,23 @@ var selectedUnit = ''.obs;
 
     if (itemKey.toLowerCase() == "bricks") {
       orderData["category_name"] = selectedCategory.value!.toString();
+    }
+
+    // ------------------ EDIT MODE: Use update API ------------------
+    if (isEdit && editItem != null && type == 2) {
+      CommonSuccessResponseModel? res = await ApiData().updateMaterialApi(editItem!.id!, orderData);
+      if (res != null && res.status == true) {
+        showToastMessage(res.message ?? "Updated successfully");
+        // Refresh the parent screen
+        try {
+          final parentController = Get.find<BricksDetailsController>();
+          parentController.fetchData();
+        } catch (_) {}
+        Get.back();
+      } else {
+        showToastMessage(res?.message ?? "Failed to update");
+      }
+      return;
     }
 
     // ------------------ FINAL POST DATA ------------------

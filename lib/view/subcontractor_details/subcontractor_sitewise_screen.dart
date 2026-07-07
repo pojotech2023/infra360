@@ -12,8 +12,11 @@ import 'package:raptor_pro/view/material_category/other_material/others_material
 import 'package:raptor_pro/view/subcontractor_details/subcontractor_services_request/request_details_controller.dart';
 import 'package:raptor_pro/view/subcontractor_details/subcontractor_services_request/request_details_screen.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
+import 'package:raptor_pro/view/subcontractor_details/site_payment_history/site_payment_history_controller.dart';
+import 'package:raptor_pro/view/subcontractor_details/site_payment_history/site_payment_history_screen.dart';
 
 import 'package:raptor_pro/view/material_category/bricks_details_screen.dart';
+import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 
 import '../../../model/site_management_model.dart';
 import 'other_subcontractor_screen/other_subcontractor.dart';
@@ -76,12 +79,25 @@ class _SubcontractorScreenState
                 itemBuilder: (context, index) {
                   final item = controller.subcontractors[index];
                   return InkWell(
-                    onTap:(){
-                      Get.to(() => RequestDetailsScreen(), arguments: SubcontracorDetailsArgs(
-                        id: siteManagementList.id ?? 0,
-                        siteName: siteManagementList.siteName ??'',
-                        itemKey: item.title,
-                      ));
+                    onTap: () {
+                      final isPettyOrRental =
+                          item.title == 'Petty Cash' || item.title == 'Rental Management';
+                      if (isPettyOrRental) {
+                        Get.to(
+                          () => SitePaymentHistoryScreen(),
+                          arguments: SitePaymentArgs(
+                            siteId: siteManagementList.id ?? 0,
+                            type: item.title,
+                            siteName: siteManagementList.siteName ?? '',
+                          ),
+                        );
+                      } else {
+                        Get.to(() => RequestDetailsScreen(), arguments: SubcontracorDetailsArgs(
+                          id: siteManagementList.id ?? 0,
+                          siteName: siteManagementList.siteName ?? '',
+                          itemKey: item.title,
+                        ));
+                      }
                     },
                     child: Card(
                       shape: RoundedRectangleBorder(
@@ -129,14 +145,28 @@ class _SubcontractorScreenState
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              "₹${item.totalAmount.toStringAsFixed(0)}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
+                            Builder(builder: (context) {
+                              final isPettyOrRental =
+                                  item.title == 'Petty Cash' || item.title == 'Rental Management';
+                              if (isPettyOrRental) {
+                                return Text(
+                                  "Payment Detail",
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                );
+                              }
+                              return Text(
+                                "₹${item.totalAmount.toStringAsFixed(0)}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              );
+                            }),
                           ],
                         ),
                       ),

@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:raptor_pro/api/api_data.dart';
 import 'package:raptor_pro/model/site_payment_history_model.dart';
 import 'package:raptor_pro/model/site_payment_summary_model.dart';
+import 'package:raptor_pro/utils/file_download.dart';
+import 'package:raptor_pro/view/widgets/toast.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PaymentStatusController extends GetxController {
   var isLoading = false.obs;
@@ -14,12 +17,16 @@ class PaymentStatusController extends GetxController {
   var budgetAmount = "0".obs;
   var balanceAmount = "0".obs;
 
+  // Customer contact info for WhatsApp/Email
+  var customerPhone = "".obs;
+  var customerEmail = "".obs;
+
   // Form controllers
   final paymentController = TextEditingController();
   final remarksController = TextEditingController();
   var selectedDate = DateTime.now().obs;
   var selectedPaymentMode = "Select Payment Mode".obs;
-  final List<String> paymentModes = ["Online", "Cheque", "Net Banking", "Cash"];
+  final List<String> paymentModes = ["Online", "Cheque", "Net Banking", "Cash", "Cash-B"];
 
   @override
   void onInit() {
@@ -28,6 +35,11 @@ class PaymentStatusController extends GetxController {
       siteId.value = Get.arguments;
       getPaymentSummary();
     }
+  }
+
+  void setCustomerContact(String phone, String email) {
+    customerPhone.value = phone;
+    customerEmail.value = email;
   }
 
   Future<void> getPaymentSummary() async {
@@ -96,6 +108,95 @@ class PaymentStatusController extends GetxController {
       }
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> downloadPaymentReceiptPdf(BuildContext context, int paymentId) async {
+    try {
+      final res = await ApiData().downloadPaymentReceiptPdf(paymentId);
+      if (res != null && res.downloadUrl != null) {
+        CommonFileDownloader.downloadAndOpen(
+          urls: res.downloadUrl ?? "",
+          context: context,
+          fileName: "payment_receipt_$paymentId.pdf",
+        );
+      } else {
+        showToastMessage("Failed to generate PDF receipt.");
+      }
+    } catch (e) {
+      showToastMessage("Error downloading PDF: $e");
+    }
+  }
+
+  Future<void> sendPaymentReceiptWhatsApp(int paymentId) async {
+    try {
+      final res = await ApiData().sendPaymentReceiptWhatsApp(paymentId, customerPhone.value);
+      if (res != null && res.status == true) {
+        showToastMessage(res.message ?? "WhatsApp link generated successfully");
+        if (res.data != null && res.data!['whatsapp_url'] != null) {
+          final String whatsappUrl = res.data!['whatsapp_url'];
+          Uri uri = Uri.parse(whatsappUrl);
+          
+          try {
+            bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (!launched && whatsappUrl.startsWith('https://wa.me/')) {
+               // Fallback to whatsapp:// protocol
+               String fallback = whatsappUrl.replaceFirst('https://wa.me/', 'whatsapp://send?phone=');
+               fallback = fallback.replaceFirst('?', '&');
+               Uri fallbackUri = Uri.parse(fallback);
+               await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+            }
+          } catch (e) {
+            showToastMessage("Could not open WhatsApp");
+          }
+        } else {
+          // Fallback if no URL returned
+          final whatsappUrl = customerPhone.value.isNotEmpty 
+              ? "https://wa.me/${customerPhone.value}?text=Payment receipt sent" 
+              : "https://wa.me/?text=Payment receipt sent";
+          Uri uri = Uri.parse(whatsappUrl);
+          
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            showToastMessage("Could not open WhatsApp");
+          }
+        }
+      } else {
+        showToastMessage(res?.message ?? "Failed to generate WhatsApp link");
+      }
+    } catch (e) {
+      showToastMessage("Error sending via WhatsApp: $e");
+    }
+  }
+
+  Future<void> sendPaymentReceiptEmail(int paymentId) async {
+    try {
+      final res = await ApiData().sendPaymentReceiptEmail(paymentId, customerEmail.value);
+      if (res != null && res.status == true) {
+        showToastMessage(res.message ?? "Receipt sent via Email");
+      } else {
+        showToastMessage(res?.message ?? "Failed to send receipt via Email");
+      }
+    } catch (e) {
+      showToastMessage("Error sending via Email: $e");
+    }
+  }
+
+  Future<void> exportPaymentHistoryExcel(BuildContext context) async {
+    try {
+      final res = await ApiData().sitePaymentExportApi(siteId.value);
+      if (res != null && res.downloadUrl != null) {
+        CommonFileDownloader.downloadAndOpen(
+          urls: res.downloadUrl ?? "",
+          context: context,
+          fileName: "payment_history_site_${siteId.value}.xlsx",
+        );
+      } else {
+        showToastMessage("Failed to generate Excel export.");
+      }
+    } catch (e) {
+      showToastMessage("Error exporting to Excel: $e");
     }
   }
 }

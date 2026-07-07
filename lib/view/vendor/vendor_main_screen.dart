@@ -22,10 +22,11 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
            Get.back();
 
          }),
-     body:  SingleChildScrollView(
-       padding: EdgeInsets.all(16),
-       child: Column(
-         children: [
+     body: SafeArea(
+       child: SingleChildScrollView(
+         padding: EdgeInsets.all(16),
+         child: Column(
+           children: [
            InkWell(
              onTap: (){
                Get.to(VendorManagementScreen());
@@ -83,9 +84,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
          ],
        ),
      ),
+     ),
    );
   }
-
-
-
 }

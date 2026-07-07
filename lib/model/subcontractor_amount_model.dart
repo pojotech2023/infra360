@@ -36,11 +36,11 @@ class Subcontractors {
   String? subcontractorType;
   String? date;
   String? amount;
-  Null? remarks;
+  String? remarks;
   int? status;
   String? noCounts;
   int? createdBy;
-  Null? updatedBy;
+  dynamic updatedBy;
   String? createdAt;
   String? updatedAt;
   Subcontractor? subcontractor;
@@ -68,13 +68,13 @@ class Subcontractors {
     subcontractorType = json['subcontractor_type'];
     date = json['date'];
     amount = json['amount'];
-    remarks = json['remarks'];
+    remarks = json['remarks']?.toString();
     status = json['status'];
-    noCounts = json['no_counts'];
+    noCounts = json['no_counts']?.toString();
     createdBy = json['created_by'];
     updatedBy = json['updated_by'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
     subcontractor = json['subcontractor'] != null
         ? new Subcontractor.fromJson(json['subcontractor'])
         : null;

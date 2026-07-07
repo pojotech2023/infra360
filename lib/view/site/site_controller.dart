@@ -10,6 +10,7 @@ import '../../api/api_data.dart';
 import '../../model/common_success_model.dart';
 import '../../model/site_management_model.dart';
 import '../dashboard/dashboard_controller.dart';
+import '../../utils/file_download.dart';
 
 
 class SiteController extends GetxController {
@@ -94,7 +95,7 @@ update();
     update();
   }
 
-  addSiteApi({required  File files}) async {
+  addSiteApi({File? files}) async {
     isSaveLoading.value = true;
     update();
 
@@ -115,7 +116,7 @@ update();
         flatArea:flatAreaController.text,
         builtupArea:builtupAreaController.text,
         duration:durationEditingController.text,
-        supervisorId:selectedEmployeeData.value!.id.toString(),
+        supervisorId: selectedEmployeeData.value?.id?.toString() ?? '',
         customerName:nameEditingController.text,
         mobileNo:mobileNumberEditingController.text,
         email:emailEditingController.text,
@@ -150,7 +151,7 @@ update();
       flatArea: flatAreaController.text,
       builtupArea: builtupAreaController.text,
       duration: durationEditingController.text,
-      supervisorId: selectedEmployeeData.value!.id.toString(),
+      supervisorId: selectedEmployeeData.value?.id?.toString() ?? '',
       status: selectedStatus.toString(),
       files: files, // ✅ nullable, safe
     );
@@ -182,6 +183,16 @@ update();
     }
   }
 
-
-
+  void siteFullExport(BuildContext context) {
+    if (siteID.value.isNotEmpty) {
+      final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteID.value}/full-report";
+      CommonFileDownloader.downloadAndOpen(
+        urls: reportUrl,
+        context: context,
+        fileName: "site_${siteID.value}_full_report.xlsx",
+      );
+    } else {
+      Get.snackbar("Error", "Site ID is empty, cannot export report.");
+    }
+  }
 }

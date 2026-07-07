@@ -69,21 +69,22 @@ class SiteManagementList {
         this.customer, this.supervisor});
 
   SiteManagementList.fromJson(Map<String, dynamic> json) {
+    print('Raw site JSON: $json');
     id = json['id'];
-    siteName = json['site_name'];
-    siteImg = json['site_img'];
-    location = json['location'];
-    value = json['value'];
-    flatArea = json['flat_area'];
-    builtupArea = json['built_up_area'];
-    duration = json['duration'];
-    settledAmnt = json['settled_amnt'];
-    pendingAmnt = json['pending_amnt'];
-    expense = json['expense'];
-    status = json['status'];
+    siteName = json['site_name']?.toString();
+    siteImg = json['site_img']?.toString();
+    location = json['location']?.toString();
+    value = json['budget_amount']?.toString() ?? json['value']?.toString();
+    flatArea = json['flat_area']?.toString();
+    builtupArea = json['built_up_area']?.toString();
+    duration = json['duration']?.toString();
+    settledAmnt = json['settled_amnt']?.toString();
+    pendingAmnt = json['pending_amnt']?.toString();
+    expense = json['expenses']?.toString() ?? json['expense']?.toString();
+    status = json['status']?.toString();
     isInactive = json['is_inactive'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
     if (json['customer'] != null) {
       customer = <Customer>[];
       json['customer'].forEach((v) {

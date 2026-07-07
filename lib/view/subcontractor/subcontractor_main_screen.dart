@@ -25,10 +25,11 @@ class _SubContractorMainScreenState extends State<SubContractorMainScreen> {
             Get.back();
 
           }),
-      body:  SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
             VerticalSpacing.d16px(),
 
             InkWell(
@@ -84,6 +85,7 @@ class _SubContractorMainScreenState extends State<SubContractorMainScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -138,6 +138,15 @@ class _AddVendorPaymentScreenState extends State<AddVendorPaymentScreen> {
                   ),
 
 
+                  VerticalSpacing.d15px(),
+                  Text("Remarks",style: AppTextStyle.textFieldHeadingStyle,),
+
+                  TextFormField(
+                    controller: controller.remarksController,
+                    keyboardType: TextInputType.text,
+                    maxLines: 3,
+                    decoration:textBoxDecoration(hint:"Enter remarks (optional)"),
+                  ),
 
               VerticalSpacing.d20px(),
 

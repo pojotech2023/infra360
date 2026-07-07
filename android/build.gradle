@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.9.21'   // ✅ Add this line (Kotlin version)
+    ext.kotlin_version = '2.1.0'   // ✅ Updated to meet Flutter minimum requirement
 
     repositories {
         google()
@@ -8,6 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.9.1'// ✅ Update AGP
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.1'
     }
 }
 

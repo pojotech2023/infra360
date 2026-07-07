@@ -9,6 +9,9 @@ class ExcelAttendanceDownloadModel {
     status = json['status'];
     message = json['message'];
     downloadUrl = json['download_url'];
+    if (json['data'] != null && json['data'] is Map<String, dynamic>) {
+      downloadUrl = downloadUrl ?? json['data']['pdf_url']?.toString() ?? json['data']['download_url']?.toString();
+    }
   }
 
   Map<String, dynamic> toJson() {

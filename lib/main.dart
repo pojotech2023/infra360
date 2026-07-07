@@ -11,8 +11,18 @@ import 'package:raptor_pro/view/material_category/bricks_details_controller.dart
 import 'package:raptor_pro/view/material_category/new_bricks/new_request_controller.dart';
 import 'package:raptor_pro/view/properties_list/properties_list_screen.dart';
 import 'package:raptor_pro/view/splash_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:raptor_pro/service/push_notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  
+  // Initialize Push Notifications
+  await PushNotificationService().initialize();
+
   await PreferenceUtils().init(); // initialize before app starts
   runApp(const MyApp());
 }

@@ -59,6 +59,7 @@ class PaymentHistoryList {
   String? payment;
   String? date;
   String? paymentMode;
+  String? remarks;
   String? createdAt;
   String? updatedAt;
   Vendor? vendor;
@@ -69,6 +70,7 @@ class PaymentHistoryList {
         this.payment,
         this.date,
         this.paymentMode,
+        this.remarks,
         this.createdAt,
         this.updatedAt,
         this.vendor});
@@ -76,9 +78,10 @@ class PaymentHistoryList {
   PaymentHistoryList.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     vendorId = json['vendor_id'];
-    payment = json['payment'];
+    payment = json['payment']?.toString() ?? json['payment']?.toString();
     date = json['date'];
     paymentMode = json['payment_mode'];
+    remarks = json['remarks'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     vendor =
@@ -92,6 +95,7 @@ class PaymentHistoryList {
     data['payment'] = this.payment;
     data['date'] = this.date;
     data['payment_mode'] = this.paymentMode;
+    data['remarks'] = this.remarks;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     if (this.vendor != null) {

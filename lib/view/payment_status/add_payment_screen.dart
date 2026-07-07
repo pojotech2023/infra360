@@ -27,13 +27,14 @@ class AddPaymentScreen extends GetView<PaymentStatusController> {
         ],
         automaticallyImplyLeading: false,
       ),
-      body: Obx(() {
-        return controller.isLoading.value
-            ? const Center(child: CommonLoader())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
+      body: SafeArea(
+        child: Obx(() {
+          return controller.isLoading.value
+              ? const Center(child: CommonLoader())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
                     _buildFormRow(
                       "Date",
                       InkWell(
@@ -170,6 +171,7 @@ class AddPaymentScreen extends GetView<PaymentStatusController> {
                 ),
               );
       }),
+      ),
     );
   }
 

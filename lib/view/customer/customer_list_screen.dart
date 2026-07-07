@@ -48,16 +48,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               Get.back();
 
             }),
-        body: Obx((){
-          return controller.isLoading.value?Center(
-            child: CommonLoader(),
-          ):
-          SingleChildScrollView(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
+        body: SafeArea(
+          child: Obx((){
+            return controller.isLoading.value?Center(
+              child: CommonLoader(),
+            ):
+            SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
 
                 ListView.builder(
                     shrinkWrap: true,
@@ -65,76 +66,254 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     itemCount: controller.customerData.length,
                     itemBuilder: (BuildContext context,int index){
                       Customers customerData=  controller.customerData[index];
-                      return Container(
-                        padding: EdgeInsets.all(16),
-                        margin: EdgeInsets.only(bottom: 16),
+                      return AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        padding: EdgeInsets.all(0),
+                        margin: EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            border:
-                            Border.all(color: Color(0xFFDCE1EF), width: 1)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                           Row(
-                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                             children: [
-                               textWidget("Name : ",customerData.name??""),
-
-                             Row(
-                               mainAxisSize: MainAxisSize.min,
-                               children: [
-
-                                 if (canEdit())
-                                   InkWell(
-                                     onTap: (){
-                                       Get.to(() => CustomerMangementScreen(), arguments: customerData);
-
-                                     },
-                                     child: Align(
-                                       alignment: Alignment.topRight,
-                                       child: Icon(Icons.edit,
-                                         color: Colors.blueAccent,),
-                                     ),
-                                   ),
-                                 if (canEdit() && canDelete()) SizedBox(width: 16,),
-                                 if (canDelete())
-                                   InkWell(
-                                     onTap: (){
-                                       deleteDialog(context,(){
-                                         controller.deleteCustomer(customerData.id!);
-
-                                       });
-                                     },
-                                     child: Align(
-                                       alignment: Alignment.topRight,
-                                       child: Icon(Icons.delete,
-                                         color: Colors.redAccent,),
-                                     ),
-                                   ),
-                               ],
-                             )
-
-                             ],
-                           ),
-                            VerticalSpacing.d10px(),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            textWidget("Mobile : ",customerData.mobileNo??""),
-                            textWidget("DOB : ",customerData.dob??""),
+                          gradient: LinearGradient(
+                            begin: Alignment(-1.0, -0.8),
+                            end: Alignment(1.0, 0.8),
+                            colors: [
+                              Color(0xFFFFFFFF),
+                              Color(0xFFF5F7FF),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF7B1FA2).withOpacity(0.12),
+                              blurRadius: 24,
+                              offset: Offset(0, 8),
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: Color(0xFF7B1FA2).withOpacity(0.06),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                              spreadRadius: 0,
+                            ),
                           ],
                         ),
-                            VerticalSpacing.d10px(),
-
-                            textWidget("Email : ",customerData.email??""),
-                            // VerticalSpacing.d10px(),
-                            //
-                            // textWidget("Marriage Date : ",customerData!.marriageDate??""),
-                            //
-
-                          ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Color(0xFFE3E8F0),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header with avatar and actions
+                                Container(
+                                  padding: EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Color(0xFF7B1FA2).withOpacity(0.05),
+                                        Color(0xFFAB47BC).withOpacity(0.02),
+                                      ],
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // Avatar
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Color(0xFF7B1FA2),
+                                              Color(0xFFAB47BC),
+                                            ],
+                                          ),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0xFF7B1FA2).withOpacity(0.3),
+                                              blurRadius: 12,
+                                              offset: Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            (customerData.name?.substring(0, 1).toUpperCase() ?? 'C'),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 16),
+                                      // Name
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              customerData.name ?? '',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF1A365D),
+                                                letterSpacing: 0.2,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 6),
+                                            if (customerData.dob != null && customerData.dob!.isNotEmpty)
+                                              Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFFAB47BC).withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Color(0xFFAB47BC).withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.cake_rounded,
+                                                      size: 14,
+                                                      color: Color(0xFF7B1FA2),
+                                                    ),
+                                                    SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        customerData.dob ?? '',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Color(0xFF7B1FA2),
+                                                          letterSpacing: 0.3,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Action buttons
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (canEdit())
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFAB47BC).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: InkWell(
+                                                onTap: (){
+                                                  Get.to(() => CustomerMangementScreen(), arguments: customerData);
+                                                },
+                                                borderRadius: BorderRadius.circular(12),
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(10),
+                                                  child: Icon(
+                                                    Icons.edit_rounded,
+                                                    size: 20,
+                                                    color: Color(0xFF7B1FA2),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          if (canEdit() && canDelete()) SizedBox(width: 8),
+                                          if (canDelete())
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFEF5350).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: InkWell(
+                                                onTap: (){
+                                                  deleteDialog(context,(){
+                                                    controller.deleteCustomer(customerData.id!);
+                                                  });
+                                                },
+                                                borderRadius: BorderRadius.circular(12),
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(10),
+                                                  child: Icon(
+                                                    Icons.delete_rounded,
+                                                    size: 20,
+                                                    color: Color(0xFFD32F2F),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Details section
+                                Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Contact info row
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.phone_rounded,
+                                            size: 18,
+                                            color: Color(0xFF78909C),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            customerData.mobileNo ?? 'N/A',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Color(0xFF455A64),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          SizedBox(width: 24),
+                                          Icon(
+                                            Icons.email_rounded,
+                                            size: 18,
+                                            color: Color(0xFF78909C),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              customerData.email ?? 'N/A',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF455A64),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       );
 
@@ -144,12 +323,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             ),
           );
         }),
-        floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
-            backgroundColor: Colors.blueAccent,
-            child: Icon(Icons.add, color: Colors.white),
-            onPressed: (){
-              Get.to(() => CustomerMangementScreen(), arguments: null);
-            }) : SizedBox.shrink()),
+      ),
+      floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
+          backgroundColor: Colors.blueAccent,
+          child: Icon(Icons.add, color: Colors.white),
+          onPressed: (){
+            Get.to(() => CustomerMangementScreen(), arguments: null);
+          }) : SizedBox.shrink()),
     );
   }
   textWidget(String title,String value){

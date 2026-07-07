@@ -43,11 +43,12 @@ class _PropertiesListScreenState extends State<PropertiesListScreen> {
             Get.to(AddPropertyScreen());
 
           }),
-      body:    Obx((){
-        return controller.isLoading.value?
-        Center(child: CommonLoader()): SingleChildScrollView(
-          padding: EdgeInsets.all(16),
-          child: Column(
+      body: SafeArea(
+        child: Obx((){
+            return controller.isLoading.value?
+            Center(child: CommonLoader()): SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
             children: [
 
 
@@ -158,9 +159,8 @@ class _PropertiesListScreenState extends State<PropertiesListScreen> {
             ],
           ),
         );
-        }),
-
-
+      }),
+      ),
     );
   }
 }

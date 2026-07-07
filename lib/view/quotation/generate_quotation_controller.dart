@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_data.dart';
 import '../../model/quotation_model.dart';
@@ -17,10 +17,11 @@ class GenerateQuotationController extends GetxController{
   TextEditingController mobileNumberEditingController = TextEditingController();
   TextEditingController contractorEditingController = TextEditingController();
   TextEditingController subjectEditingController = TextEditingController();
+  // Email field — passed to quotation/store to trigger mail_sent
+  TextEditingController emailEditingController = TextEditingController();
 
   TextEditingController datePickerController = TextEditingController();
   var totalAmt = 0.0.obs;
-
 
   var quotationList = <QuotationData>[].obs;
 
@@ -28,38 +29,26 @@ class GenerateQuotationController extends GetxController{
   var isLoading = false.obs;
   var issubmitLoading = false.obs;
 
-
   @override
   void onInit() {
-    // TODO: implement onInit
     quotation();
     super.onInit();
   }
-
 
   Future<void> quotation() async {
     try {
       isLoading.value = true;
       quotationList.clear();
-
-      // Call API
-      QuotationModel? response =
-      await ApiData().quotationListApi();
-
-       quotationList.value = response?.data ?? [];
+      QuotationModel? response = await ApiData().quotationListApi();
+      quotationList.value = response?.data ?? [];
       calculateTotal();
-      isLoading.value = false;
-
     } catch (e) {
-      print("Error loading subcontractor data: $e");
-      isLoading.value = false;
+      print("Error loading quotation data: $e");
     } finally {
       isLoading.value = false;
     }
-    isLoading.value = false;
     update();
   }
-
 
   void calculateTotal() {
     double sum = 0;
@@ -70,24 +59,22 @@ class GenerateQuotationController extends GetxController{
     update();
   }
 
-
-
-  Future<void> genrateQuotationApi() async {
+  /// Builds the payload and calls quotation/store.
+  /// Optionally pass [email] to trigger mail sending on the backend.
+  Future<QuotationStoredModel?> _storeQuotation({String? email}) async {
     try {
       issubmitLoading.value = true;
+      update();
 
-      // Convert your quotationList (which contains TextEditingControllers)
-      // into a clean JSON array for API
       List<Map<String, dynamic>> quotationData = quotationList.map((item) {
         return {
           "particular": item.particular?.text ?? "",
           "rate": item.rate?.text ?? "0",
           "sqFt": item.sqFt?.text ?? "0",
-          "unit": item.unit ?? "", // assuming you have a dropdown or string field for unit
+          "unit": item.unit ?? "",
         };
       }).toList();
 
-      // Prepare full request payload
       var data = {
         "name": nameEditingController.text,
         "subject": subjectEditingController.text,
@@ -96,44 +83,100 @@ class GenerateQuotationController extends GetxController{
         "location": locationEditingController.text,
         "contractor": contractorEditingController.text,
         "data": quotationData,
+        if (email != null && email.isNotEmpty) "email": email,
       };
 
-      // Debug print to verify payload
       print("REQUEST BODY: $data");
-
-      // Call API
-      QuotationStoredModel? response = await ApiData().quotationStoreApi(data);
-      shareQuotation(response!.whatsappUrl ?? '');
-
+      return await ApiData().quotationStoreApi(data);
     } catch (e) {
-      print("Error in genrateQuotationApi: $e");
+      print("Error in _storeQuotation: $e");
+      return null;
     } finally {
-      issubmitLoading(false);
+      issubmitLoading.value = false;
+      update();
     }
-    update();
   }
 
+  /// Send WhatsApp — stores quotation, opens whatsapp_url from response.
+  Future<void> sendWhatsAppAction() async {
+    final res = await _storeQuotation();
+    if (res == null || res.status != true) {
+      Get.snackbar("Error", res?.message ?? "Failed to generate quotation.",
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+
+    final url = res.whatsappUrl;
+    if (url != null && url.isNotEmpty) {
+      extractAndOpenWhatsApp(url);
+    } else {
+      Get.snackbar("Error", "WhatsApp URL not available.",
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    }
+  }
+
+  /// Send Mail — stores quotation with email param, backend triggers mail.
+  Future<void> sendMailAction() async {
+    final email = emailEditingController.text.trim();
+    if (email.isEmpty) {
+      Get.snackbar("Email Required",
+          "Please enter an email address to send the quotation.",
+          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+      return;
+    }
+
+    final res = await _storeQuotation(email: email);
+    if (res == null || res.status != true) {
+      Get.snackbar("Error", res?.message ?? "Failed to send mail.",
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+
+    if (res.mailSent == true) {
+      Get.snackbar("Success", "Quotation mail sent successfully!",
+          backgroundColor: Colors.green, colorText: Colors.white);
+    } else {
+      Get.snackbar("Info",
+          res.message ?? "Quotation created. Mail status unavailable.",
+          backgroundColor: Colors.blueGrey, colorText: Colors.white);
+    }
+  }
+
+  /// Download PDF — stores quotation, opens pdf_url from response.
+  Future<void> downloadPdfAction() async {
+    final res = await _storeQuotation();
+    if (res == null || res.status != true) {
+      Get.snackbar("Error", res?.message ?? "Failed to generate PDF.",
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+
+    final pdfUrl = res.pdfUrl;
+    if (pdfUrl != null && pdfUrl.isNotEmpty) {
+      final Uri uri = Uri.parse(pdfUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar("Error", "Cannot open PDF URL.",
+            backgroundColor: Colors.redAccent, colorText: Colors.white);
+      }
+    } else {
+      Get.snackbar("Error", "PDF URL not available.",
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    }
+  }
 
   String convertDateFormat(String inputDate) {
     try {
-      // Parse from dd-MM-yyyy
       DateTime parsedDate = DateFormat('dd-MM-yyyy').parse(inputDate);
-
-      // Convert to yyyy-MM-dd
-      String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
-      return formattedDate;
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
     } catch (e) {
       print("Error parsing date: $e");
-      return inputDate; // Return the original if parsing fails
+      return inputDate;
     }
   }
 
-
   void shareQuotation(String url) {
-
     extractAndOpenWhatsApp(url);
   }
-
-
-
 }

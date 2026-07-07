@@ -39,15 +39,16 @@ class _AgentManagementScreenState extends State<AgentManagementScreen> {
               Get.to(AddAgentManagementScreen());
 
             }),
-        body: Obx((){
-          return controller.isLoading.value?Center(
-            child: CommonLoader(),
-          ):
-          SingleChildScrollView(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
+        body: SafeArea(
+          child: Obx((){
+            return controller.isLoading.value?Center(
+              child: CommonLoader(),
+            ):
+            SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
               children: [
 
                 ListView.builder(
@@ -119,9 +120,9 @@ class _AgentManagementScreenState extends State<AgentManagementScreen> {
               ],
             ),
           );
-        })
+        }),
+      ),
     );
-
   }
   textWidget(String title,String value){
     return Row(

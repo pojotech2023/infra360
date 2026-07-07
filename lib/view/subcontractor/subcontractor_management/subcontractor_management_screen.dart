@@ -59,15 +59,16 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
           Get.to(AddSubcontractorManagementScreen());
 
     }) : SizedBox.shrink()),
-    body: Obx((){
-      return controller.isLoading.value?Center(
-        child: CommonLoader(),
-      ):
-        SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
+    body: SafeArea(
+      child: Obx((){
+        return controller.isLoading.value?Center(
+          child: CommonLoader(),
+        ):
+          SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
           children: [
 
             ListView.builder(
@@ -76,87 +77,278 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
                 itemCount: controller.subcontractorList.length,
                 itemBuilder: (BuildContext context,int index){
                 Subcontractor subcontractorData=  controller.subcontractorList[index];
-                return Container(
-                  padding: EdgeInsets.all(16),
-                  margin: EdgeInsets.only(bottom: 16),
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  padding: EdgeInsets.all(0),
+                  margin: EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border:
-                      Border.all(color: Color(0xFFDCE1EF), width: 1)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    gradient: LinearGradient(
+                      begin: Alignment(-1.0, -0.8),
+                      end: Alignment(1.0, 0.8),
+                      colors: [
+                        Color(0xFFFFFFFF),
+                        Color(0xFFF5F7FF),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFE65100).withOpacity(0.12),
+                        blurRadius: 24,
+                        offset: Offset(0, 8),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Color(0xFFE65100).withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Color(0xFFE3E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          textWidget("Name : ",subcontractorData.name??""),
-                        Row(
-                          children: [
-                            if (canEdit())
-                              InkWell(
-                                onTap: (){
-                                  Get.to(AddSubcontractorManagementScreen(),arguments: subcontractorData);
-
-                                },
-                                child: Icon(Icons.edit_note,
-                                  size: 30,
-                                  color: AppColor.buttonLightBlue,),
+                          // Header with avatar and actions
+                          Container(
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFE65100).withOpacity(0.05),
+                                  Color(0xFFFF9800).withOpacity(0.02),
+                                ],
                               ),
-                            if (canEdit() && canDelete()) HorizontalSpacing.d10px(),
-                            if (canDelete())
-                              InkWell(
-                                onTap: (){
-                                  deleteDialog(context,(){
-                                    controller.deleteSupervisor(subcontractorData.id!);
-
-                                  });
-                                },
-                                child: Align(
-                                  alignment: Alignment.topRight,
-                                  child: Icon(Icons.delete,
-                                    color: Colors.redAccent,),
+                            ),
+                            child: Row(
+                              children: [
+                                // Avatar
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFFE65100),
+                                        Color(0xFFFF9800),
+                                      ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0xFFE65100).withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      (subcontractorData.name?.substring(0, 1).toUpperCase() ?? 'S'),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                          ],
-                        )
+                                SizedBox(width: 16),
+                                // Name
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        subcontractorData.name ?? '',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1A365D),
+                                          letterSpacing: 0.2,
+                                        ),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 6),
+                                      if (subcontractorData.subcontractors != null && subcontractorData.subcontractors!.isNotEmpty)
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFFF9800).withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Color(0xFFFF9800).withOpacity(0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.business_rounded,
+                                                size: 14,
+                                                color: Color(0xFFE65100),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  subcontractorData.subcontractors ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFFE65100),
+                                                    letterSpacing: 0.3,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                // Action buttons
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (canEdit())
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFFF9800).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: InkWell(
+                                          onTap: (){
+                                            Get.to(AddSubcontractorManagementScreen(),arguments: subcontractorData);
+                                          },
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(10),
+                                            child: Icon(
+                                              Icons.edit_rounded,
+                                              size: 20,
+                                              color: Color(0xFFE65100),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (canEdit() && canDelete()) SizedBox(width: 8),
+                                    if (canDelete())
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFEF5350).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: InkWell(
+                                          onTap: (){
+                                            deleteDialog(context,(){
+                                              controller.deleteSupervisor(subcontractorData.id!);
+                                            });
+                                          },
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(10),
+                                            child: Icon(
+                                              Icons.delete_rounded,
+                                              size: 20,
+                                              color: Color(0xFFD32F2F),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Details section
+                          Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Contact info row
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.phone_rounded,
+                                      size: 18,
+                                      color: Color(0xFF78909C),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      subcontractorData.mobileNo ?? 'N/A',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF455A64),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(width: 24),
+                                    Icon(
+                                      Icons.email_rounded,
+                                      size: 18,
+                                      color: Color(0xFF78909C),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        subcontractorData.email ?? 'N/A',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF455A64),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-
-
-                      VerticalSpacing.d5px(),
-
-                      textWidget("subcontractor : ",subcontractorData.subcontractors??""),
-                      VerticalSpacing.d5px(),
-                      textWidget("Mobile Number : ",subcontractorData.mobileNo??""),
-                      VerticalSpacing.d5px(),
-                      textWidget("Email : ",subcontractorData.email??""),
-
-                    ],
+                    ),
                   ),
                 );
 
             })
-
           ],
         ),
-      );
-    })
-  );
-
+        );
+      }),
+      ),
+    );
   }
   textWidget(String title,String value){
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: AppTextStyle.textRegular15,
         ),
-        Text(
-          value,
-          style: AppTextStyle.textMedium.copyWith(fontSize: 15),
-
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyle.textMedium.copyWith(fontSize: 15),
+          ),
         ),
       ],
     );

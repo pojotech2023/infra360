@@ -12,6 +12,7 @@ import 'package:raptor_pro/view/material_category/other_material/others_material
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 
 import 'package:raptor_pro/view/material_category/bricks_details_screen.dart';
+import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 
 import '../../../model/site_management_model.dart';
 import 'material_details_controller.dart';
@@ -45,7 +46,7 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            Obx((){
+            Obx(() {
               final materialList = controller.data.entries.toList();
            return  GridView.builder(
               shrinkWrap: true,

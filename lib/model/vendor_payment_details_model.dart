@@ -27,21 +27,23 @@ class VendorPaymentDetailsModel {
 }
 
 class VendorPaymentDetailsData {
-  int? totalUnits;
-  int? totalAmount;
+  String? totalUnits;
+  String? totalAmount;
   PayDetail? payDetail;
   Vendor? vendor;
+  String? siteName;
 
-  VendorPaymentDetailsData({this.totalUnits, this.totalAmount, this.payDetail, this.vendor});
+  VendorPaymentDetailsData({this.totalUnits, this.totalAmount, this.payDetail, this.vendor, this.siteName});
 
   VendorPaymentDetailsData.fromJson(Map<String, dynamic> json) {
-    totalUnits = json['total_units'];
-    totalAmount = json['total_amount'];
+    totalUnits = json['total_units']?.toString() ?? json['totalUnits']?.toString();
+    totalAmount = json['total_amount']?.toString() ?? json['totalAmount']?.toString();
     payDetail = json['pay_detail'] != null
         ? new PayDetail.fromJson(json['pay_detail'])
         : null;
     vendor =
     json['vendor'] != null ? new Vendor.fromJson(json['vendor']) : null;
+    siteName = json['site_name'];
   }
 
   Map<String, dynamic> toJson() {
@@ -54,6 +56,7 @@ class VendorPaymentDetailsData {
     if (this.vendor != null) {
       data['vendor'] = this.vendor!.toJson();
     }
+    data['site_name'] = this.siteName;
     return data;
   }
 }
@@ -88,10 +91,10 @@ class PayDetail {
     id = json['id'];
     vendorId = json['vendor_id'];
     openingBalance = json['opening_balance'];
-    totalUnits = json['total_units'];
-    totalUnitPrice = json['total_unit_price'];
-    balanceAmount = json['balance_amount'];
-    paidAmount = json['paid_amount'];
+    totalUnits = json['total_units']?.toString() ?? json['totalUnits']?.toString();
+    totalUnitPrice = json['total_unit_price']?.toString() ?? json['totalUnitPrice']?.toString();
+    balanceAmount = json['balance_amount']?.toString() ?? json['balanceAmount']?.toString();
+    paidAmount = json['paid_amount']?.toString() ?? json['paidAmount']?.toString();
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     createdBy = json['created_by'];

@@ -2,7 +2,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../model/material_details_argument_model.dart';
-import '../../../model/subcontractor_list_model.dart';
+import '../../../model/subcontractor_list_model.dart' as list_model;
 import '../../../utils/app_text_style.dart';
 import '../../../utils/res/spacing.dart';
 import '../../../utils/text_form_style.dart';
@@ -23,23 +23,22 @@ class NewServiceRequestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar.appBar(
-        title: "Add Request",
+        title: controller.isEditMode ? "Edit ${args.itemKey} Service" : "Add ${args.itemKey} Service",
         onTap: () => Get.back(),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// ===============================
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               /// SUBCONTRACTOR DROPDOWN
-              /// ===============================
               Text("Subcontractor Name",
                   style: AppTextStyle.textFieldHeadingStyle),
               Obx(
-                    () => DropdownButtonFormField2<Subcontractor>(
+                    () => DropdownButtonFormField2<list_model.Subcontractor>(
                   isExpanded: true,
                   decoration: dropDownBoxDecoration(
                     hint: "Select Subcontractor Name",
@@ -48,10 +47,10 @@ class NewServiceRequestScreen extends StatelessWidget {
                     'Select Subcontractor Name',
                     style: AppTextStyle.textHintText,
                   ),
-                  value: controller.selectedSubContractorData.value, // ✅ Keeps selected item
+                  value: controller.selectedSubContractorData.value,
 
                   items: controller.getLists.map((item) {
-                    return DropdownMenuItem<Subcontractor>(
+                    return DropdownMenuItem<list_model.Subcontractor>(
                       value: item,
                       child: Text(
                         item.name,
@@ -62,7 +61,7 @@ class NewServiceRequestScreen extends StatelessWidget {
 
                   validator: (value) {
                     if (value == null) {
-                      return 'Please select Vendor';
+                      return 'Please select Subcontractor';
                     }
                     return null;
                   },
@@ -196,38 +195,55 @@ class NewServiceRequestScreen extends StatelessWidget {
                 controller: controller.dateController,
                 decoration:textBoxDecoration(hint:"dd-MM-yyyy",
                     suffixIcon: Icon(Icons.calendar_month,color: Colors.grey,)),
-                readOnly: true,
-                onTap: () async {
-                  // ✅ Proper date picker
-                  final DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null) {
-                    controller.dateController.text =
-                    "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
-                  }
-                },
+                  readOnly: true,
+                  onTap: () async {
+                    final DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      controller.dateController.text =
+                          "${pickedDate.day.toString().padLeft(2,'0')}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.year}";
+                    }
+                  },
+              ),
+
+              /// ===============================
+              /// REMARKS
+              /// ===============================
+              VerticalSpacing.d15px(),
+              Text("Remarks", style: AppTextStyle.textFieldHeadingStyle),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                controller: controller.remarksController,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
+                minLines: 2,
+                decoration: textBoxDecoration(hint: "Enter remarks (optional)"),
               ),
 
               /// ===============================
               /// SUBMIT BUTTON
               /// ===============================
               VerticalSpacing.d20px(),
-             Obx(()=> controller.isLoading == true ? CircularProgressIndicator():  CommonButton(
+             Obx(()=> controller.isLoading.value ? Center(child: CircularProgressIndicator()) : CommonButton(
                onTap: () {
                  if (_formKey.currentState!.validate()) {
-                   // TODO: call controller.addMaterialApi()
-                   controller.addServicesApi(args.id);
+                   if (controller.isEditMode) {
+                     controller.updateServicesApi(args.id);
+                   } else {
+                     controller.addServicesApi(args.id);
+                   }
                  }
                },
-               text: "Submit",
+               text: controller.isEditMode ? "Update" : "Submit",
              ),)
             ],
           ),
         ),
+      ),
       ),
     );
   }

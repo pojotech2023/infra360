@@ -9,6 +9,7 @@ import 'package:raptor_pro/utils/res/spacing.dart';
 import 'package:raptor_pro/view/attendance/attendance_screen.dart';
 import 'package:raptor_pro/view/material_category/material_details/material_details_screen.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
+import 'package:raptor_pro/utils/file_download.dart';
 
 import '../../model/site_management_model.dart';
 import '../check_list/check_list_screen.dart';
@@ -17,6 +18,7 @@ import '../subcontractor_details/subcontractor_sitewise_screen.dart';
 import '../tickets/ticket_list_screen.dart';
 import '../payment_status/payment_status_screen.dart';
 import '../dashboard/dashboard_controller.dart';
+import '../sales_bill/sales_bill_screen.dart';
 
 class MaterialCategoryScreen extends StatefulWidget {
   @override
@@ -116,6 +118,13 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
           "onTap": () => Get.to(() => const PaymentStatusScreen(),
               arguments: siteManagementList.id),
         },
+      // Sales Bill — always visible (no specific permission flag yet)
+      {
+        "title": "Sales Bill",
+        "image": Images.salesBill,
+        "onTap": () => Get.to(() => const SalesBillScreen(),
+            arguments: siteManagementList.id),
+      },
     ];
 
     print("📋 [MATERIAL_CATEGORY] Showing ${items.length} item(s): ${items.map((e) => e['title']).toList()}");
@@ -125,27 +134,52 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar.appBar(
-        title: "Materials Category",
+        title: "Site Details",
         onTap: () => Get.back(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColor.buttonBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteManagementList.id}/full-report";
+                CommonFileDownloader.downloadAndOpen(
+                  urls: reportUrl,
+                  context: context,
+                  fileName: "site_report_${siteManagementList.id}.xlsx",
+                );
+              },
+              icon: Icon(Icons.download, color: Colors.white, size: 18),
+              label: Text("Download Full Report", style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          )
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 250,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.8,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 250,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return _buildGridItem(
+                context,
+                title: items[index]["title"],
+                image: items[index]["image"],
+                onTap: items[index]["onTap"],
+              );
+            },
           ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            return _buildGridItem(
-              context,
-              title: items[index]["title"],
-              image: items[index]["image"],
-              onTap: items[index]["onTap"],
-            );
-          },
         ),
       ),
     );

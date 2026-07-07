@@ -295,14 +295,53 @@ class DashboardScreen extends StatelessWidget {
       }),
 
       // ----------------- BODY -----------------
-      body: GetBuilder<DashboardController>(
-        builder: (controller) => controller.isLoading
-            ? Center(child: CommonLoader())
-            : SingleChildScrollView(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // ---------------- SEARCH BOX ----------------
+      body: SafeArea(
+        child: GetBuilder<DashboardController>(
+          builder: (controller) => controller.isLoading
+              ? Center(child: CommonLoader())
+              : SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+              // ---------------- TABS ----------------
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: ['All', 'Ongoing', 'Completed'].map((tab) {
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          controller.selectedTab.value = tab;
+                          controller.update(); // Update the view if GetBuilder is used, but selectedTab is obs.
+                        },
+                        child: Obx(() {
+                          bool isSelected = controller.selectedTab.value == tab;
+                          return Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.blueAccent : Colors.transparent,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Text(
+                              tab,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.grey.shade700,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
 
               // --------------- SITE LIST ----------------
               Builder(builder: (context) {
@@ -333,10 +372,10 @@ class DashboardScreen extends StatelessWidget {
                   shrinkWrap: true,
                   primary: false,
           physics: NeverScrollableScrollPhysics(),
-          itemCount: controller.siteManagementList.length,
+          itemCount: controller.filteredSiteList.length,
 
           itemBuilder: (_, index) {
-            SiteManagementList site = controller.siteManagementList[index];
+            SiteManagementList site = controller.filteredSiteList[index];
 
             return Container(
               margin: EdgeInsets.only(bottom: 24),
@@ -455,106 +494,145 @@ class DashboardScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
-                          _premiumInfo(Icons.timer_rounded,
-                              site.duration ?? "N/A", Colors.blueAccent),
-
-                          SizedBox(height: 8),
-
-                          InkWell(
-                            onTap: () => _openMap(site.location ?? ""),
-                            child: _premiumInfo(
-                              Icons.location_on_rounded,
-                              site.location ?? "N/A",
-                              Colors.redAccent,
-                              isLink: true,
+                          // ---------- Customer Details ----------
+                          if (site.customer != null && site.customer!.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _premiumInfo(
+                                  Icons.person,
+                                  site.customer!.first.name ?? "Customer N/A",
+                                  Colors.deepPurpleAccent,
+                                ),
+                                SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () => _callNumber(site.customer!.first.mobileNo ?? ""),
+                                  child: _premiumInfo(
+                                    Icons.call,
+                                    site.customer!.first.mobileNo ?? "Phone N/A",
+                                    Colors.green,
+                                    isLink: false,
+                                  ),
+                                ),
+                                SizedBox(height: 12),
+                              ],
                             ),
-                          ),
 
-                          SizedBox(height: 8),
-
-                          // ---------- Supervisor + Details Row ----------
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-
-                              // Left side
-                              Expanded(
+                          // ---------- Financial Details Card ----------
+                          Builder(
+                            builder: (context) {
+                              double budget = double.tryParse(site.value?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
+                              double expense = double.tryParse(site.expense?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
+                              double balance = budget - expense;
+                              
+                              String formatIndianCurrency(double value) {
+                                final formatter = NumberFormat.currency(
+                                  symbol: '₹',
+                                  decimalDigits: 2,
+                                  locale: 'en_IN',
+                                );
+                                return formatter.format(value);
+                              }
+                              
+                              return Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.shade50,
+                                      Colors.purple.shade50,
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                                ),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _premiumInfo(
-                                      Icons.person,
-                                      site.supervisor?.name ?? "Supervisor N/A",
-                                      Colors.deepPurpleAccent,
+                                    Row(
+                                      children: [
+                                        Icon(Icons.account_balance_wallet, color: Colors.blue.shade700, size: 20),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Financial Summary",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.blue.shade900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _financialItem("Budget", formatIndianCurrency(budget), Colors.teal),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: _financialItem("Expenses", formatIndianCurrency(expense), Colors.orange),
+                                        ),
+                                      ],
                                     ),
                                     SizedBox(height: 8),
-                                    InkWell(
-                                      onTap: () =>
-                                          _callNumber(site.supervisor?.mobileNo ?? ""),
-                                      child: _premiumInfo(
-                                        Icons.call,
-                                        site.supervisor?.mobileNo ?? "Phone N/A",
-                                        Colors.green,
-                                        isLink: false,
+                                    _financialItem("Balance", formatIndianCurrency(balance), Colors.purple),
+                                  ],
+                                ),
+                              );
+                            }
+                          ),
+
+                          SizedBox(height: 12),
+
+                          // ---------- Details Button ----------
+                          Builder(builder: (context) {
+                            bool canViewDetails = false;
+                            if (controller.profileRole.value.toLowerCase() == 'admin') {
+                              canViewDetails = true;
+                            } else {
+                              final p = controller.supervisorPermissions.value?.siteManagement;
+                              canViewDetails = (p?.editSite == 1 || p?.deleteSite == 1);
+                            }
+
+                            if (!canViewDetails) return SizedBox();
+
+                            return InkWell(
+                              onTap: () {
+                                showCustomerDetailsBottomSheet(
+                                    context, site, controller);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blueAccent.withOpacity(.2),
+                                      Colors.blueAccent.withOpacity(.1),
+                                    ],
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.info_outline,
+                                        size: 18, color: Colors.blueAccent),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      "View Details",
+                                      style: TextStyle(
+                                        color: Colors.blueAccent,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-
-                              SizedBox(width: 12),
-
-                               // Right side - Details button
-                                Builder(builder: (context) {
-                                  bool canViewDetails = false;
-                                  if (controller.profileRole.value.toLowerCase() == 'admin') {
-                                    canViewDetails = true;
-                                  } else {
-                                    final p = controller.supervisorPermissions.value?.siteManagement;
-                                    canViewDetails = (p?.editSite == 1 || p?.deleteSite == 1);
-                                  }
-
-                                  if (!canViewDetails) return SizedBox();
-
-                                  return InkWell(
-                                    onTap: () {
-                                      showCustomerDetailsBottomSheet(
-                                          context, site, controller);
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(14),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.blueAccent.withOpacity(.2),
-                                            Colors.blueAccent.withOpacity(.1),
-                                          ],
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.info_outline,
-                                              size: 18, color: Colors.blueAccent),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            "Details",
-                                            style: TextStyle(
-                                              color: Colors.blueAccent,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                })
-                            ],
-                          ),
-
+                            );
+                          })
                         ],
                       ),
                     ),
@@ -562,13 +640,11 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             );
-
-
           },
         );
-      })
-
-        ],
+      }),
+              ],
+            ),
           ),
         ),
       ),
@@ -605,6 +681,89 @@ class DashboardScreen extends StatelessWidget {
           ),
           if (isLink)
             Icon(Icons.arrow_outward_rounded, color: color, size: 18),
+        ],
+      ),
+    );
+  }
+
+  Widget _compactFinancialInfo(IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: color.withOpacity(0.08),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color.withOpacity(0.85),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _financialItem(String label, String value, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: color.withOpacity(0.8),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

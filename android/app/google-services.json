@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "862161934081",
+    "project_id": "infra360-38b97",
+    "storage_bucket": "infra360-38b97.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:862161934081:android:0681a620111cb9f49c6d00",
+        "android_client_info": {
+          "package_name": "com.pojotech.infra360"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWGqBQCxoc-jke3_9sR6fa_QdTazCjkjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

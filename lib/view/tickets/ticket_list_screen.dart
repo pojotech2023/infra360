@@ -26,16 +26,17 @@ class _TicketListScreenState extends State<TicketListScreen> {
         title: "Tickets",
         onTap: () => Get.back(),
       ),
-      body: GetBuilder<TicketController>(
-        builder: (controller) {
+      body: SafeArea(
+        child: GetBuilder<TicketController>(
+          builder: (controller) {
 
-          if(controller.isLoading.value){
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.isLoading.value == false && controller.ticketList.isEmpty) {
-            return const Center(child: Text("No Ticket Available"));
-          }
-          return ListView.builder(
+            if(controller.isLoading.value){
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (controller.isLoading.value == false && controller.ticketList.isEmpty) {
+              return const Center(child: Text("No Ticket Available"));
+            }
+            return ListView.builder(
             itemCount: controller.ticketList.length,
             itemBuilder: (context, index) {
               var data = controller.ticketList[index];
@@ -89,6 +90,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
             },
           );
         },
+      ),
       ),
     );
   }

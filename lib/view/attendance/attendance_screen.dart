@@ -17,6 +17,7 @@ import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 
 import 'add_wages.dart';
+import 'export_attendance.dart';
 
 class AttendanceScreen extends StatefulWidget {
   @override
@@ -33,9 +34,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     // TODO: implement initState
     id = Get.arguments;
     controller.siteId.value = id;
-    controller.init(id);
     controller.totalWeeks.value = ConstantData.getWeeksInMonth(
         controller.selectedYear.value, controller.selectedMonth.value);
+    controller.init(id);
 
     super.initState();
   }
@@ -45,7 +46,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     // TODO: implement build
     return Scaffold(
       appBar: CommonAppBar.appBar(
-          title: "Today Attendance",
+          title: "Attendance",
           onTap: () {
             Get.back();
           },actions: [
@@ -68,77 +69,72 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           children: [
             Obx((){
 
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 4,
-                  child: InkWell(
-                    onTap: () async {
-                      _pickMonth();
-                    },
-                    child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColor.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: AppColor.materialCategoryBorderColor,
-                              width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
+                InkWell(
+                  onTap: () async {
+                    _pickMonth();
+                  },
+                  child: Container(
+                      width: 150,
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColor.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppColor.materialCategoryBorderColor,
+                            width: 1),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              controller.displayMonthText.value.isNotEmpty
+                                  ? controller.displayMonthText.value
+                                  : "Select Month",
+                              style: TextStyle(fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(Icons.keyboard_arrow_down, size: 20)
+                        ],
+                      )),
+                ),
+                VerticalSpacing.custom(value: 12),
+                SizedBox(
+                  height: 40,
+                  child: Obx(() => ListView.separated(
+                    shrinkWrap: true,
+                    primary: false,
+                    itemCount: controller.totalWeeks.value + 1,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (BuildContext context, int index) {
+                      final tabName = index == 0 ? 'Full Month' : 'Week ${index}';
+                      return Obx(() => InkWell(
+                            onTap: () {
+                              controller.onTabSelected(tabName);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                  color: controller.selectedTab.value == tabName
+                                      ? AppColor.buttonBlue
+                                      : AppColor.black,
+                                  borderRadius: BorderRadius.circular(20)),
                               child: Text(
-                                controller.selectedMonthText.value ??
-                                    "Select Month",
-                                style: TextStyle(fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
+                                tabName,
+                                style: TextStyle(color: AppColor.white, fontSize: 13),
                               ),
                             ),
-                            Icon(Icons.keyboard_arrow_down, size: 20)
-                          ],
-                        )),
-                  ),
-                ),
-                HorizontalSpacing.custom(value: 8),
-                Expanded(
-                  flex: 6,
-                  child: SizedBox(
-                    height: 30,
-                    child: Obx(() => ListView.separated(
-                      shrinkWrap: true,
-                      primary: false,
-                      padding: EdgeInsets.only(left: 10),
-                      itemCount: controller.totalWeeks.value,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (BuildContext context, int index) {
-                        return Obx(() => InkWell(
-                              onTap: () {
-                                controller.onWeekSelected(index + 1);
-                              },
-                              child: Container(
-                                width: 55,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                    color: controller.selectedWeek.value ==
-                                            index + 1
-                                        ? AppColor.buttonBlue
-                                        : AppColor.black,
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: Text(
-                                  "W${index + 1}",
-                                  style: TextStyle(color: AppColor.white),
-                                ),
-                              ),
-                            ));
-                      },
-                      separatorBuilder: (BuildContext context, int index) {
-                        return Padding(padding: EdgeInsets.only(right: 8));
-                      },
-                    )),
-                  ),
+                          ));
+                    },
+                    separatorBuilder: (BuildContext context, int index) {
+                      return Padding(padding: EdgeInsets.only(right: 8));
+                    },
+                  )),
                 ),
               ],
             );}),
@@ -157,9 +153,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           itemCount: controller.weekDaysList.length,
                           itemBuilder: (BuildContext context, int index) {
                             WeekDays weekDays = controller.weekDaysList[index];
-                            return InkWell(
+                            return Obx(() => InkWell(
                               onTap: () {
+                                print("📅 Date tapped: ${weekDays.value}");
                                 controller.selectedDate.value = weekDays.value!;
+                                print("📅 selectedDate.value set to: ${controller.selectedDate.value}");
                                 controller.onDaysSelected(weekDays.value!);
 
                               },
@@ -168,14 +166,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   padding: EdgeInsets.only(
                                     left: 16,
                                     right: 16,
+                                    top: 8,
+                                    bottom: 8,
                                   ),
                                   margin: EdgeInsets.only(right: 10),
                                   decoration: BoxDecoration(
                                       color: controller.selectedDate.value ==
                                               weekDays.value
-                                          ? AppColor.black
+                                          ? AppColor.buttonBlue
                                           : AppColor.daysSelected,
-                                      borderRadius: BorderRadius.circular(16)),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: controller.selectedDate.value ==
+                                              weekDays.value
+                                          ? Border.all(
+                                              color: AppColor.buttonBlue,
+                                              width: 2,
+                                            )
+                                          : null,
+                                      boxShadow: controller.selectedDate.value ==
+                                              weekDays.value
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColor.buttonBlue.withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: Offset(0, 4),
+                                              ),
+                                            ]
+                                          : null),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -183,6 +200,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                         weekDays.label!.split(" ")[0],
                                         style: AppTextStyle.textMedium.copyWith(
                                             fontSize: 14,
+                                            fontWeight: controller.selectedDate.value ==
+                                                    weekDays.value
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                             color:
                                                 controller.selectedDate.value ==
                                                         weekDays.value
@@ -193,6 +214,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                           style: AppTextStyle.textMedium
                                               .copyWith(
                                                   fontSize: 14,
+                                                  fontWeight: controller.selectedDate.value ==
+                                                          weekDays.value
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
                                                   color: controller.selectedDate
                                                               .value ==
                                                           weekDays.value
@@ -200,7 +225,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                                       : AppColor.black)),
                                     ],
                                   )),
-                            );
+                            ));
                           }),
                     )
                   : Container();
@@ -277,8 +302,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                      child:InkWell(
                        borderRadius: BorderRadius.circular(6),
                        onTap: () {
-                         controller.clear();
-                         showAddWagesBottomSheet(context,"2",[]);
+                         showDialog(context: context, builder: (_) => ExportAttendance());
                        },
                        child: Container(
                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -297,13 +321,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                            mainAxisSize: MainAxisSize.min,
                            children: const [
                              Icon(
-                               Icons.add,
+                               Icons.download,
                                color: Colors.white,
                                size: 18,
                              ),
                              SizedBox(width: 6),
                              Text(
-                               "Attendance",
+                               "Export",
                                style: TextStyle(
                                  color: Colors.white,
                                  fontWeight: FontWeight.w600,
@@ -389,8 +413,7 @@ mainAxisAlignment: MainAxisAlignment.center,
                      child:InkWell(
                        borderRadius: BorderRadius.circular(6),
                        onTap: () {
-                         controller.clear();
-                         showAddWagesBottomSheet(context,"2",[]);
+                         showDialog(context: context, builder: (_) => ExportAttendance());
                        },
                        child: Container(
                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -410,13 +433,13 @@ mainAxisAlignment: MainAxisAlignment.center,
                            mainAxisSize: MainAxisSize.min,
                            children: const [
                              Icon(
-                               Icons.add,
+                               Icons.download,
                                color: Colors.white,
                                size: 18,
                              ),
                              SizedBox(width: 6),
                              Text(
-                               "Attendance",
+                               "Export",
                                style: TextStyle(
                                  color: Colors.white,
                                  fontWeight: FontWeight.w600,
@@ -440,226 +463,158 @@ mainAxisAlignment: MainAxisAlignment.center,
 
 
             Obx((){
-              return GridView.builder(
-                shrinkWrap: true,
-                primary: false,
-                padding: EdgeInsets.only(top: 16),
-                itemCount: controller.attendanceList.length,
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.75
-                ),
-                itemBuilder: (BuildContext context,int index){
-               Attendances attendances=   controller.attendanceList[index];
-                  /*return Container(
-                    padding: EdgeInsets.all(16),
+              if (controller.attendanceList.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 40.0),
+                  child: Text("No attendance records found.", style: AppTextStyle.textMedium),
+                );
+              }
+              // Group attendance by date
+              Map<String, List<Attendances>> groupedData = {};
+              for (var item in controller.attendanceList) {
+                if (item.date != null) {
+                  groupedData.putIfAbsent(item.date!, () => []).add(item);
+                }
+              }
+
+              return Column(
+                children: groupedData.entries.map((entry) {
+                  String rawDate = entry.key;
+                  List<Attendances> items = entry.value;
+                  String displayDate = DateFormat('dd MMM yyyy').format(DateTime.parse(rawDate));
+
+                  return Container(
+                    margin: EdgeInsets.only(top: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: ConstantData().attendanceBorderColor[index% ConstantData().attendanceBorderColor.length], width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ConstantData().attendanceShadowColor[index% ConstantData().attendanceShadowColor.length],
-                          blurRadius: 10,
-                          spreadRadius: 0.8,
-                          offset: Offset(0, 6), // vertical shadow
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Align(alignment: Alignment.topRight,
-                        child: IconButton(onPressed: (){
-                          controller.clear();
-                          showAddWagesBottomSheet(context,"3",controller.attendanceList);
-                        }, icon: Icon(Icons.edit)),),
-
-                        Text("${attendances.count}",
-                        style: AppTextStyle.textMedium
-                          .copyWith(fontSize: 20,
-                        color: AppColor.attendanceTextColor),),
-
-                       Row(
-                         children: [
-                           Text("${attendances.category}",
-                               style: AppTextStyle.textMedium
-                                   .copyWith(fontSize: 18,
-                                   color: AppColor.attendanceTextColor)),
-
-                           Text(" x ${attendances.amount}",
-                               style: AppTextStyle.textMedium
-                                   .copyWith(fontSize: 18,
-                                   color:Colors.grey)),
-                           Text(
-                             " = ${(attendances.amount ?? 0) * (attendances.count ?? 0)}",
-                             style: AppTextStyle.textMedium.copyWith(
-                               fontSize: 18,
-                               color: Colors.grey,
-                             ),
-                           ),
-
-                         ],
-                       )
-
-                      ],
-                    ),
-                  );*/
-return Container(
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(14),
-    border: Border.all(
-      color: ConstantData()
-          .attendanceBorderColor[index %
-          ConstantData().attendanceBorderColor.length],
-      width: 1,
-    ),
-    boxShadow: [
-      BoxShadow(
-        color: ConstantData()
-            .attendanceShadowColor[index %
-            ConstantData().attendanceShadowColor.length],
-        blurRadius: 10,
-        spreadRadius: 1,
-        offset: const Offset(0, 6),
-      ),
-    ],
-  ),
-  child: Column(
-
-    children: [
-      /// ---------------- TOP SECTION ----------------
-      Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (controller.selectedDate.value == null)
-                        Text(
-                          controller.selectedWeek.value != null
-                              ? "Week ${controller.selectedWeek.value}"
-                              : "${DateFormat('MMMM').format(DateTime(2000, controller.selectedMonth.value))} Month",
-                          style: AppTextStyle.textMedium.copyWith(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.bold,
+                        // Card Header (Date + Actions)
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Color(0xffC8D6FF),
+                            borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(displayDate, style: AppTextStyle.textBold.copyWith(fontSize: 15, color: Colors.indigo.shade900)),
+                              Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      controller.clear();
+                                      showAddWagesBottomSheet(context, "3", items);
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.all(6),
+                                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+                                      child: Icon(Icons.edit, size: 18, color: Colors.blue.shade700),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  InkWell(
+                                    onTap: () {
+                                      print("Delete button tapped for date: $displayDate");
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text("Confirm Delete"),
+                                            content: Text("Are you sure you want to delete all attendance records for $displayDate?"),
+                                            actions: [
+                                              TextButton(
+                                                style: TextButton.styleFrom(backgroundColor: Colors.blue.shade400, foregroundColor: Colors.white),
+                                                child: Text("Cancel"),
+                                                onPressed: () => Navigator.of(context).pop(),
+                                              ),
+                                              TextButton(
+                                                style: TextButton.styleFrom(backgroundColor: Colors.red.shade400, foregroundColor: Colors.white),
+                                                child: Text("Delete"),
+                                                onPressed: () async {
+                                                  print("Delete confirmed for date: $displayDate");
+                                                  Navigator.of(context).pop();
+                                                  // Delete all records for this date by calling delete for each ID
+                                                  print("Starting to delete ${items.length} records for date $displayDate");
+                                                  for (var item in items) {
+                                                    print("Checking item: category=${item.category}, count=${item.count}, id=${item.id}");
+                                                    if (item.id != null) {
+                                                      print("➡️ Deleting record with ID: ${item.id}");
+                                                      await controller.deleteAttendance(item.id!);
+                                                    } else {
+                                                      print("⚠️ Skipping delete for ${item.category} because ID is NULL");
+                                                    }
+                                                  }
+                                                  print("Delete operation completed. Fetching latest data...");
+                                                  await controller.init(controller.siteId.value);
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.all(6),
+                                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+                                      child: Icon(Icons.delete, size: 18, color: Colors.red.shade600),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
                           ),
                         ),
-                      if (controller.selectedDate.value == null)
-                        const SizedBox(height: 4),  
-                      Text(
-                        attendances.category ?? "",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyle.textMedium.copyWith(
-                          fontSize: 18,
-                          color: AppColor.attendanceTextColor,
+                        // Column Headers
+                        Padding(
+                          padding: EdgeInsets.only(top: 12, bottom: 4, left: 16, right: 16),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 2, child: Text("Category", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700))),
+                              Expanded(flex: 1, child: Text("Count", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700), textAlign: TextAlign.center)),
+                              Expanded(flex: 1, child: Text("Wages", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700), textAlign: TextAlign.right)),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (controller.selectedDate.value != null)
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      icon: const Icon(Icons.edit, size: 20),
-                      onPressed: () {
-                        controller.clear();
-                        showAddWagesBottomSheet(
-                            context, "3", controller.attendanceList);
-                      },
+                        Divider(color: Colors.grey.shade200, height: 1),
+                        // List of categories
+                        ListView.separated(
+                          shrinkWrap: true,
+                          primary: false,
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100, height: 1),
+                          itemBuilder: (context, index) {
+                            Attendances item = items[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(flex: 2, child: Text(item.category ?? "-", style: AppTextStyle.textMedium.copyWith(fontSize: 14))),
+                                  Expanded(flex: 1, child: Text("${item.count ?? 0}", style: AppTextStyle.textMedium.copyWith(fontSize: 14), textAlign: TextAlign.center)),
+                                  Expanded(flex: 1, child: Text(
+                                    () {
+                                      final total = (item.amount ?? 0) * (item.count ?? 0);
+                                      return total == total.roundToDouble()
+                                          ? "₹ ${total.toInt()}"
+                                          : "₹ ${total.toStringAsFixed(2)}";
+                                    }(),
+                                    style: AppTextStyle.textMedium.copyWith(fontSize: 14, color: Colors.green.shade700),
+                                    textAlign: TextAlign.right,
+                                  )),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 8),
+                      ],
                     ),
-                  ),
-              ],
-            ),
-            /// Edit icon
-
-SizedBox(height: 30,),
-            /// Category & Count
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.person, color: Colors.grey, size: 20),
-                  Text(
-                    " ${attendances.count ?? 0}  *  ",
-                    style: AppTextStyle.textMedium.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    "${attendances.amount ?? 0}",
-                    style: AppTextStyle.textMedium.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 30,),
-
-            /// Amount
-
-          ],
-        ),
-      ),
-
-      /// ---------------- BOTTOM COLORED SECTION ----------------
-     Expanded(child:  Container(
-       width: double.infinity,
-       padding: const EdgeInsets.symmetric(vertical: 14),
-       decoration: BoxDecoration(
-         color: ConstantData()
-             .attendanceBorderColor[index %
-             ConstantData().attendanceBorderColor.length],
-         borderRadius: const BorderRadius.only(
-           bottomLeft: Radius.circular(14),
-           bottomRight: Radius.circular(14),
-         ),
-       ),
-       child: Center(
-         child: Padding(
-           padding: const EdgeInsets.symmetric(horizontal: 8),
-           child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              "Total : ₹ ${(attendances.amount ?? 0) * (attendances.count ?? 0)}",
-              style: AppTextStyle.textMedium.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-         ),
-       ),
-     ),)
-    ],
-  ),
-);
-
-                },
+                  );
+                }).toList(),
               );
             }),
 
@@ -759,23 +714,28 @@ SizedBox(height: 30,),
       controller.onMonthSelected(year, month);
     }
   }
-  void showAddWagesBottomSheet(BuildContext context,type,List<Attendances> data,) {
+
+  void showAddWagesBottomSheet(BuildContext context, type, List<Attendances> data) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       isScrollControlled: true,
-        useSafeArea:true,
-
-
+      useSafeArea: true,
       builder: (_) {
-    return DraggableScrollableSheet(
-    expand: false,
-    initialChildSize: 0.8,
-    snap: true,
-    builder: (_, controller1) {
-        return AddWages(types:type,attendanceDatas: data,scrollController: controller1,);});
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.8,
+          snap: true,
+          builder: (_, scrollController) {
+            return AddWages(
+              types: type,
+              attendanceDatas: data,
+              scrollController: scrollController,
+            );
+          },
+        );
       },
     );
   }

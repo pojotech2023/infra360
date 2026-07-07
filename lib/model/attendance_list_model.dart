@@ -7,10 +7,10 @@ class AttendanceListModel {
   int? totalWeeks;
   List<WeekDays>? weekDays;
   List<Attendances>? attendances;
+  List<Map<String, dynamic>>? groupedByDate;
   Wage? wage;
   CategoryWages? categoryWages;
   int? totalWages;
-
 
   AttendanceListModel(
       {this.siteName,
@@ -21,6 +21,7 @@ class AttendanceListModel {
         this.totalWeeks,
         this.weekDays,
         this.attendances,
+        this.groupedByDate,
         this.wage,
         this.categoryWages,
         this.totalWages,
@@ -47,6 +48,9 @@ class AttendanceListModel {
     }
     else{
       attendances=[];
+    }
+    if (json['grouped_by_date'] != null) {
+      groupedByDate = List<Map<String, dynamic>>.from(json['grouped_by_date']);
     }
     wage = json['wage'] != null ? new Wage.fromJson(json['wage']) : null;
     categoryWages = json['category_wages'] != null && json['category_wages'].isNotEmpty
@@ -124,7 +128,17 @@ class Attendances {
     siteId = json['site_id'];
     category = json['category'];
     count = json['count'];
-    amount = json['amount'];
+    // amount may come as int, double, or String from the backend
+    final raw = json['amount'];
+    if (raw is double) {
+      amount = raw;
+    } else if (raw is int) {
+      amount = raw.toDouble();
+    } else if (raw is String) {
+      amount = double.tryParse(raw);
+    } else {
+      amount = null;
+    }
     date = json['date'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];

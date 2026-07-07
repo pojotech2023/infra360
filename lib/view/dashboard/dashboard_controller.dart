@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:get/get.dart';
@@ -15,6 +16,14 @@ import 'package:flutter/material.dart';
 class DashboardController extends GetxController {
   List<SiteManagementList> siteManagementList = [];
   bool isLoading = false;
+  var selectedTab = 'All'.obs;
+
+  List<SiteManagementList> get filteredSiteList {
+    if (selectedTab.value == 'All') {
+      return siteManagementList;
+    }
+    return siteManagementList.where((site) => site.status?.toLowerCase() == selectedTab.value.toLowerCase()).toList();
+  }
 
   late LoginResponse userDetails;
   var profileImage = ''.obs;
@@ -25,6 +34,12 @@ class DashboardController extends GetxController {
   /// null = admin login or permissions not yet loaded.
   var supervisorPermissions = Rxn<PermissionsData>();
 
+  /// Timer for automatic permission polling
+  Timer? _permissionPollTimer;
+  
+  /// Polling interval in seconds (default: 30 seconds)
+  static const int _permissionPollInterval = 30;
+
   @override
   void onInit() {
     final data = jsonDecode(PreferenceUtils().getUserInfo());
@@ -34,7 +49,20 @@ class DashboardController extends GetxController {
     profileRole.value  = userDetails.data!.role         ?? '';
 
     init();
+    
+    // Start automatic permission polling for supervisors
+    if (profileRole.value.toLowerCase() == 'supervisor') {
+      _startPermissionPolling();
+    }
+    
     super.onInit();
+  }
+
+  @override
+  void onClose() {
+    // Stop permission polling when controller is disposed
+    stopPermissionPolling();
+    super.onClose();
   }
 
   updateFromPreference() {
@@ -51,29 +79,33 @@ class DashboardController extends GetxController {
     isLoading = true;
     update();
 
-    // ── 1. Load site list ────────────────────────────────────────────────────
-    SiteManagementModel? siteManagementModel = await ApiData().siteListApi();
-    if (siteManagementModel != null) {
-      siteManagementList = siteManagementModel.data ?? [];
+    try {
+      // ── 1. Load site list ────────────────────────────────────────────────────
+      SiteManagementModel? siteManagementModel = await ApiData().siteListApi();
+      if (siteManagementModel != null) {
+        siteManagementList = siteManagementModel.data ?? [];
 
-      int siteLimit = userDetails.data?.siteLimit ?? 0;
-      if (siteManagementList.length >= siteLimit && siteLimit > 0) {
-        PreferenceUtils().setHasReachedLimit(true);
+        int siteLimit = userDetails.data?.siteLimit ?? 0;
+        if (siteManagementList.length >= siteLimit && siteLimit > 0) {
+          PreferenceUtils().setHasReachedLimit(true);
+        }
       }
-    }
 
-    // ── 2. Load permissions if supervisor ────────────────────────────────────
-    if (profileRole.value.toLowerCase() == 'supervisor') {
-      await _loadSupervisorPermissions();
-    } else {
-      // Admin: clear any stale cached permissions
-      supervisorPermissions.value = null;
-      PreferenceUtils().clearSupervisorPermissions();
-      print("ℹ️ [PERMISSIONS] Role='${profileRole.value}' → skipping permissions load");
+      // ── 2. Load permissions if supervisor ────────────────────────────────────
+      if (profileRole.value.toLowerCase() == 'supervisor') {
+        await _loadSupervisorPermissions();
+      } else {
+        // Admin: clear any stale cached permissions
+        supervisorPermissions.value = null;
+        PreferenceUtils().clearSupervisorPermissions();
+        print("ℹ️ [PERMISSIONS] Role='${profileRole.value}' → skipping permissions load");
+      }
+    } catch (e, stacktrace) {
+      print("🚨 Exception in DashboardController.init: $e\n$stacktrace");
+    } finally {
+      isLoading = false;
+      update();
     }
-
-    isLoading = false;
-    update();
   }
 
   /// Fetches permissions from API using the logged-in supervisor's user ID.
@@ -97,6 +129,9 @@ class DashboardController extends GetxController {
       final encoded = jsonEncode(model.permissions!.toJson());
       PreferenceUtils().setSupervisorPermissions(encoded);
       print("💾 [PERMISSIONS] Cached to SharedPreferences: $encoded");
+      
+      // Force UI update to reflect permission changes
+      update();
     } else {
       // Fallback: restore from cache
       print("⚠️ [PERMISSIONS] API failed — attempting to load from cache...");
@@ -114,6 +149,66 @@ class DashboardController extends GetxController {
         print("❌ [PERMISSIONS] No cache found — all options default to VISIBLE");
         supervisorPermissions.value = null;
       }
+      update();
+    }
+  }
+
+  /// Refreshes supervisor permissions from API and updates UI immediately.
+  /// Call this when permissions may have changed (e.g., after admin updates).
+  Future<void> refreshPermissions() async {
+    if (profileRole.value.toLowerCase() != 'supervisor') {
+      print("ℹ️ [PERMISSIONS] Not a supervisor — skipping permission refresh");
+      return;
+    }
+
+    print("🔄 [PERMISSIONS] Refreshing permissions...");
+    
+    // Clear cached permissions to force fresh API call
+    PreferenceUtils().clearSupervisorPermissions();
+    
+    // Reload from API
+    await _loadSupervisorPermissions();
+    
+    print("✅ [PERMISSIONS] Refresh complete");
+  }
+
+  /// Starts automatic permission polling for supervisors
+  /// Polls every 30 seconds to check for permission changes
+  /// Only supervisors can use polling, and only one timer exists at a time
+  void _startPermissionPolling() {
+    // Double-check role is supervisor (defensive programming)
+    if (profileRole.value.toLowerCase() != 'supervisor') {
+      print("⏱️ [PERMISSIONS] Not a supervisor - skipping polling start");
+      return;
+    }
+    
+    // Stop any existing timer to prevent duplicates
+    stopPermissionPolling();
+    
+    // Check if timer is already running (shouldn't happen after stop, but defensive)
+    if (_permissionPollTimer != null && _permissionPollTimer!.isActive) {
+      print("⏱️ [PERMISSIONS] Timer already running - skipping duplicate");
+      return;
+    }
+    
+    print("⏱️ [PERMISSIONS] Starting automatic polling (every ${_permissionPollInterval}s)");
+    
+    _permissionPollTimer = Timer.periodic(
+      Duration(seconds: _permissionPollInterval),
+      (timer) async {
+        print("⏱️ [PERMISSIONS] Polling for permission changes...");
+        await refreshPermissions();
+      },
+    );
+  }
+
+  /// Stops the automatic permission polling
+  /// Can be called externally (e.g., during logout)
+  void stopPermissionPolling() {
+    if (_permissionPollTimer != null) {
+      print("⏱️ [PERMISSIONS] Stopping permission polling");
+      _permissionPollTimer?.cancel();
+      _permissionPollTimer = null;
     }
   }
 

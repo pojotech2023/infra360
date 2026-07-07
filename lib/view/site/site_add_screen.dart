@@ -178,9 +178,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                         controller: controller.durationEditingController,
                         decoration: textBoxDecoration(hint: "Enter Duration"),
                         validator: (text) {
-                          if (text == null || text.isEmpty) {
-                            return 'Required';
-                          }
                           return null;
                         },
                       ),
@@ -195,9 +192,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                         maxLines: 5,
                         decoration: textBoxDecoration(hint: "Enter Location"),
                         validator: (text) {
-                          if (text == null || text.isEmpty) {
-                            return 'Required';
-                          }
                           return null;
                         },
                       ),
@@ -216,10 +210,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                           print("value");
                         },
                         validator: (text) {
-                          if (text == null || text.isEmpty) {
-                            return 'Required';
-                          }
-
                           return null;
                         },
                       ),
@@ -237,10 +227,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                           print("value");
                         },
                         validator: (text) {
-                          if (text == null || text.isEmpty) {
-                            return 'Required';
-                          }
-
                           return null;
                         },
                       ),
@@ -269,7 +255,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                                 ))
                             .toList(),
                         validator: (value) {
-                          if (value == null) return 'Please select Supervisor';
                           return null;
                         },
                         onChanged: (value) {
@@ -315,7 +300,7 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                                           files: attachment); // ✅ optional
                                     } else {
                                       controller.addSiteApi(
-                                          files: attachment!); // ✅ required
+                                          files: attachment); // ✅ optional
                                     }
                                   }
                                 },
@@ -364,9 +349,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
           controller: controller.nameEditingController,
           decoration: textBoxDecoration(hint: "Enter Customer name"),
           validator: (text) {
-            if (text == null || text.isEmpty) {
-              return 'Required';
-            }
             return null;
           },
         ),
@@ -382,10 +364,7 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
           inputFormatters: tenDigitPhoneFormatter(),
           decoration: textBoxDecoration(hint: "Enter Customer Mobile Number"),
           validator: (text) {
-            if (text == null || text.isEmpty) {
-              return 'Required';
-            }
-            if (text.length != 10) {
+            if (text != null && text.isNotEmpty && text.length != 10) {
               return 'Mobile number must be 10 digits';
             }
             return null;
@@ -400,9 +379,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
           controller: controller.emailEditingController,
           decoration: textBoxDecoration(hint: "Enter Customer Email"),
           validator: (text) {
-            if (text == null || text.isEmpty) {
-              return 'Required';
-            }
             return null;
           },
         ),
@@ -427,9 +403,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
             }
           },
           validator: (text) {
-            if (text == null || text.isEmpty) {
-              return 'Required';
-            }
             return null;
           },
         ),
@@ -444,9 +417,6 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
           maxLines: 5,
           decoration: textBoxDecoration(hint: "Enter Customer Address"),
           validator: (text) {
-            if (text == null || text.isEmpty) {
-              return 'Required';
-            }
             return null;
           },
         ),
@@ -490,7 +460,7 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                     ),
                   ))
               .toList(),
-          validator: (value) => value == null ? 'Select Site Status' : null,
+          validator: (value) => null,
           onChanged: (value) {
             controller.selectedStatus.value = value ?? '';
             controller.status.value = value ?? '';

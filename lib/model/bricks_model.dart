@@ -70,12 +70,14 @@ class BricksModel {
 class BricksList {
   int? id;
   int? siteId;
+  int? vendorId;
   String? vendorName;
   String? materialType;
   String? date;
   String? quantity;
   String? unit;
   int? price;
+  String? gst;
  // Null? availableUnitCount;
   int? status;
   String? createdAt;
@@ -84,12 +86,14 @@ class BricksList {
   BricksList(
       {this.id,
         this.siteId,
+        this.vendorId,
         this.vendorName,
         this.materialType,
         this.date,
         this.quantity,
         this.unit,
         this.price,
+        this.gst,
        // this.availableUnitCount,
         this.status,
         this.createdAt,
@@ -98,10 +102,12 @@ class BricksList {
   BricksList.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     siteId = json['site_id'] ?? json['siteId'];
+    vendorId = json['vendor_id']?.toInt();
     
     // Vendor handling: check for nested object or flat field
     if (json['vendor'] != null && json['vendor'] is Map) {
       vendorName = json['vendor']['name'];
+      vendorId = json['vendor']['id']?.toInt();
     } else {
       vendorName = json['vendor_name'] ?? json['vendorName'] ?? json['vendor']?.toString();
     }
@@ -110,7 +116,8 @@ class BricksList {
     date = json['date'];
     quantity = json['quantity']?.toString() ?? json['qty']?.toString();
     unit = json['unit'];
-    price = json['price'] != null ? int.tryParse(json['price'].toString()) : json['amount'] != null ? int.tryParse(json['amount'].toString()) : null;
+    price = json['price'] != null ? double.tryParse(json['price'].toString())?.toInt() : json['amount'] != null ? double.tryParse(json['amount'].toString())?.toInt() : null;
+    gst = json['gst']?.toString();
     status = json['status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
@@ -120,12 +127,14 @@ class BricksList {
     final Map<String, dynamic> data =  Map<String, dynamic>();
     data['id'] = id;
     data['site_id'] = siteId;
+    data['vendor_id'] = vendorId;
     data['vendor_name'] = vendorName;
     data['material_type'] = materialType;
     data['date'] = date;
     data['quantity'] = quantity;
     data['unit'] = unit;
     data['price'] = price;
+    data['gst'] = gst;
     //data['available_unit_count'] = this.availableUnitCount;
     data['status'] = this.status;
     data['created_at'] = this.createdAt;

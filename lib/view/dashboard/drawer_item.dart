@@ -30,8 +30,7 @@ class DrawerWidget extends StatelessWidget {
           bottomLeft: Radius.circular(10),
         ),
       ),
-      child: GetBuilder<DashboardController>(
-        init: DashboardController(),
+      child: GetX<DashboardController>(
         builder: (controller) {
           final bool isSupervisor =
               controller.profileRole.value.toLowerCase() == 'supervisor';
@@ -114,25 +113,6 @@ class DrawerWidget extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Profile — always visible
-                      drawerItem(Images.user, 'Profile', onTap: () {
-                        Get.to(() => ProfileScreen());
-                      }),
-
-                      // Supervisor Creation — admin only
-                      if (controller.userDetails.data!.role!.toLowerCase() ==
-                          'admin')
-                        drawerItem(Images.supervisor, 'Supervisor Creation',
-                            onTap: () {
-                          Get.to(SuperVisorManagementScreen());
-                        }),
-
-                      // Customer List — permission controlled for supervisor
-                      if (canShow((p) => p.customerManagement?.canAccessCustomer ?? false))
-                        drawerItem(Images.customer, 'Customer List', onTap: () {
-                          Get.to(CustomerListScreen());
-                        }),
-
                       // Generate Quotation — permission controlled for supervisor
                       if (canShow((p) => p.quotation?.canAccessQuotation ?? false))
                         drawerItem(Images.quotation, 'Generate Quotation',
@@ -142,6 +122,12 @@ class DrawerWidget extends StatelessWidget {
                                 force: true);
                           }
                           Get.to(() => GenerateQuotationScreen());
+                        }),
+
+                      // Customer List — permission controlled for supervisor
+                      if (canShow((p) => p.customerManagement?.canAccessCustomer ?? false))
+                        drawerItem(Images.customer, 'Customer List', onTap: () {
+                          Get.to(CustomerListScreen());
                         }),
 
                       // Vendor Creation — permission controlled for supervisor
@@ -156,6 +142,19 @@ class DrawerWidget extends StatelessWidget {
                             'SubContractor Creation', onTap: () {
                           Get.to(SubContractorMainScreen());
                         }),
+
+                      // Supervisor Creation — admin only
+                      if (controller.userDetails.data!.role!.toLowerCase() ==
+                          'admin')
+                        drawerItem(Images.supervisor, 'Supervisor Creation',
+                            onTap: () {
+                          Get.to(SuperVisorManagementScreen());
+                        }),
+
+                      // Profile — always visible
+                      drawerItem(Images.user, 'Profile', onTap: () {
+                        Get.to(() => ProfileScreen());
+                      }),
 
                       // Sign out — always visible
                       drawerItem(Images.signOut, 'Signout', onTap: () {

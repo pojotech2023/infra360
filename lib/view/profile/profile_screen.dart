@@ -41,13 +41,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Get.back();
 
           }),
-      body:  Form(
-        key: _formKey,
-        child: GetBuilder<ProfileController>(builder: (controller){
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: GetBuilder<ProfileController>(builder: (controller){
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
 
@@ -227,9 +228,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }),
       ),
-
-    );
-  }
+    ),
+  );
+}
 
    /// ✅ File Picker Bottom Sheet
    void _showAttachmentOptions(BuildContext context) {

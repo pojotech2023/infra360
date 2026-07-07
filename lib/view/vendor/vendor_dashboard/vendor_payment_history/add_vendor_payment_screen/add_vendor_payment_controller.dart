@@ -10,6 +10,7 @@ class AddVendorPaymentController extends GetxController{
 
   TextEditingController paymentController =TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
   RxnString ?selectedPayment = RxnString();
 
 
@@ -22,13 +23,24 @@ class AddVendorPaymentController extends GetxController{
   addPayment()async{
     isLoading.value =true;
 
+    print("Get.arguments: ${Get.arguments}");
+    print("Vendor ID from arguments: ${Get.arguments}");
+
+    if (Get.arguments == null) {
+      showToastMessage("Vendor ID is missing. Please try again.");
+      isLoading.value = false;
+      return;
+    }
+
     Map<String,dynamic> postData ={
       "vendor_id":Get.arguments,
       "payment": paymentController.text,
       "date":datePickerController.text,
-      "payment_mode":selectedPayment!.value
+      "payment_mode":selectedPayment!.value,
+      "remarks": remarksController.text
     };
 
+    print("Payment Data: $postData");
 
     CommonSuccessResponseModel ?model= await ApiData().vendorPaymentUpdate(postData);
 

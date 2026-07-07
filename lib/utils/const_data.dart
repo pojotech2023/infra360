@@ -6,7 +6,7 @@ import 'package:raptor_pro/utils/res/images.dart';
 class ConstantData {
 
   static final List<String> paymentMode = [
-    "Online","Check","Net Banking","Cash"
+    "Online","Check","Net Banking","Cash","Cash-B"
   ];
 
 
@@ -72,67 +72,93 @@ class ConstantData {
 
 
   static final List<String> allMaterialKeys = [
-    "bricks",
-    "sand",
-    "cement",
-    "rmc",
-    "gravel",
+    "Bricks",
+    "Sand",
+    "Cement",
+    "Electrical Wires",
+    "Plumber",
+    "Tea",
+    "Watercan",
+    "Lorry Water",
+    "Tiles",
+    "Granite",
+    "Jally",
+    "Welding",
+    "Lift",
+    "RC Concrete",
+    "Transport",
+    "Interior",
+    "Painting",
+    "Steel",
+    "AGGREGATE",
+    "RMC",
+    "Gravel",
   ];
 
   static final Map<String, String> materialImages = {
-    "bricks": Images.brick,
-    "sand": Images.sand,
-    "cement":  Images.cement,
-    "rmc":  Images.rmc,
-    "gravel":  Images.jally,
+    "Bricks": Images.brick,
+    "Sand": Images.sandJpeg,
+    "Cement":  Images.cement,
+    "Electrical Wires": Images.electricalWires,
+    "Plumber": Images.plumber,
+    "Tea": Images.tea,
+    "Watercan": Images.waterCan,
+    "Lorry Water": Images.lorryWater,
+    "Tiles": Images.tiles,
+    "Granite": Images.granite,
+    "Jally": Images.jally,
+    "Welding": Images.welding,
+    "Lift": Images.lift,
+    "RC Concrete": Images.rcConcrete,
+    "Transport": Images.transport,
+    "Interior": Images.interior,
+    "Painting": Images.painting,
+    "Steel": Images.steel,
+    "AGGREGATE": Images.aggregate,
+    "RMC": Images.rmc,
+    "Gravel": Images.gravel,
   };
 
   static final List<String> allSubcontractorKeys = [
-    "plumber",
-    "electrician",
-    "painter",
-    "welder",
-    "tiles layer",
-    "granite layer",
-    "ss welder",
-    "carpenter",
-    "centering works",
-    "mason works",
+    "Plumber",
+    "Electrician",
+    "Painter",
+    "Welder",
+    "Tiles Layer",
+    "Granite Layer",
+    "SS Welder",
+    "Carpenter",
+    "Centering Works",
+    "Mason Works",
+    "Petty Cash",
+    "Rental Management",
   ];
 
   static final Map<String, String> allSubcontractorImages = {
-    "plumber": Images.plumber,
-    "electrician": Images.electricalCable,
-    "painter": Images.painter,
-    "welder": Images.welding,
-    "tiles layer": Images.titles,
-    "granite layer": Images.grantie,
-    "ss welder": Images.material,
-    "carpenter": Images.material,
-    "centering works": Images.material,
-    "mason works": Images.material,
+    "Plumber": Images.plumber,
+    "Electrician": Images.electrician,
+    "Painter": Images.painter,
+    "Welder": Images.welder,
+    "Tiles Layer": Images.tilesLayer,
+    "Granite Layer": Images.graniteLayer,
+    "SS Welder": Images.ssWelder,
+    "Carpenter": Images.carpenter,
+    "Centering Works": Images.centeringWorks,
+    "Mason Works": Images.masonWorks,
+    "Petty Cash": Images.pettyCash,
+    "Rental Management": Images.rentalManagement,
   };
 
 
 
 
   static int getWeeksInMonth(int year, int month) {
-    // First day of the month
-    final firstDay = DateTime(year, month, 1);
-
-    // Last day of the month (by going to next month, day 0)
-    final lastDay = DateTime(year, month + 1, 0);
-
-    // ISO week starts from Monday. Adjust based on your needs.
-    int firstWeekday = firstDay.weekday; // 1 (Mon) to 7 (Sun)
-    int totalDays = lastDay.day;
-
-    // Calculate days including leading days before first Monday
-    int daysOffset = firstWeekday - 1; // days before full week
-    int totalCalendarDays = daysOffset + totalDays;
-
-    // Divide by 7, round up to count weeks
-    return (totalCalendarDays / 7).ceil();
+    // Week 1 = days  1-7,  Week 2 = days  8-14,
+    // Week 3 = days 15-21, Week 4 = days 22-28,
+    // Week 5 = days 29-end  (if month has >28 days)
+    // This matches the web admin's week definition.
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    return (daysInMonth / 7).ceil();
   }
 
   static const Color attendanceTextColor = Color(0xFF252C58);

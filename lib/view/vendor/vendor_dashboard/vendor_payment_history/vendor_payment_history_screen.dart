@@ -6,130 +6,174 @@ import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_payment_history/v
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-class VendorPaymentHistoryScreen extends StatefulWidget{
+class VendorPaymentHistoryScreen extends StatefulWidget {
+  const VendorPaymentHistoryScreen({Key? key}) : super(key: key);
+
   @override
   State<VendorPaymentHistoryScreen> createState() => _VendorPaymentHistoryScreenState();
 }
 
 class _VendorPaymentHistoryScreenState extends State<VendorPaymentHistoryScreen> {
 
-VendorPaymentHistoryController controller =Get.put(VendorPaymentHistoryController());
+  VendorPaymentHistoryController controller = Get.put(VendorPaymentHistoryController());
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Payment History",
-          onTap: (){
+          onTap: () {
             Get.back();
-
           }),
-      body:  SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildTableHeader(),
-            Obx(() => controller.isLoading.value?Center(child: CommonLoader(),):Column(
-              children: controller.paymentHistoryData.value.paymentHistoryList!
-                  .map((item) => _buildTableRow({
-                'id': item.id.toString(),
-                'name': item.vendor?.name ?? '',
-                'date': item.date ?? '',
-                'payment': item.payment ?? '',
-                'mode': item.paymentMode??"" ,
-              }))
-                  .toList(),
-            )),
-            Obx(()=>Container(
-              height: 50,
-              margin: EdgeInsets.only(top: 16),
-              decoration: BoxDecoration(
-                color: AppColor.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 8), // vertical offset for soft shadow
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CommonLoader());
+          }
+
+          final historyList = controller.paymentHistoryData.value.paymentHistoryList ?? [];
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              // Export Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text("Total Amount: ",style: AppTextStyle.textMedium.copyWith(color: AppColor.buttonLightBlue),),
-                  Text("${controller.paymentHistoryData.value.totalPaidAmount??"N/A"}",style: AppTextStyle.textBold.
-                    copyWith(color: AppColor.buttonLightBlue),),
+                  Obx(() => ElevatedButton.icon(
+                    onPressed: controller.isExporting.value
+                        ? null
+                        : () => controller.vendorPaymentHistoryExport(context),
+                    icon: controller.isExporting.value
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.file_download, size: 18, color: Colors.white),
+                    label: Text(
+                      controller.isExporting.value ? 'Exporting...' : 'Export Excel',
+                      style: AppTextStyle.textMedium.copyWith(color: AppColor.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  )),
                 ],
               ),
-            )),
-          ],
-        ),
+              const SizedBox(height: 16),
+
+              // Table
+              // Table
+              if (historyList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: Text("No payment history found")),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: historyList.length,
+                  itemBuilder: (context, index) {
+                    final item = historyList[index];
+                    String formattedDate = item.date ?? '';
+                    try {
+                      if (formattedDate.isNotEmpty) {
+                        final dt = DateTime.parse(formattedDate);
+                        formattedDate = DateFormat('dd-MM-yyyy').format(dt);
+                      }
+                    } catch (_) {}
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('S.NO: ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                                Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const Divider(),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Total Payment: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                                Expanded(child: Text('₹${item.payment ?? "0"}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Payment Mode: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                                Expanded(child: Text((item.paymentMode == null || item.paymentMode!.isEmpty) ? "N/A" : item.paymentMode!)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Remarks: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                                Expanded(child: Text((item.remarks == null || item.remarks!.isEmpty) ? "-" : item.remarks!)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+              // Total Amount
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColor.tableBGColor,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Total Amount",
+                      style: AppTextStyle.textMedium.copyWith(
+                          color: AppColor.buttonLightBlue, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "${controller.paymentHistoryData.value.totalPaidAmount ?? "0"}",
+                      style: AppTextStyle.textBold.copyWith(color: AppColor.buttonLightBlue),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
       ),
     );
   }
-Widget _buildTableHeader() {
-  return Container(
-    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 5),
-    decoration: BoxDecoration(
-        color: AppColor.tableBGColor,
-        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(10),
-        )),
-    child: Row(
-      children: [
-       // _buildCell('S.No', bold: true),
-        _buildCell('Name',  bold: true,),
-        _buildCell('Date', bold: true,),
-        _buildCell('Payment', bold: true),
-        _buildCell('Mode', bold: true),
-      ],
-    ),
-  );
-}
-Widget _buildTableRow(Map<String, String> item) {
-  return Container(
-    decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-      color: AppColor.tableBGColor,
-      // borderRadius: BorderRadius.only(
-      //   bottomLeft: Radius.circular(10),
-      //   bottomRight: Radius.circular(10),
-      // )
-    ),
-    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 5),
-    child: Row(
-      children: [
-        //_buildCell(item['id']!,),
-        _buildCell(item['name']!,),
-        _buildCell(item['date']!,),
-        _buildCell(item['payment']!,),
-        _buildCell(item['mode']!,),
-      ],
-    ),
-  );
-}
-Widget _buildCell(String text, {int flex = 1, bool bold = false}) {
-  return Expanded(
-    flex: flex,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 1),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            fontWeight: bold ? FontWeight.bold : FontWeight.w400,
-            color: AppColor.black,
-            fontSize: 13),
-      ),
-    ),
-  );
-}
 
 
 }

@@ -10,8 +10,8 @@ class Images {
   static const String arrow = "assets/images/arrow.svg";
   static const String brick = "assets/images/bricks.png";
   static const String tickets = "assets/images/tickets.png";
-  static const String checklist = "assets/images/checklist.png";
-  static const String drawing = "assets/images/drawing.png";
+  static const String checklist = "assets/images/checklist.jpeg";
+  static const String drawing = "assets/images/drawing.jpeg";
   static const String calendar = "assets/images/calendar.png";
   static const String sand = "assets/images/sand.png";
   static const String profile = "assets/images/profile.png";
@@ -25,27 +25,50 @@ class Images {
   static const String properties = "assets/images/properties.svg";
   static const String signOut = "assets/images/signout.svg";
   static const String propertiesList = "assets/images/properties_list.png";
-  static const String rmc = "assets/images/rmc.png";
+  static const String rmc = "assets/images/RMC.jpeg";
+  static const String rmcPng = "assets/images/rmc.png";
 
 
-  static const String cement = "assets/images/cement.png";
+  static const String cement = "assets/images/cement.jpeg";
   static const String electricalCable = "assets/images/electrical-cable.png";
-  static const String plumber = "assets/images/plumber.png";
-  static const String tea = "assets/images/tea.png";
-  static const String waterCan = "assets/images/waterCan.png";
-  static const String lorryWater = "assets/images/lorry_water.png";
+  static const String plumber = "assets/images/plumber.jpeg";
+  static const String tea = "assets/images/Tea.jpeg";
+  static const String waterCan = "assets/images/Watercan.jpeg";
+  static const String lorryWater = "assets/images/Lorry Water.jpeg";
   static const String titles = "assets/images/titles.png";
   static const String grantie = "assets/images/grantie.png";
-  static const String jally = "assets/images/jally.png";
-  static const String welding = "assets/images/welding.png";
-  static const String lift = "assets/images/lift.png";
+  static const String jally = "assets/images/Jally.jpeg";
+  static const String welding = "assets/images/welding.jpeg";
+  static const String lift = "assets/images/Lift.jpeg";
   static const String rcc = "assets/images/rcc.png";
-  static const String transport = "assets/images/transport.png";
-  static const String interior = "assets/images/interior.png";
-  static const String subcontractors = "assets/images/subcontractor_1.png";
-  static const String material = "assets/images/material.jpg";
-  static const String painter = "assets/images/painter.png";
+  static const String transport = "assets/images/Transport.jpeg";
+  static const String interior = "assets/images/Interior.jpeg";
+  static const String subcontractors = "assets/images/subcontractor_1.jpeg";
+  static const String material = "assets/images/material.jpeg";
+  static const String painter = "assets/images/painter.jpeg";
   static const String others = "assets/images/others.svg";
   static const String totalWages = "assets/images/totalWages.svg";
   static const String paymentStatus = "assets/images/Payment Status.png";
+  static const String salesBill = "assets/images/sales.png";
+  
+  static const String electricalWires = "assets/images/Electrical wires.jpeg";
+  static const String electrician = "assets/images/Electrician.jpeg";
+  static const String welder = "assets/images/welder.jpeg";
+  static const String tilesLayer = "assets/images/Tiles Layer.jpeg";
+  static const String graniteLayer = "assets/images/Granite Layer.jpeg";
+  static const String ssWelder = "assets/images/ss welder.jpeg";
+  static const String carpenter = "assets/images/Carpenter.jpeg";
+  static const String centeringWorks = "assets/images/centering works.jpeg";
+  static const String masonWorks = "assets/images/mason works.jpeg";
+  static const String pettyCash = "assets/images/Petty cash.jpeg";
+  static const String rentalManagement = "assets/images/Rental Management.jpeg";
+  static const String tiles = "assets/images/Tiles.jpeg";
+  static const String granite = "assets/images/Granite.jpeg";
+  static const String rcConcrete = "assets/images/Rc concrete.jpeg";
+  static const String painting = "assets/images/Painting.jpeg";
+  static const String steel = "assets/images/Steel.jpeg";
+  static const String aggregate = "assets/images/Aggregate.jpeg";
+  static const String gravel = "assets/images/Gravel.jpeg";
+  static const String sandJpeg = "assets/images/Sand.jpeg";
+
 }

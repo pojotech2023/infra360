@@ -10,6 +10,14 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
 
   @override
   Widget build(BuildContext context) {
+    // Get customer contact info from arguments
+    if (Get.arguments != null) {
+      final args = Get.arguments as Map<String, dynamic>;
+      controller.setCustomerContact(
+        args['customerPhone'] ?? '',
+        args['customerEmail'] ?? '',
+      );
+    }
     controller.getPaymentHistory();
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
@@ -28,7 +36,7 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -42,6 +50,21 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
                           color: Color(0xFF1976D2),
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        controller.exportPaymentHistoryExcel(context);
+                      },
+                      icon: const Icon(Icons.file_download, size: 18),
+                      label: const Text("Export Excel"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
@@ -64,42 +87,20 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SizedBox(
-                        width: 600, // Fixed width to ensure all columns have enough space
-                        child: Column(
-                          children: [
-                            Container(
-                              color: const Color(0xFFF8F9FA),
-                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                              child: Row(
-                                children: const [
-                                  _HeaderCell("S.N", flex: 1),
-                                  _HeaderCell("DATE", flex: 4),
-                                  _HeaderCell("AMOUNT", flex: 4),
-                                  _HeaderCell("MODE", flex: 3),
-                                  _HeaderCell("REMARKS", flex: 5),
-                                ],
-                              ),
+                    child: controller.historyList.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Text("No history available"),
                             ),
-                            const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                            Expanded(
-                              child: controller.historyList.isEmpty
-                                  ? const Center(child: Text("No history available"))
-                                  : ListView.separated(
-                                      itemCount: controller.historyList.length,
-                                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F1F1)),
-                                      itemBuilder: (context, index) {
-                                        final item = controller.historyList[index];
-                                        return _buildTableRow(index + 1, item);
-                                      },
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          )
+                        : ListView.builder(
+                            itemCount: controller.historyList.length,
+                            itemBuilder: (context, index) {
+                              final item = controller.historyList[index];
+                              return _buildTableRow(context, index + 1, item);
+                            },
+                          ),
                   ),
                 ),
               ),
@@ -113,17 +114,88 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
     );
   }
 
-  Widget _buildTableRow(int index, dynamic item) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      child: Row(
-        children: [
-          _DataCell(index.toString(), flex: 1),
-          _DataCell(item.date ?? "-", flex: 4, preventWrap: true),
-          _DataCell(item.payment ?? "0.00", flex: 4, isBold: true, preventWrap: true),
-          _DataCell(item.paymentMode ?? "-", flex: 3),
-          _DataCell(item.remarks ?? "-", flex: 5),
-        ],
+  Widget _buildTableRow(BuildContext context, int index, dynamic item) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12, left: 8, right: 8, top: 4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('S.NO: $index', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                Text(item.date ?? "-", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const Divider(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Amount: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                Expanded(child: Text('₹${item.payment ?? "0.00"}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Mode: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                Expanded(child: Text(item.paymentMode ?? "-")),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Remarks: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                Expanded(child: Text(item.remarks ?? "-")),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _ActionButton(
+                  icon: Icons.arrow_downward,
+                  label: "PDF",
+                  color: const Color(0xFFE53935),
+                  tooltip: "Download PDF",
+                  onTap: () {
+                    if (item.id != null) {
+                      controller.downloadPaymentReceiptPdf(context, item.id);
+                    }
+                  },
+                ),
+                _ActionButton(
+                  icon: Icons.message,
+                  label: "WhatsApp",
+                  color: const Color(0xFF25D366),
+                  tooltip: "Send via WhatsApp",
+                  onTap: () {
+                    if (item.id != null) {
+                      controller.sendPaymentReceiptWhatsApp(item.id);
+                    }
+                  },
+                ),
+                _ActionButton(
+                  icon: Icons.email,
+                  label: "Mail",
+                  color: const Color(0xFF1976D2),
+                  tooltip: "Send via Email",
+                  onTap: () {
+                    if (item.id != null) {
+                      controller.sendPaymentReceiptEmail(item.id);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -217,6 +289,61 @@ class _DataCell extends StatelessWidget {
           fontSize: 13,
           fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
           color: const Color(0xFF2D3243),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isPdf = label == "PDF";
+    final Color bgColor = isPdf ? Colors.white : color;
+    final Color textColor = isPdf ? color : Colors.white;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: textColor,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

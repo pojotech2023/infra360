@@ -3,6 +3,7 @@ class AttendanceDatewiseModel {
   String? siteId;
   String? date;
   Data? data;
+  List<Data>? dataList;
   List<String>? categories;
   int? totalWages;
 
@@ -11,14 +12,21 @@ class AttendanceDatewiseModel {
         this.siteId,
         this.date,
         this.data,
+        this.dataList,
         this.categories,
         this.totalWages});
-
   AttendanceDatewiseModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     siteId = json['site_id'];
-    date = json['date'];
-    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+    date = json['date'] ?? json['from_date'];
+    
+    if (json['data'] != null) {
+      if (json['data'] is List) {
+        dataList = (json['data'] as List).map((v) => Data.fromJson(v)).toList();
+      } else if (json['data'] is Map<String, dynamic>) {
+        data = Data.fromJson(json['data']);
+      }
+    }
     categories = json['categories'].cast<String>();
     totalWages = json['total_wages'];
   }
@@ -30,6 +38,8 @@ class AttendanceDatewiseModel {
     data['date'] = this.date;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
+    } else if (this.dataList != null) {
+      data['data'] = this.dataList!.map((v) => v.toJson()).toList();
     }
     data['categories'] = this.categories;
     data['total_wages'] = this.totalWages;

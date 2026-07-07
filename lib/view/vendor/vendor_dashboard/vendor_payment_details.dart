@@ -28,10 +28,6 @@ class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
     return dashboardController.supervisorPermissions.value?.vendorManagement?.addPayment == 1;
   }
   
-  bool canViewPaymentHistory() {
-    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
-    return dashboardController.supervisorPermissions.value?.vendorManagement?.paymentHistory == 1;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,135 +40,136 @@ class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
             Get.back();
 
           }),
-      body: Obx((){
-      return controller.isLoading.value?Center(
-        child: CommonLoader(),
-      ):SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
+      body: SafeArea(
+        child: Obx((){
+        return controller.isLoading.value?Center(
+          child: CommonLoader(),
+        ):SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Action Buttons at top
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (canAddPayment())
-                    SizedBox(width: 150,
-
-                      child: CommonButton(customColor: AppColor.buttonLightBlue, onTap: () {
-                        Get.to(AddVendorPaymentScreen(),arguments: controller.vendorDataList.value.vendor?.id);
+                    SizedBox(
+                      width: 150,
+                      child: CommonButton(
+                        customColor: AppColor.buttonLightBlue,
+                        onTap: () {
+                          Get.to(() => AddVendorPaymentScreen(), arguments: controller.vendorId.value);
+                        },
+                        text: 'Add Payment',
+                      ),
+                    ),
+                  SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: CommonButton(
+                      customColor: AppColor.buttonLightBlue,
+                      onTap: () {
+                        Get.to(() => const VendorPaymentHistoryScreen(), arguments: controller.vendorDataList.value.vendor?.id);
                       },
-                        text: 'Add Payment',),),
-                  if (canAddPayment() && canViewPaymentHistory()) HorizontalSpacing.d5px(),
-
-
-                  if (canViewPaymentHistory())
-                    SizedBox(width: 150,
-                    child: CommonButton(customColor: AppColor.buttonGreen, onTap: () {
-                      Get.to(VendorPaymentHistoryScreen(),arguments: controller.vendorDataList.value.vendor?.id);
-                    },
-                      text: 'Payment History',),)
+                      text: 'Payment History',
+                    ),
+                  ),
                 ],
               ),
 
-            VerticalSpacing.d15px(),
-            Text("Opening Balance",style: AppTextStyle.textFieldHeadingStyle,),
-            VerticalSpacing.d5px(),
-            TextFormField(
-              controller: controller.openingBalanceController,
-              keyboardType: TextInputType.number,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
+              VerticalSpacing.d15px(),
+              // Opening Balance field hidden as per requirements
+              // Text("Opening Balance",style: AppTextStyle.textFieldHeadingStyle,),
+              // VerticalSpacing.d5px(),
+              // TextFormField(
+              //   controller: controller.openingBalanceController,
+              //   keyboardType: TextInputType.number,
+              //   autovalidateMode: AutovalidateMode.onUserInteraction,
+              //   decoration:textBoxDecoration(hint:"Enter opening balance"),
+              //   onChanged: (value){
+              //     print("value");
+              //   },
+              //   validator: (text){
+              //     if (text == null || text.isEmpty) {
+              //       return 'Required';
+              //     }
+              //     return null;
+              //   },
+              // ),
+              // VerticalSpacing.d15px(),
 
-              decoration:textBoxDecoration(hint:"Enter opening balance"),
-              onChanged: (value){
-                print("value");
-              },
-              validator: (text){
-                if (text == null || text.isEmpty) {
-                  return 'Required';
-                }
-
-                return null;
-              },
-
-
-
-            ),
-
-
-            VerticalSpacing.d15px(),
-
-            Text("Total Units",style: AppTextStyle.textFieldHeadingStyle,),
-            VerticalSpacing.d5px(),
-            TextFormField(
-              initialValue:controller.vendorDataList.value.payDetail?.totalUnits ,
-              keyboardType: TextInputType.number,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              readOnly: true,
-              decoration:textBoxDecoration(hint:"Total Units",
-              fillColor: Colors.grey[200]),
-            ),
+              Text("Total Units",style: AppTextStyle.textFieldHeadingStyle,),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                initialValue:controller.vendorDataList.value.payDetail?.totalUnits ,
+                keyboardType: TextInputType.number,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                readOnly: true,
+                decoration:textBoxDecoration(hint:"Total Units",
+                fillColor: Colors.grey[200]),
+              ),
 
 
-            VerticalSpacing.d15px(),
+              VerticalSpacing.d15px(),
 
-            VerticalSpacing.d15px(),
+              VerticalSpacing.d15px(),
 
-            Text("Total Unit Price",style: AppTextStyle.textFieldHeadingStyle,),
-            VerticalSpacing.d5px(),
-            TextFormField(
-              initialValue:controller.vendorDataList.value.payDetail?.totalUnitPrice ,
-              keyboardType: TextInputType.number,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              readOnly: true,
-              decoration:textBoxDecoration(hint:"Total Unit Price",
-                  fillColor: Colors.grey[200]),
-            ),
-
-
-            VerticalSpacing.d15px(),
+              Text("Total Unit Price",style: AppTextStyle.textFieldHeadingStyle,),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                initialValue:controller.vendorDataList.value.payDetail?.totalUnitPrice ,
+                keyboardType: TextInputType.number,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                readOnly: true,
+                decoration:textBoxDecoration(hint:"Total Unit Price",
+                    fillColor: Colors.grey[200]),
+              ),
 
 
-            Text("Balance Amount",style: AppTextStyle.textFieldHeadingStyle,),
-            VerticalSpacing.d5px(),
-            TextFormField(
-              initialValue:controller.vendorDataList.value.payDetail?.balanceAmount ,
-              keyboardType: TextInputType.number,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              readOnly: true,
-              decoration:textBoxDecoration(hint:"Balance Amount",
-                  fillColor: Colors.grey[200]),
-            ),
+              VerticalSpacing.d15px(),
 
 
-            VerticalSpacing.d15px(),
-
-            Text("Paid Amount",style: AppTextStyle.textFieldHeadingStyle,),
-            VerticalSpacing.d5px(),
-            TextFormField(
-              initialValue:controller.vendorDataList.value.payDetail?.paidAmount ,
-              keyboardType: TextInputType.number,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              readOnly: true,
-              decoration:textBoxDecoration(hint:"Paid Amount",
-                  fillColor: Colors.grey[200]),
-            ),
+              Text("Balance Amount",style: AppTextStyle.textFieldHeadingStyle,),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                initialValue:controller.vendorDataList.value.payDetail?.balanceAmount ,
+                keyboardType: TextInputType.number,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                readOnly: true,
+                decoration:textBoxDecoration(hint:"Balance Amount",
+                    fillColor: Colors.grey[200]),
+              ),
 
 
-            VerticalSpacing.d15px(),
+              VerticalSpacing.d15px(),
+
+              Text("Paid Amount",style: AppTextStyle.textFieldHeadingStyle,),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                initialValue:controller.vendorDataList.value.payDetail?.paidAmount ,
+                keyboardType: TextInputType.number,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                readOnly: true,
+                decoration:textBoxDecoration(hint:"Paid Amount",
+                    fillColor: Colors.grey[200]),
+              ),
 
 
-            Obx(() => 
-
-           controller.isButtonLoading.value?Center(child: CommonLoader()): CommonButton(onTap: () {
-              controller.paymentUpdate();
-            }, text: "Submit"))
-
-          ],
-        ),
-      );}));
+              VerticalSpacing.d15px(),
 
 
+              Obx(() => 
 
-      }
+             controller.isButtonLoading.value?Center(child: CommonLoader()): CommonButton(onTap: () {
+                controller.paymentUpdate();
+              }, text: "Submit"))
+
+            ],
+          ),
+        );
+        }),
+      ),
+    );
+  }
 }

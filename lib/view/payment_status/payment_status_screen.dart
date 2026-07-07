@@ -19,18 +19,19 @@ class PaymentStatusScreen extends GetView<PaymentStatusController> {
         title: "Payment Detail",
         onTap: () => Get.back(),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CommonLoader());
-        }
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CommonLoader());
+          }
 
-        final data = controller.summaryData.value;
+          final data = controller.summaryData.value;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -47,7 +48,11 @@ class PaymentStatusScreen extends GetView<PaymentStatusController> {
                     ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const PaymentHistoryScreen()),
+                    onPressed: () => Get.to(() => const PaymentHistoryScreen(), arguments: {
+                      'siteId': controller.siteId.value,
+                      'customerPhone': controller.customerPhone.value,
+                      'customerEmail': controller.customerEmail.value,
+                    }),
                     icon: const Icon(Icons.history, color: Colors.white, size: 18),
                     label: const Text("Payment History", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
@@ -86,6 +91,7 @@ class PaymentStatusScreen extends GetView<PaymentStatusController> {
           ),
         );
       }),
+      ),
     );
   }
 
