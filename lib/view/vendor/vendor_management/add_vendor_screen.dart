@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -77,7 +78,14 @@ class _AddVendorScreenState extends State<AddVendorScreen> {
               VerticalSpacing.d5px(),
               DropdownButtonFormField2<String>(
                 isExpanded: true,
-                value:controller.selectedSiteUtilities==null?null: lowerCapitalize(controller.selectedSiteUtilities!),
+              // Find matching item from allMaterialKeys case-insensitively
+              // (API may return lowercase e.g. "plumber" but list has "Plumber")
+              value: controller.selectedSiteUtilities == null
+                  ? null
+                  : ConstantData.allMaterialKeys.firstWhereOrNull(
+                      (k) => k.toLowerCase() ==
+                          controller.selectedSiteUtilities!.toLowerCase(),
+                    ),
 
                 decoration: dropDownBoxDecoration(
                 ),
@@ -101,9 +109,7 @@ class _AddVendorScreenState extends State<AddVendorScreen> {
                   return null;
                 },
                 onChanged: (value) {
-                  controller.selectedSiteUtilities=value;
-
-                  //Do something when selected item is changed.
+                  controller.selectedSiteUtilities = value;
                 },
                 onSaved: (value) {
                   // selectedValue = value.toString();

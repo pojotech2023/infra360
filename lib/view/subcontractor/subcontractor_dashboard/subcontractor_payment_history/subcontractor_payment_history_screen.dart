@@ -7,6 +7,8 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/subcontractor/subcontractor_dashboard/subcontractor_payment_history/add_subcontractor_payment_screen/add_subcontractor_payment_screen.dart';
 
 class SubcontractorPaymentHistoryScreen extends StatefulWidget {
   const SubcontractorPaymentHistoryScreen({Key? key}) : super(key: key);
@@ -27,15 +29,16 @@ class _SubcontractorPaymentHistoryScreenState extends State<SubcontractorPayment
           onTap: () {
             Get.back();
           }),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CommonLoader());
-        }
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CommonLoader());
+          }
 
-        final historyList = controller.paymentHistoryData.value.paymentHistoryList ?? [];
+          final historyList = controller.paymentHistoryData.value.paymentHistoryList ?? [];
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -127,6 +130,7 @@ class _SubcontractorPaymentHistoryScreenState extends State<SubcontractorPayment
           ),
         );
       }),
+      ),
     );
   }
 
@@ -239,6 +243,34 @@ class _SubcontractorPaymentHistoryScreenState extends State<SubcontractorPayment
           _buildCardRow('Payment Mode', item.paymentMode?.isEmpty == true ? 'N/A' : item.paymentMode ?? 'N/A'),
           SizedBox(height: 8),
           _buildCardRow('Remarks', item.remarks?.isEmpty == true ? '-' : item.remarks ?? '-'),
+          Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: () async {
+                  final result = await Get.to(() => AddSubcontractorPaymentScreen(), arguments: {
+                    'isEditMode': true,
+                    'item': item,
+                    'subcontractorId': Get.arguments
+                  });
+                  if (result == true) {
+                    controller.init(); // Refresh list on return
+                  }
+                },
+                child: Icon(Icons.edit, color: Colors.blue, size: 20),
+              ),
+              SizedBox(width: 16),
+              InkWell(
+                onTap: () {
+                  deleteDialog(Get.context!, () {
+                    controller.deletePayment(item.id!);
+                  });
+                },
+                child: Icon(Icons.delete, color: Colors.red, size: 20),
+              ),
+            ],
+          )
         ],
       ),
     );

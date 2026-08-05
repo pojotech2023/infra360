@@ -24,6 +24,7 @@ class GenerateQuotationController extends GetxController{
   var totalAmt = 0.0.obs;
 
   var quotationList = <QuotationData>[].obs;
+  var units = <String>[].obs;
 
   // Loading indicator
   var isLoading = false.obs;
@@ -40,7 +41,14 @@ class GenerateQuotationController extends GetxController{
       isLoading.value = true;
       quotationList.clear();
       QuotationModel? response = await ApiData().quotationListApi();
+      final unitRes = await ApiData().unitMasterListApi();
+      
       quotationList.value = response?.data ?? [];
+      
+      if (unitRes != null && unitRes.data != null) {
+        units.value = unitRes.data!.map((u) => u.unitName ?? '').where((u) => u.isNotEmpty).toList();
+      }
+      
       calculateTotal();
     } catch (e) {
       print("Error loading quotation data: $e");

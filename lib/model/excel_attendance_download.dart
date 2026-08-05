@@ -8,14 +8,18 @@ class ExcelAttendanceDownloadModel {
   ExcelAttendanceDownloadModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     message = json['message'];
-    downloadUrl = json['download_url'];
-    if (json['data'] != null && json['data'] is Map<String, dynamic>) {
-      downloadUrl = downloadUrl ?? json['data']['pdf_url']?.toString() ?? json['data']['download_url']?.toString();
+    // API returns pdf_url at top level: {"pdf_url":"https://..."}
+    downloadUrl = json['pdf_url']?.toString()
+        ?? json['download_url']?.toString();
+    // Fallback: nested under data{}
+    if (downloadUrl == null && json['data'] != null && json['data'] is Map<String, dynamic>) {
+      final d = json['data'] as Map<String, dynamic>;
+      downloadUrl = d['pdf_url']?.toString() ?? d['download_url']?.toString();
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['status'] = this.status;
     data['message'] = this.message;
     data['download_url'] = this.downloadUrl;

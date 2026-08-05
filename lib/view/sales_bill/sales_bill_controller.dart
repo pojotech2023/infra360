@@ -24,6 +24,7 @@ class SalesBillController extends GetxController {
   TextEditingController dateController = TextEditingController();
   TextEditingController subjectController = TextEditingController();
   TextEditingController locationController = TextEditingController();
+  TextEditingController termsController = TextEditingController();
 
   // Customer List
   List<CustomerInfo> customers = [];
@@ -48,6 +49,20 @@ class SalesBillController extends GetxController {
     // Load form details (pre-fill customer info)
     _loadFormDetails();
     super.onInit();
+  }
+
+  void resetForm() {
+    nameController.clear();
+    mobileController.clear();
+    emailController.clear();
+    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    subjectController.clear();
+    locationController.clear();
+    termsController.clear();
+    itemList.clear();
+    itemList.add(SalesBillItem());
+    recalcTotal();
+    update();
   }
 
   Future<void> _loadFormDetails() async {
@@ -118,6 +133,7 @@ class SalesBillController extends GetxController {
       'date': dateController.text.trim(),
       'mobile_no': mobileController.text.trim(),
       'location': locationController.text.trim(),
+      if (termsController.text.isNotEmpty) 'terms_conditions': termsController.text.trim(),
       if (email != null && email.isNotEmpty) 'email': email,
       'particular': particulars,
       'count': counts,

@@ -6,6 +6,7 @@ class AttendanceDatewiseModel {
   List<Data>? dataList;
   List<String>? categories;
   int? totalWages;
+  Map<String, dynamic>? dayPhotos;
 
   AttendanceDatewiseModel(
       {this.status,
@@ -14,6 +15,7 @@ class AttendanceDatewiseModel {
         this.data,
         this.dataList,
         this.categories,
+        this.dayPhotos,
         this.totalWages});
   AttendanceDatewiseModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
@@ -27,8 +29,15 @@ class AttendanceDatewiseModel {
         data = Data.fromJson(json['data']);
       }
     }
-    categories = json['categories'].cast<String>();
+    categories = json['categories']?.cast<String>();
     totalWages = json['total_wages'];
+    if (json['day_photos'] != null) {
+      if (json['day_photos'] is Map) {
+        dayPhotos = Map<String, dynamic>.from(json['day_photos']);
+      } else {
+        dayPhotos = {};
+      }
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -58,6 +67,10 @@ class Data {
   String? helperWage;
   int? mason;
   String? masonWage;
+  String? checkInTime;
+  String? checkInPhoto;
+  String? checkOutTime;
+  String? checkOutPhoto;
 
   Data(
       {this.date,
@@ -69,7 +82,11 @@ class Data {
         this.helper,
         this.helperWage,
         this.mason,
-        this.masonWage});
+        this.masonWage,
+        this.checkInTime,
+        this.checkInPhoto,
+        this.checkOutTime,
+        this.checkOutPhoto});
 
   Data.fromJson(Map<String, dynamic> json) {
     date = json['date'];
@@ -82,6 +99,10 @@ class Data {
     helperWage = json['helper_wage'];
     mason = json['mason'];
     masonWage = json['mason_wage'];
+    checkInTime = json['check_in_time'] ?? json['time'];
+    checkInPhoto = json['check_in_photo'] ?? json['image_url'];
+    checkOutTime = json['check_out_time'] ?? json['out_time'];
+    checkOutPhoto = json['check_out_photo'] ?? json['out_image_url'];
   }
 
   Map<String, dynamic> toJson() {
@@ -96,6 +117,10 @@ class Data {
     data['helper_wage'] = this.helperWage;
     data['mason'] = this.mason;
     data['mason_wage'] = this.masonWage;
+    data['check_in_time'] = this.checkInTime;
+    data['check_in_photo'] = this.checkInPhoto;
+    data['check_out_time'] = this.checkOutTime;
+    data['check_out_photo'] = this.checkOutPhoto;
     return data;
   }
 }

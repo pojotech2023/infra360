@@ -28,6 +28,11 @@ class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
     return dashboardController.supervisorPermissions.value?.vendorManagement?.addPayment == 1;
   }
   
+  bool canViewPaymentHistory() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.paymentHistory == 1;
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -64,17 +69,19 @@ class _VendorPaymentDetailsState extends State<VendorPaymentDetails> {
                         text: 'Add Payment',
                       ),
                     ),
-                  SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: CommonButton(
-                      customColor: AppColor.buttonLightBlue,
-                      onTap: () {
-                        Get.to(() => const VendorPaymentHistoryScreen(), arguments: controller.vendorDataList.value.vendor?.id);
-                      },
-                      text: 'Payment History',
+                  if (canViewPaymentHistory()) ...[
+                    SizedBox(width: 10),
+                    SizedBox(
+                      width: 150,
+                      child: CommonButton(
+                        customColor: AppColor.buttonLightBlue,
+                        onTap: () {
+                          Get.to(() => const VendorPaymentHistoryScreen(), arguments: controller.vendorDataList.value.vendor?.id);
+                        },
+                        text: 'Payment History',
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
 

@@ -51,13 +51,41 @@ class SitePaymentHistoryController extends GetxController {
     isLoading.value = false;
   }
 
+  RxBool isEditMode = false.obs;
+  RxnInt editPaymentId = RxnInt();
+
+  void openEditMode(PaymentHistoryList item) {
+    isEditMode.value = true;
+    editPaymentId.value = item.id;
+    paymentCtrl.text = item.payment ?? "";
+    remarksCtrl.text = item.remarks ?? "";
+    
+    if (item.date != null && item.date!.isNotEmpty) {
+      dateCtrl.text = item.date!;
+    }
+    
+    if (item.paymentMode != null) {
+      selectedPaymentMode.value = item.paymentMode;
+    }
+    // Will navigate back or focus based on UI
+  }
+
+  void resetForm() {
+    isEditMode.value = false;
+    editPaymentId.value = null;
+    paymentCtrl.clear();
+    remarksCtrl.clear();
+    dateCtrl.clear();
+    selectedPaymentMode.value = null;
+  }
+
   Future<void> addPayment() async {
     if (paymentCtrl.text.isEmpty || dateCtrl.text.isEmpty || selectedPaymentMode.value == null) {
       showToastMessage("Please fill in all required fields.");
       return;
     }
     if (subcontractorId.value == 0) {
-      showToastMessage("Subcontractor details not loaded. Cannot add payment.");
+      showToastMessage("Subcontractor details not loaded. Cannot process payment.");
       return;
     }
     isAddingPayment.value = true;
@@ -68,18 +96,34 @@ class SitePaymentHistoryController extends GetxController {
       "payment_mode": selectedPaymentMode.value,
       "remarks": remarksCtrl.text,
     };
-    final res = await ApiData().siteAddPaymentApi(data);
+    
+    dynamic res;
+    if (isEditMode.value && editPaymentId.value != null) {
+      res = await ApiData().updateSubPaymentApi(editPaymentId.value!, data);
+    } else {
+      res = await ApiData().siteAddPaymentApi(data);
+    }
+
     if (res != null) {
-      showToastMessage(res.message ?? "Payment added successfully");
-      paymentCtrl.clear();
-      dateCtrl.clear();
-      remarksCtrl.clear();
-      selectedPaymentMode.value = null;
+      showToastMessage(res.message ?? "Payment processed successfully");
+      resetForm();
       await fetchHistory();
     } else {
-      showToastMessage("Failed to add payment. Please try again.");
+      showToastMessage("Failed to process payment. Please try again.");
     }
     isAddingPayment.value = false;
+  }
+
+  Future<void> deletePayment(int id) async {
+    isLoading.value = true;
+    final res = await ApiData().deleteSubPaymentApi(id);
+    if (res != null && (res.status == true || res.responseCode == 200)) {
+      showToastMessage(res.message ?? "Deleted successfully");
+      await fetchHistory();
+    } else {
+      showToastMessage("Failed to delete payment.");
+      isLoading.value = false;
+    }
   }
 
   Future<void> exportHistory(BuildContext context) async {

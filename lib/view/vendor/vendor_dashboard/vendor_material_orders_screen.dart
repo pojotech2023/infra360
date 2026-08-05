@@ -9,6 +9,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'vendor_material_orders_controller.dart';
 import 'vendor_payment_details.dart';
 import 'vendor_payment_history/vendor_payment_history_screen.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class VendorMaterialOrdersScreen extends StatefulWidget {
   const VendorMaterialOrdersScreen({Key? key}) : super(key: key);
@@ -25,6 +26,12 @@ class _VendorMaterialOrdersScreenState extends State<VendorMaterialOrdersScreen>
   void initState() {
     super.initState();
     controller = Get.put(VendorMaterialOrdersController(vendorId: vendorId));
+  }
+
+  bool canViewPaymentHistory() {
+    DashboardController dashboardController = Get.find<DashboardController>();
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.paymentHistory == 1;
   }
 
   @override
@@ -75,17 +82,18 @@ class _VendorMaterialOrdersScreenState extends State<VendorMaterialOrdersScreen>
                         child: Text('Payment', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
                       ),
                       HorizontalSpacing.d10px(),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.to(() => const VendorPaymentHistoryScreen(), arguments: vendorId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.buttonBlue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      if (canViewPaymentHistory())
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.to(() => const VendorPaymentHistoryScreen(), arguments: vendorId);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColor.buttonBlue,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          child: Text('Payment History', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
                         ),
-                        child: Text('Payment History', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
-                      ),
                     ],
                   ),
                 ],

@@ -9,6 +9,7 @@ import 'package:raptor_pro/service/api_service.dart';
 import 'package:raptor_pro/service/shared_preference_service.dart';
 import 'package:raptor_pro/view/dashboard/dashboard_screen.dart';
 import 'package:raptor_pro/view/widgets/toast.dart';
+import 'package:raptor_pro/service/location_service.dart';
 
 class LoginController extends GetxController{
 
@@ -26,6 +27,10 @@ class LoginController extends GetxController{
 
 
         PreferenceUtils().setUserInfo(user);
+        
+        // Start location tracking for all authenticated users to ensure it continues running reliably
+        LocationService.startService();
+
         Get.offAll(() => DashboardScreen());
       }
     } catch (e) {

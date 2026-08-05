@@ -263,10 +263,10 @@ class GenerateQuotationScreen extends StatelessWidget {
                                   isExpanded: true,
                                   decoration: dropDownBoxDecoration(hint: "Select Unit"),
                                   hint: Text('Select Unit', style: AppTextStyle.textHintText),
-                                  value: ConstantData.area.contains(data.unit) ? data.unit : null, // Keep this
-                                  items: ConstantData.area
+                                  value: controller.units.contains(data.unit) ? data.unit : null, 
+                                  items: controller.units
                                       .map((item) => DropdownMenuItem<String>(
-                                    value: item, // ✅ FIXED HERE
+                                    value: item,
                                     child: Text(item, style: AppTextStyle.textFieldHeadingStyle),
                                   ))
                                       .toList(),

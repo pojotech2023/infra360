@@ -37,6 +37,18 @@ class VendorPaymentHistoryController extends GetxController{
     isLoading.value=false;
   }
 
+  deletePayment(int id) async {
+    isLoading.value = true;
+    final res = await ApiData().deletePaymentApi(id);
+    if (res != null && (res.status == true || res.responseCode == 200)) {
+      showToastMessage(res.message ?? "Deleted successfully");
+      init();
+    } else {
+      showToastMessage("Failed to delete payment");
+      isLoading.value = false;
+    }
+  }
+
   Future<void> vendorPaymentHistoryExport(BuildContext context) async {
     isExporting.value = true;
     final res = await ApiData().vendorPaymentHistoryExportApi(Get.arguments);

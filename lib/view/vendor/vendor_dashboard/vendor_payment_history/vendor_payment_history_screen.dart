@@ -7,6 +7,8 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_payment_history/add_vendor_payment_screen/add_vendor_payment_screen.dart';
+import 'package:raptor_pro/view/widgets/log_out.dart';
 
 class VendorPaymentHistoryScreen extends StatefulWidget {
   const VendorPaymentHistoryScreen({Key? key}) : super(key: key);
@@ -134,6 +136,34 @@ class _VendorPaymentHistoryScreenState extends State<VendorPaymentHistoryScreen>
                                 Expanded(child: Text((item.remarks == null || item.remarks!.isEmpty) ? "-" : item.remarks!)),
                               ],
                             ),
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                InkWell(
+                                  onTap: () async {
+                                    final result = await Get.to(() => AddVendorPaymentScreen(), arguments: {
+                                      'isEditMode': true, 
+                                      'item': item, 
+                                      'vendorId': Get.arguments
+                                    });
+                                    if (result == true) {
+                                      controller.init(); // Refresh list on return
+                                    }
+                                  },
+                                  child: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                ),
+                                const SizedBox(width: 16),
+                                InkWell(
+                                  onTap: () {
+                                    deleteDialog(context, () {
+                                      controller.deletePayment(item.id!);
+                                    });
+                                  },
+                                  child: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                ),
+                              ],
+                            )
                           ],
                         ),
                       ),

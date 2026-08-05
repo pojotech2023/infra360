@@ -37,9 +37,16 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
     if (isEditMode) {
       controller.preFillData(widget.siteData!);
+    } else {
+      // Reset customer type state for Add mode
+      controller.customerType.value = 'new';
+      controller.searchMobileController.clear();
+      controller.searchStatusMessage.value = '';
+      controller.searchStatusIsError.value = false;
+      controller.existingCustomerId.value = null;
     }
   }
 
@@ -294,13 +301,15 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                             ? Center(child: CommonLoader())
                             : CommonButton(
                                 onTap: () {
+                                  // Guard against double-tap
+                                  if (controller.isSaveLoading.value) return;
                                   if (_formKey.currentState!.validate()) {
                                     if (isEditMode) {
                                       controller.updateSiteApi(
-                                          files: attachment); // ✅ optional
+                                          files: attachment);
                                     } else {
                                       controller.addSiteApi(
-                                          files: attachment); // ✅ optional
+                                          files: attachment);
                                     }
                                   }
                                 },
@@ -332,6 +341,7 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
   }
 
   customerDetailForm(BuildContext context) {
+    final bool isExisting = controller.customerType.value == 'existing';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,17 +350,37 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
           "Customer Detail",
           style: AppTextStyle.textFieldHeadingStyle.copyWith(fontSize: 18),
         ),
-        VerticalSpacing.d20px(),
+        VerticalSpacing.d15px(),
+        // ── Customer Type Radio ──
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Customer Type",
+              style: AppTextStyle.textFieldHeadingStyle,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildRadioOption('new', 'New Customer'),
+                const SizedBox(width: 24),
+                _buildRadioOption('existing', 'Existing Customer'),
+              ],
+            ),
+          ],
+        ),
+        // ── Search by Mobile (Existing only) ──
+        if (isExisting) ..._buildExistingCustomerSearchRow(context),
+        VerticalSpacing.d15px(),
         Text(
           "Name",
           style: AppTextStyle.textFieldHeadingStyle,
         ),
         TextFormField(
           controller: controller.nameEditingController,
+          readOnly: isExisting,
           decoration: textBoxDecoration(hint: "Enter Customer name"),
-          validator: (text) {
-            return null;
-          },
+          validator: (text) => null,
         ),
         VerticalSpacing.d15px(),
         Text(
@@ -359,12 +389,16 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
         ),
         TextFormField(
           controller: controller.mobileNumberEditingController,
+          readOnly: isExisting,
           keyboardType: TextInputType.number,
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          inputFormatters: tenDigitPhoneFormatter(),
+          inputFormatters: isExisting ? [] : tenDigitPhoneFormatter(),
           decoration: textBoxDecoration(hint: "Enter Customer Mobile Number"),
           validator: (text) {
-            if (text != null && text.isNotEmpty && text.length != 10) {
+            if (!isExisting &&
+                text != null &&
+                text.isNotEmpty &&
+                text.length != 10) {
               return 'Mobile number must be 10 digits';
             }
             return null;
@@ -377,10 +411,9 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
         ),
         TextFormField(
           controller: controller.emailEditingController,
+          readOnly: isExisting,
           decoration: textBoxDecoration(hint: "Enter Customer Email"),
-          validator: (text) {
-            return null;
-          },
+          validator: (text) => null,
         ),
         VerticalSpacing.d15px(),
         Text(
@@ -389,22 +422,22 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
         ),
         TextFormField(
           controller: controller.dobPickerController,
-          decoration: textBoxDecoration(
-              hint: "dd-MM-yyyy",
-              suffixIcon: Icon(
-                Icons.calendar_month,
-                color: Colors.grey,
-              )),
           readOnly: true,
-          onTap: () async {
-            String date = await selectDate(context); // 👈 wait for result
-            if (date.isNotEmpty) {
-              controller.dobPickerController.text = date; // 👈 assign here
-            }
-          },
-          validator: (text) {
-            return null;
-          },
+          decoration: textBoxDecoration(
+            hint: "dd-MM-yyyy",
+            suffixIcon: isExisting
+                ? null
+                : const Icon(Icons.calendar_month, color: Colors.grey),
+          ),
+          onTap: isExisting
+              ? null
+              : () async {
+                  String date = await selectDate(context);
+                  if (date.isNotEmpty) {
+                    controller.dobPickerController.text = date;
+                  }
+                },
+          validator: (text) => null,
         ),
         VerticalSpacing.d10px(),
         Text(
@@ -413,16 +446,128 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
         ),
         TextFormField(
           controller: controller.addressEditingController,
+          readOnly: isExisting,
           minLines: 3,
           maxLines: 5,
           decoration: textBoxDecoration(hint: "Enter Customer Address"),
-          validator: (text) {
-            return null;
-          },
+          validator: (text) => null,
         ),
       ],
     );
   }
+
+  /// Builds a single radio button option for Customer Type
+  Widget _buildRadioOption(String value, String label) {
+    return Obx(() {
+      final bool isSelected = controller.customerType.value == value;
+      return GestureDetector(
+        onTap: () => controller.setCustomerType(value),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColor.buttonBlue : Colors.grey,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColor.buttonBlue,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 6),
+            Text(label, style: AppTextStyle.textFieldHeadingStyle),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Builds the Search by Mobile Number row for Existing Customer mode
+  List<Widget> _buildExistingCustomerSearchRow(BuildContext context) {
+    return [
+      VerticalSpacing.d15px(),
+      Text(
+        "Search by Mobile Number",
+        style: AppTextStyle.textFieldHeadingStyle,
+      ),
+      const SizedBox(height: 8),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: controller.searchMobileController,
+              keyboardType: TextInputType.number,
+              inputFormatters: tenDigitPhoneFormatter(),
+              decoration: textBoxDecoration(
+                hint: "Enter 10 digit mobile number",
+              ),
+              validator: (text) => null,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Obx(() => controller.isSearchLoading.value
+              ? const SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : ElevatedButton(
+                  onPressed: () => controller.searchCustomerByMobile(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Search',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )),
+        ],
+      ),
+      Obx(() {
+        final msg = controller.searchStatusMessage.value;
+        if (msg.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            msg,
+            style: TextStyle(
+              color: controller.searchStatusIsError.value
+                  ? Colors.red
+                  : Colors.green,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      }),
+    ];
+  }
+
 
   statusDetailForm(BuildContext context) {
     return Column(

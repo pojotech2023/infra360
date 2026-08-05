@@ -4,6 +4,7 @@ import 'package:raptor_pro/model/bricks_model.dart';
 import 'package:raptor_pro/model/material_details_argument_model.dart';
 import 'package:raptor_pro/service/api_service.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:raptor_pro/utils/file_download.dart';
 import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 import 'package:raptor_pro/view/widgets/toast.dart';
@@ -72,8 +73,8 @@ class BricksDetailsController extends GetxController {
     isDeleting.value = false;
   }
 
-  Future<void> updateMaterial(int materialId, Map<String, dynamic> data) async {
-    final res = await ApiData().updateMaterialApi(materialId, data);
+  Future<void> updateMaterial(int materialId, Map<String, dynamic> data, {File? attachment}) async {
+    final res = await ApiData().updateMaterialApi(materialId, data, attachment: attachment);
     if (res != null) {
       showToastMessage(res.message ?? "Updated successfully");
       await fetchData();

@@ -2,31 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 
 import '../../model/attendance_list_model.dart';
 import '../../utils/app_text_style.dart';
 import 'attendance_controller.dart';
 import '../../utils/res/spacing.dart';
 import '../widgets/common_loader.dart';
+import '../../api/api_data.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model for a row in the Add Wages table
 // ─────────────────────────────────────────────────────────────────────────────
 class _WageRow {
-  final String? fixedCategory; // null for dynamic rows
+  final int? id;
   final TextEditingController categoryController;
   final TextEditingController amountController;
   final TextEditingController countController;
   final FocusNode amountFocus;
+  final FocusNode categoryFocus;
+  bool isCategoryEditable;
   final bool isFixed;
 
   _WageRow({
-    this.fixedCategory,
+    this.id,
     required this.categoryController,
     required this.amountController,
     required this.countController,
     required this.amountFocus,
-    this.isFixed = true,
+    required this.categoryFocus,
+    this.isCategoryEditable = false,
+    this.isFixed = false,
   });
 
   void clear() {
@@ -36,9 +43,12 @@ class _WageRow {
 
   void dispose() {
     categoryController.dispose();
-    amountController.dispose();
-    countController.dispose();
+    if (!isFixed) {
+      amountController.dispose();
+      countController.dispose();
+    }
     amountFocus.dispose();
+    categoryFocus.dispose();
   }
 }
 
@@ -72,16 +82,30 @@ class _AddWagesState extends State<AddWages> {
   late final String type;
   late final List<Attendances> attendanceData;
 
-  // Fixed rows always correspond to the 4 known categories linked to the controller
-  late final _WageRow _masonRow;
-  late final _WageRow _helperRow;
-  late final _WageRow _fitterRow;
-  late final _WageRow _centringHelperRow;
+  // Unified list of all rows
+  final List<_WageRow> _allRows = [];
 
-  // Dynamic rows (custom, not saved to backend separately)
-  final List<_WageRow> _dynamicRows = [];
+  // Getter for dynamic rows (used in Edit Mode to separate custom rows from fixed UI fields)
+  List<_WageRow> get _dynamicRows => _allRows.where((row) => 
+      row.amountController != controller.masonAmountController &&
+      row.amountController != controller.helperAmountController &&
+      row.amountController != controller.fitterAmountController &&
+      row.amountController != controller.centringHelperAmountController).toList();
 
-  List<_WageRow> get _allRows => [_masonRow, _helperRow, _fitterRow, _centringHelperRow, ..._dynamicRows];
+  String _getAttendanceRowsJson() {
+    List<Map<String, dynamic>> rows = [];
+    for (var row in _dynamicRows) {
+      String cat = row.categoryController.text.trim();
+      if (cat.isNotEmpty) {
+        rows.add({
+          "category": cat,
+          "count": row.countController.text,
+          "amount": row.amountController.text,
+        });
+      }
+    }
+    return jsonEncode(rows);
+  }
 
   @override
   void initState() {
@@ -98,51 +122,73 @@ class _AddWagesState extends State<AddWages> {
       } catch (_) {}
     }
 
-    // Build the fixed rows linked to the controller
-    _masonRow = _WageRow(
-      fixedCategory: "Mason",
+    // Build the initial rows linked to the controller
+    _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Mason"),
       amountController: controller.masonAmountController,
       countController: controller.masonCountController,
       amountFocus: FocusNode(),
-    );
-    _helperRow = _WageRow(
-      fixedCategory: "Helper",
+      categoryFocus: FocusNode(),
+      isFixed: true,
+    ));
+    _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Helper"),
       amountController: controller.helperAmountController,
       countController: controller.helperCountController,
       amountFocus: FocusNode(),
-    );
-    _fitterRow = _WageRow(
-      fixedCategory: "Fitter",
+      categoryFocus: FocusNode(),
+      isFixed: true,
+    ));
+    _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Fitter"),
       amountController: controller.fitterAmountController,
       countController: controller.fitterCountController,
       amountFocus: FocusNode(),
-    );
-    _centringHelperRow = _WageRow(
-      fixedCategory: "Centring Helper",
+      categoryFocus: FocusNode(),
+      isFixed: true,
+    ));
+    _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Centring Helper"),
       amountController: controller.centringHelperAmountController,
       countController: controller.centringHelperCountController,
       amountFocus: FocusNode(),
-    );
+      categoryFocus: FocusNode(),
+      isFixed: true,
+    ));
 
     // Pre-fill values from existing attendance data (for Edit mode)
     if (attendanceData.isNotEmpty) {
       _prefillCounts();
       _prefillAmounts();
+
+      if (attendanceData[0].time != null) controller.checkInTime.value = attendanceData[0].time;
+      if (attendanceData[0].checkOutTime != null) controller.checkOutTime.value = attendanceData[0].checkOutTime;
+      if (attendanceData[0].imageUrl != null) controller.checkInImageUrl.value = attendanceData[0].imageUrl;
+      if (attendanceData[0].checkOutPhoto != null) controller.checkOutImageUrl.value = attendanceData[0].checkOutPhoto;
+
+      final fixedCategories = ["Mason", "Helper", "Fitter", "Centring Helper"];
+      for (final item in attendanceData) {
+        if (item.category != null && item.category!.trim().isNotEmpty) {
+          bool isFixed = fixedCategories.any((c) => c.toLowerCase() == item.category!.trim().toLowerCase());
+          if (!isFixed) {
+            _allRows.add(_WageRow(
+              id: item.id,
+              categoryController: TextEditingController(text: item.category),
+              amountController: TextEditingController(text: item.amount?.toString() ?? ""),
+              countController: TextEditingController(text: item.count?.toString() ?? ""),
+              amountFocus: FocusNode(),
+              categoryFocus: FocusNode(),
+              isCategoryEditable: true,
+            ));
+          }
+        }
+      }
     }
   }
 
   @override
   void dispose() {
-    // Only dispose focus nodes — controllers for fixed rows belong to the controller
-    _masonRow.amountFocus.dispose();
-    _helperRow.amountFocus.dispose();
-    _fitterRow.amountFocus.dispose();
-    _centringHelperRow.amountFocus.dispose();
-    for (final row in _dynamicRows) {
+    for (final row in _allRows) {
       row.dispose();
     }
     dateRanger.dispose();
@@ -177,35 +223,45 @@ class _AddWagesState extends State<AddWages> {
     controller.centringHelperAmountController.text = getAmount("Centring Helper");
   }
 
-  // ── Add Row: adds a new editable row with empty Category ──────────────────
   void _addRow() {
     setState(() {
-      _dynamicRows.add(_WageRow(
-        fixedCategory: null,
+      _allRows.add(_WageRow(
         categoryController: TextEditingController(), // empty by default
         amountController: TextEditingController(),
         countController: TextEditingController(),
         amountFocus: FocusNode(),
-        isFixed: false,
+        categoryFocus: FocusNode(),
+        isCategoryEditable: true,
       ));
     });
   }
 
   // ── Clear / remove a row ───────────────────────────────────────────────────
-  void _deleteRow(_WageRow row) {
-    if (row.isFixed) {
-      setState(() => row.clear());
-    } else {
-      setState(() {
-        _dynamicRows.remove(row);
-        row.dispose();
-      });
+  void _deleteRow(_WageRow row) async {
+    if (row.id != null) {
+      await controller.deleteAttendance(row.id!);
+      try {
+        final rawDate = DateFormat("yyyy-MM-dd").format(DateFormat("dd-MM-yyyy").parse(dateRanger.text));
+        await ApiData().deleteWagesRowApi({
+          "site_id": controller.siteId.value,
+          "date": rawDate,
+          "category": row.categoryController.text.trim(),
+        });
+      } catch (e) {
+        print("Error deleting wages: $e");
+      }
     }
+    setState(() {
+      _allRows.remove(row);
+    });
   }
 
   // ── Focus the amount field for editing ────────────────────────────────────
   void _focusEdit(_WageRow row) {
-    Future.microtask(() => FocusScope.of(context).requestFocus(row.amountFocus));
+    setState(() {
+      row.isCategoryEditable = true;
+    });
+    Future.microtask(() => FocusScope.of(context).requestFocus(row.categoryFocus));
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -291,6 +347,10 @@ class _AddWagesState extends State<AddWages> {
           _buildAddTable(),
           const SizedBox(height: 20),
 
+          // Time and Photo
+          _buildTimeAndPhotoSection(true),
+          const SizedBox(height: 20),
+
           // Submit button
           Align(
             alignment: Alignment.centerRight,
@@ -301,7 +361,7 @@ class _AddWagesState extends State<AddWages> {
                       width: 120,
                       height: 42,
                       child: ElevatedButton(
-                        onPressed: () => controller.attendanceAddWages(dateRanger.text, "3"),
+                        onPressed: () => controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
@@ -361,33 +421,27 @@ class _AddWagesState extends State<AddWages> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Category (read-only for fixed, editable for dynamic)
+          // Category (editable when edit is clicked)
           Expanded(
             flex: 4,
             child: SizedBox(
               height: 36,
-              child: row.isFixed
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.centerLeft,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(row.fixedCategory!, style: TextStyle(fontSize: 13, color: Colors.grey.shade800), overflow: TextOverflow.ellipsis),
-                    )
-                  : TextFormField(
-                      controller: row.categoryController,
-                      style: const TextStyle(fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: "Category",
-                        hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.blue.shade400)),
-                      ),
-                    ),
+              child: TextFormField(
+                controller: row.categoryController,
+                focusNode: row.categoryFocus,
+                readOnly: !row.isCategoryEditable,
+                style: TextStyle(fontSize: 13, color: row.isCategoryEditable ? Colors.black87 : Colors.grey.shade800),
+                decoration: InputDecoration(
+                  hintText: "Category",
+                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: Colors.blue.shade400)),
+                  filled: !row.isCategoryEditable,
+                  fillColor: !row.isCategoryEditable ? Colors.grey.shade50 : Colors.white,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 6),
@@ -497,40 +551,29 @@ class _AddWagesState extends State<AddWages> {
             ],
           ),
           const SizedBox(height: 12),
-          _editRow("Mason", controller.masonCountController),
-          _editRow("Helper", controller.helperCountController),
-          _editRow("Fitter", controller.fitterCountController),
-          _editRow("Centring Helper", controller.centringHelperCountController),
-          const SizedBox(height: 12),
-          if (_dynamicRows.isNotEmpty) ...[
-            const Text("Additional Custom Rows", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87)),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Column(
-                children: [
-                  _buildTableHeader(),
-                  ..._dynamicRows.asMap().entries.map((e) => _buildTableRow(e.value, isLast: e.key == _dynamicRows.length - 1)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
+          if (controller.masonCountController.text.isNotEmpty) _editRow("Mason", controller.masonCountController),
+          if (controller.helperCountController.text.isNotEmpty) _editRow("Helper", controller.helperCountController),
+          if (controller.fitterCountController.text.isNotEmpty) _editRow("Fitter", controller.fitterCountController),
+          if (controller.centringHelperCountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperCountController),
+          ..._dynamicRows.map((row) => _editRow(row.categoryController.text, row.countController, isCustom: true, row: row)),
 
           const SizedBox(height: 2),
           const Divider(height: 32),
 
           // ── Update Wages section ───────────────────────────────
-          Text("Update Wages", style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Text("Update Wages", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 12),
-          _editRow("Mason", controller.masonAmountController),
-          _editRow("Helper", controller.helperAmountController),
-          _editRow("Fitter", controller.fitterAmountController),
-          _editRow("Centring Helper", controller.centringHelperAmountController),
+          if (controller.masonAmountController.text.isNotEmpty) _editRow("Mason", controller.masonAmountController),
+          if (controller.helperAmountController.text.isNotEmpty) _editRow("Helper", controller.helperAmountController),
+          if (controller.fitterAmountController.text.isNotEmpty) _editRow("Fitter", controller.fitterAmountController),
+          if (controller.centringHelperAmountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperAmountController),
+          ..._dynamicRows.map((row) => _editRow(row.categoryController.text, row.amountController, isCustom: true, row: row)),
+          const SizedBox(height: 20),
+
+          // Time and Photo
+          _buildTimeAndPhotoSection(true),
+          const SizedBox(height: 12),
+          _buildTimeAndPhotoSection(false),
           const SizedBox(height: 20),
 
           // ── Single Update Button ───────────────────────────────
@@ -540,7 +583,7 @@ class _AddWagesState extends State<AddWages> {
                 : SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => controller.attendanceAddWages(dateRanger.text, "3"),
+                      onPressed: () => controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade600,
                         foregroundColor: Colors.white,
@@ -559,15 +602,30 @@ class _AddWagesState extends State<AddWages> {
   }
 
   /// Single label + text field row used in edit mode
-  Widget _editRow(String label, TextEditingController textController) {
+  Widget _editRow(String label, TextEditingController textController, {bool isCustom = false, _WageRow? row}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           SizedBox(
             width: 130,
-            child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+            child: isCustom && row != null
+                ? SizedBox(
+                    height: 42,
+                    child: TextFormField(
+                      controller: row.categoryController,
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.blue.shade400)),
+                      ),
+                    ),
+                  )
+                : Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
           ),
+          const SizedBox(width: 12),
           Expanded(
             child: SizedBox(
               height: 42,
@@ -585,6 +643,20 @@ class _AddWagesState extends State<AddWages> {
               ),
             ),
           ),
+          if (isCustom && row != null && row.id == null) ...[
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () => _deleteRow(row),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.red.shade300),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(Icons.close, color: Colors.red, size: 16),
+              ),
+            ),
+          ]
         ],
       ),
     );
@@ -602,4 +674,107 @@ class _AddWagesState extends State<AddWages> {
       setState(() => dateRanger.text = DateFormat("dd-MM-yyyy").format(picked));
     }
   }
+
+  Widget _buildTimeAndPhotoSection(bool isCheckIn) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Time Picker
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          runSpacing: 12,
+          children: [
+            Text("Time (${isCheckIn ? 'Check-in' : 'Check-out'})", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
+            InkWell(
+              onTap: () => controller.pickTime(context, isCheckIn),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(6)),
+                child: Obx(() => Text(
+                      (isCheckIn ? controller.checkInTime.value : controller.checkOutTime.value) ?? "Select Time",
+                      style: const TextStyle(color: Colors.black87, fontSize: 13),
+                    )),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Photo Picker
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          runSpacing: 12,
+          children: [
+            Text("Upload Photo (${isCheckIn ? 'Check-in' : 'Check-out'})", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () => _showImagePickerBottomsheet(isCheckIn),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.grey.shade200, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(6)),
+                    child: const Text("Choose File", style: TextStyle(fontSize: 13, color: Colors.black87)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Obx(() {
+                  final file = isCheckIn ? controller.checkInImage.value : controller.checkOutImage.value;
+                  final url = isCheckIn ? controller.checkInImageUrl.value : controller.checkOutImageUrl.value;
+                  
+                  String displayText = "No file chosen";
+                  if (file != null) {
+                    displayText = file.path.split('/').last;
+                  } else if (url != null && url.isNotEmpty) {
+                    displayText = "Saved Photo";
+                  }
+
+                  return SizedBox(
+                    width: 90,
+                    child: Text(
+                      displayText,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showImagePickerBottomsheet(bool isCheckIn) {
+    Get.bottomSheet(
+      Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text("Camera"),
+              onTap: () {
+                Get.back();
+                controller.pickImage(isCheckIn, ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.blue),
+              title: const Text("Gallery"),
+              onTap: () {
+                Get.back();
+                controller.pickImage(isCheckIn, ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+

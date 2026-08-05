@@ -21,6 +21,11 @@ import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 import '../../../model/site_management_model.dart';
 import 'other_subcontractor_screen/other_subcontractor.dart';
 import 'subcontractor_sitewise_controller.dart';
+import 'package:raptor_pro/service/shared_preference_service.dart';
+import 'package:raptor_pro/model/login_response.dart';
+import 'dart:convert';
+import 'add_subcontractor_type_dialog.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class SubcontractorScreen extends StatefulWidget {
   @override
@@ -33,11 +38,73 @@ class _SubcontractorScreenState
   late final SiteManagementList siteManagementList;
   final controller = Get.put(SubcontractorController());
 
+  /// True when the current user may add a new subcontractor type.
+  bool _canAdd = false;
+
+  /// True when the current user may remove/hide a subcontractor type.
+  bool _canRemove = false;
+
   @override
   void initState() {
     super.initState();
     siteManagementList = Get.arguments ?? 0;
+    _fetchRole();
     controller.init(siteManagementList.id ?? 0);
+  }
+
+  Future<void> _fetchRole() async {
+    try {
+      final data = jsonDecode(PreferenceUtils().getUserInfo());
+      final userDetails = LoginResponse.fromJson(data);
+      final role = userDetails.data?.role?.toLowerCase() ?? '';
+
+      if (role == 'admin') {
+        _canAdd    = true;
+        _canRemove = true;
+      } else if (role == 'supervisor') {
+        // Use DashboardController's already-loaded supervisor permissions
+        final dashCtrl = Get.find<DashboardController>();
+        final perms = dashCtrl.supervisorPermissions.value;
+        final subPerms = perms?.subcontractorManagement;
+        _canAdd    = (subPerms?.addSubcontractor    ?? 0) == 1;
+        _canRemove = (subPerms?.deleteSubcontractor ?? 0) == 1;
+        print("🔐 [SubcontractorScreen] supervisor perms — canAdd=$_canAdd, canRemove=$_canRemove");
+      }
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      print("Error fetching role: $e");
+    }
+  }
+
+  void _showRemoveDialog(BuildContext context, SubcontractorItem item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Confirm Remove"),
+        content: const Text(
+            "Are you sure you want to remove this card from the grid? This only hides the card; existing records remain and it can be brought back by an admin later."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (item.id != null) {
+                controller.deleteSubcontractorType(item.id!);
+              } else {
+                Get.snackbar('Notice', 'Cannot delete static category',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+              }
+            },
+            child: const Text("Yes, Remove", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -46,6 +113,35 @@ class _SubcontractorScreenState
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Subcontractor Details",
+          actions: _canAdd
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final added = await showAddSubcontractorTypeDialog(context);
+                          if (added == true) {
+                            controller.init(siteManagementList.id ?? 0);
+                          }
+                        },
+                        icon: const Icon(Icons.add, size: 12),
+                        label: const Text(
+                          "Add SubContractor",
+                          style: TextStyle(fontSize: 11),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: const Size(0, 30),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  )
+                ]
+              : null,
           onTap: () {
             Get.back();
           }),
@@ -111,23 +207,48 @@ class _SubcontractorScreenState
                           children: [
 
 
-                            ClipRRect(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(15),
-                                topRight: Radius.circular(15),
-
-                              ),
-                              child: Container(
-                                margin: EdgeInsets.all(4),
-                                color: AppColor.materialCategoryBGColor,
-                                child: Image.asset(item.image,
-                                  width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.height*0.12,
-                                  fit: BoxFit.contain,
+                            Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(15),
+                                    topRight: Radius.circular(15),
+                                  ),
+                                  child: Container(
+                                    margin: const EdgeInsets.all(4),
+                                    color: AppColor.materialCategoryBGColor,
+                                    child: item.networkImageUrl != null
+                                        ? Image.network(
+                                            item.networkImageUrl!,
+                                            width: MediaQuery.of(context).size.width,
+                                            height: MediaQuery.of(context).size.height * 0.12,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Image.asset(
+                                              Images.material,
+                                              width: MediaQuery.of(context).size.width,
+                                              height: MediaQuery.of(context).size.height * 0.12,
+                                              fit: BoxFit.contain,
+                                            ),
+                                          )
+                                        : Image.asset(
+                                            item.image,
+                                            width: MediaQuery.of(context).size.width,
+                                            height: MediaQuery.of(context).size.height * 0.12,
+                                            fit: BoxFit.contain,
+                                          ),
+                                  ),
                                 ),
-                              ),
+                                if (_canRemove)
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () => _showRemoveDialog(context, item),
+                                      child: const Icon(Icons.close, color: Colors.red, size: 20),
+                                    ),
+                                  ),
+                              ],
                             ),
-
 
                             VerticalSpacing.custom(value: 8),
 

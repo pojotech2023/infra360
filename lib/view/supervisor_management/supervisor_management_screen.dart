@@ -10,7 +10,10 @@ import 'package:raptor_pro/view/supervisor_management/supervisor_management_cont
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/supervisor_management/supervisor_map_screen.dart';
+import 'package:raptor_pro/view/supervisor_management/all_supervisors_map_screen.dart';
 
 class SuperVisorManagementScreen extends StatefulWidget{
   @override
@@ -50,7 +53,26 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
           children: [
-
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Get.to(() => const AllSupervisorsMapScreen());
+                  },
+                  icon: const Icon(Icons.map_rounded),
+                  label: const Text('View All Locations'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             ListView.builder(
               shrinkWrap: true,
                 primary: false,
@@ -244,6 +266,31 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                             Icons.delete_rounded,
                                             size: 20,
                                             color: Color(0xFFD32F2F),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Get.to(() => SupervisorMapScreen(
+                                            supervisorId: superVisorData.id!,
+                                            supervisorName: superVisorData.name ?? 'Supervisor',
+                                            supervisorMobile: superVisorData.mobileNo ?? '',
+                                          ));
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Icon(
+                                            Icons.location_on_rounded,
+                                            size: 20,
+                                            color: Colors.blue,
                                           ),
                                         ),
                                       ),

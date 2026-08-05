@@ -319,6 +319,49 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
                                     ),
                                   ],
                                 ),
+                                SizedBox(height: 12),
+                                // GST and Address row
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.receipt_long_rounded,
+                                      size: 18,
+                                      color: Color(0xFF78909C),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        subcontractorData.gst != null && subcontractorData.gst!.isNotEmpty ? subcontractorData.gst! : 'N/A',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF455A64),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      size: 18,
+                                      color: Color(0xFF78909C),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        subcontractorData.address != null && subcontractorData.address!.isNotEmpty ? subcontractorData.address! : 'N/A',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF455A64),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),

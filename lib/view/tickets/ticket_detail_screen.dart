@@ -72,19 +72,37 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   children: [
                     if (data.message != null) Text(data.message!),
                     if (data.attachment != null)
-                      Container(
-                        width: 100,
-                        height: 100,
-                        margin: EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: NetworkImage('$imageUrl/${data.attachment!}'),
-                            fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {
-                              debugPrint('Image load failed: $exception');
-                            },
-                          ),borderRadius:BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade100, width: 1,),
+                      GestureDetector(
+                        onTap: () {
+                          final imageFullUrl = '$imageUrl/${data.attachment!}';
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => _FullScreenImagePage(
+                                imageUrl: imageFullUrl,
+                                tag: 'ticket_img_${data.attachment!}',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Hero(
+                          tag: 'ticket_img_${data.attachment!}',
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            margin: EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: NetworkImage('$imageUrl/${data.attachment!}'),
+                                fit: BoxFit.cover,
+                                onError: (exception, stackTrace) {
+                                  debugPrint('Image load failed: $exception');
+                                },
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade100, width: 1),
+                            ),
+                          ),
                         ),
                       ),
                     Text(    "${isAdmin ? "You" : data.senderType} | $formattedDate", style: const TextStyle(fontSize: 10)),
@@ -219,6 +237,54 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Full-screen image viewer with pinch-to-zoom and hero animation
+class _FullScreenImagePage extends StatelessWidget {
+  final String imageUrl;
+  final String tag;
+
+  const _FullScreenImagePage({required this.imageUrl, required this.tag});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5.0,
+          child: Hero(
+            tag: tag,
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              },
+              errorBuilder: (context, error, _) => const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.broken_image, color: Colors.white54, size: 60),
+                  SizedBox(height: 12),
+                  Text('Failed to load image',
+                      style: TextStyle(color: Colors.white54)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

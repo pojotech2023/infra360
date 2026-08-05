@@ -50,6 +50,8 @@ class Images {
   static const String totalWages = "assets/images/totalWages.svg";
   static const String paymentStatus = "assets/images/Payment Status.png";
   static const String salesBill = "assets/images/sales.png";
+  static const String purchaseBill = "assets/images/purchase bill.png";
+  static const String materialEstimation = "assets/images/estimate.png";
   
   static const String electricalWires = "assets/images/Electrical wires.jpeg";
   static const String electrician = "assets/images/Electrician.jpeg";

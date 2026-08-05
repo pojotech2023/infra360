@@ -13,6 +13,7 @@ import 'package:raptor_pro/view/properties_list/properties_list_screen.dart';
 import 'package:raptor_pro/view/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:raptor_pro/service/push_notification_service.dart';
+import 'package:raptor_pro/service/location_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,14 @@ void main() async {
   await PushNotificationService().initialize();
 
   await PreferenceUtils().init(); // initialize before app starts
+  
+  // Initialize Location Service
+  try {
+    await LocationService().initializeService();
+  } catch (e) {
+    debugPrint("LocationService init error: $e");
+  }
+
   runApp(const MyApp());
 }
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

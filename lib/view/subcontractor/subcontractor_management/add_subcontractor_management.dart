@@ -93,15 +93,20 @@ class _AddSubcontractorManagementScreenState extends State<AddSubcontractorManag
                  'Subcontractors',
                  style: AppTextStyle.textHintText,
                ),
-               items: ConstantData.allSubcontractorKeys
-                   .map((item) => DropdownMenuItem<String>(
-                 value: item, // keep same as in list
-                 child: Text(
-                   item, // display item directly
-                   style: AppTextStyle.textFieldHeadingStyle,
-                 ),
-               ))
-                   .toList(),
+               items: () {
+                 final list = List<String>.from(ConstantData.allSubcontractorKeys);
+                 final currentValue = controller.selectedSiteUtilities.value;
+                 if (currentValue.isNotEmpty && !list.contains(currentValue)) {
+                   list.add(currentValue);
+                 }
+                 return list.map((item) => DropdownMenuItem<String>(
+                   value: item,
+                   child: Text(
+                     item,
+                     style: AppTextStyle.textFieldHeadingStyle,
+                   ),
+                 )).toList();
+               }(),
                validator: (value) {
                  if (value == null) {
                    return 'Select Subcontractors';

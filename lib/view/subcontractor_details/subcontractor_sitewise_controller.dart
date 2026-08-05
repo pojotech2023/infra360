@@ -5,6 +5,8 @@ import 'package:raptor_pro/utils/const_data.dart';
 
 import '../../model/my_subcontractor_list_model.dart';
 import '../../utils/res/images.dart';
+import 'package:flutter/material.dart';
+import 'package:raptor_pro/service/api_service.dart';
 
 class SubcontractorController extends GetxController {
   // Observable list of subcontractor items (title, image, amount)
@@ -75,15 +77,35 @@ class SubcontractorController extends GetxController {
       // API data map (key → SubcontractorData)
       final apiData = response?.data ?? {};
 
-      // Loop through static list (ensures consistent order)
+      // First, add all dynamic types returned by API
+      final dynamicTypes = response?.subcontractorTypes ?? [];
+      final addedDynamicTitles = <String>{};
+      for (var type in dynamicTypes) {
+        final normalizedKey = type.name.toLowerCase();
+        final totalAmount = apiData[normalizedKey]?.totalAmounts ?? 0;
+        
+        subcontractors.add(SubcontractorItem(
+          id: type.id,
+          title: type.name,
+          image: Images.material, // fallback for dynamic
+          networkImageUrl: type.imageUrl.isNotEmpty ? type.imageUrl : null,
+          totalAmount: totalAmount,
+        ));
+        addedDynamicTitles.add(normalizedKey);
+      }
+
+      // Loop through static list (ensures consistent order for hardcoded ones)
       for (var key in ConstantData.allSubcontractorKeys) {
         final normalizedKey = key.toLowerCase();
+        if (addedDynamicTitles.contains(normalizedKey)) continue; // skip if already added from dynamic
+
         final imagePath =
             ConstantData.allSubcontractorImages[key] ?? Images.material;
 
         final totalAmount = apiData[normalizedKey]?.totalAmounts ?? 0;
 
         subcontractors.add(SubcontractorItem(
+          id: null,
           title: key,
           image: imagePath,
           totalAmount: totalAmount,
@@ -95,17 +117,41 @@ class SubcontractorController extends GetxController {
       isLoading(false);
     }
   }
+
+  Future<void> deleteSubcontractorType(int id) async {
+    isLoading(true);
+    try {
+      final res = await ApiData().deleteSubcontractorTypeApi(id);
+      if (res != null && res.status == true) {
+        Get.snackbar('Success', 'Subcontractor type deleted successfully',
+            backgroundColor: Colors.green, colorText: Colors.white);
+        if (currentSiteId != null) init(currentSiteId!);
+      } else {
+        Get.snackbar('Error', 'Failed to delete Subcontractor type',
+            backgroundColor: Colors.redAccent, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'An error occurred',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    } finally {
+      isLoading(false);
+    }
+  }
 }
 
 /// UI-ready data model
 class SubcontractorItem {
+  final int? id;
   final String title;
   final String image;
+  final String? networkImageUrl;
   final num totalAmount;
 
   SubcontractorItem({
+    this.id,
     required this.title,
     required this.image,
+    this.networkImageUrl,
     required this.totalAmount,
   });
 }

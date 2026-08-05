@@ -1,0 +1,283 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'dart:io' as dart_io;
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../api/api_data.dart';
+import '../../model/purchase_bill_model.dart';
+import '../../utils/res/sendWhatsAppMessage.dart';
+
+class PurchaseBillItem {
+  TextEditingController particular = TextEditingController();
+  TextEditingController count = TextEditingController();
+  TextEditingController amount = TextEditingController();
+}
+
+class PurchaseBillController extends GetxController {
+  // Site ID passed via arguments
+  late int siteId;
+
+  // Form controllers
+  TextEditingController nameController = TextEditingController();
+  TextEditingController mobileController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
+  TextEditingController subjectController = TextEditingController();
+  TextEditingController locationController = TextEditingController();
+  TextEditingController termsController = TextEditingController();
+  
+  FocusNode vendorFocusNode = FocusNode();
+
+  // Vendor List
+  List<VendorInfo> vendors = [];
+  List<VendorInfo> filteredVendors = [];
+  VendorInfo? selectedVendor;
+  bool isVendorListVisible = false;
+
+  // Particulars list
+  var itemList = <PurchaseBillItem>[].obs;
+
+  // Total
+  var totalAmount = 0.0.obs;
+
+  // Loading
+  var isFormLoading = false.obs;
+  var isSubmitLoading = false.obs;
+
+  @override
+  void onInit() {
+    siteId = Get.arguments as int;
+    // Add one blank row by default
+    itemList.add(PurchaseBillItem());
+    // Set today's date
+    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    // Load form details (pre-fill vendor info)
+    _loadFormDetails();
+
+    vendorFocusNode.addListener(() {
+      if (vendorFocusNode.hasFocus) {
+        isVendorListVisible = true;
+      } else {
+        // Use a short delay so tap on list item can register before it hides
+        Future.delayed(const Duration(milliseconds: 150), () {
+          isVendorListVisible = false;
+          update();
+        });
+      }
+      update();
+    });
+
+    super.onInit();
+  }
+
+  @override
+  void onClose() {
+    vendorFocusNode.dispose();
+    super.onClose();
+  }
+
+  void resetForm() {
+    nameController.clear();
+    mobileController.clear();
+    emailController.clear();
+    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    subjectController.clear();
+    locationController.clear();
+    termsController.clear();
+    itemList.clear();
+    itemList.add(PurchaseBillItem());
+    selectedVendor = null;
+    isVendorListVisible = false;
+    filteredVendors = List.from(vendors);
+    recalcTotal();
+    update();
+  }
+
+  Future<void> _loadFormDetails() async {
+    isFormLoading.value = true;
+    update();
+    try {
+      final res = await ApiData().purchaseBillFormApi(siteId);
+      final vendorRes = await ApiData().vendorManagementList();
+
+      print("DEBUG: Form API Status: ${res?.status}");
+      print("DEBUG: Vendor API Status: ${vendorRes?.status}");
+
+      if (res != null && res.status == true) {
+        // Prefill location from site if empty
+        if (locationController.text.isEmpty && res.data?.site?.location != null) {
+          locationController.text = res.data!.site!.location!;
+        }
+      }
+
+      if (vendorRes != null && vendorRes.status == true && vendorRes.data != null) {
+        vendors = vendorRes.data!.map((v) => VendorInfo(
+          id: v.id,
+          name: v.name,
+          mobileNo: v.mobileNo,
+          email: v.email,
+          address: v.address,
+        )).toList();
+        filteredVendors = List.from(vendors);
+        print("DEBUG: Controller stored vendors count: ${vendors.length}");
+      } else {
+        print("DEBUG: Vendor API returned empty or null data");
+      }
+    } catch (e) {
+      print("DEBUG: Exception in _loadFormDetails: $e");
+    } finally {
+      isFormLoading.value = false;
+      update();
+    }
+  }
+
+  void onVendorSelected(VendorInfo vendor) {
+    selectedVendor = vendor;
+    nameController.text = vendor.name ?? '';
+    mobileController.text = vendor.mobileNo ?? '';
+    emailController.text = vendor.email ?? '';
+    if (vendor.address != null && vendor.address!.isNotEmpty) {
+      locationController.text = vendor.address!;
+    }
+    isVendorListVisible = false;
+    vendorFocusNode.unfocus();
+    update();
+  }
+
+  void filterVendors(String query) {
+    print("DEBUG: filterVendors called with query: '$query'");
+    if (query.isEmpty) {
+      filteredVendors = List.from(vendors);
+    } else {
+      filteredVendors = vendors.where((vendor) {
+        return (vendor.name ?? '').toLowerCase().contains(query.toLowerCase());
+      }).toList();
+    }
+    print("DEBUG: filterVendors - filtered length: ${filteredVendors.length}, original length: ${vendors.length}");
+    
+    try {
+      final debugFile = dart_io.File('debug_vendor_filter.txt');
+      debugFile.writeAsStringSync('Query: $query\nFiltered: ${filteredVendors.length}\nOriginal: ${vendors.length}');
+    } catch (e) {}
+    
+    update();
+  }
+
+  void addItem() {
+    itemList.add(PurchaseBillItem());
+    update();
+  }
+
+  void removeItem(int index) {
+    if (itemList.length > 1) {
+      itemList.removeAt(index);
+      recalcTotal();
+    }
+  }
+
+  void recalcTotal() {
+    double sum = 0;
+    for (var item in itemList) {
+      sum += double.tryParse(item.amount.text) ?? 0;
+    }
+    totalAmount.value = sum;
+    update();
+  }
+
+  Map<String, dynamic> _buildPayload({String? email}) {
+    final particulars = itemList.map((i) => i.particular.text.trim()).toList();
+    final counts = itemList.map((i) => i.count.text.trim()).toList();
+    final amounts = itemList.map((i) => i.amount.text.trim()).toList();
+
+    return {
+      'site_id': siteId,
+      'name': nameController.text.trim(),
+      'subject': subjectController.text.trim(),
+      'date': dateController.text.trim(),
+      'mobile_no': mobileController.text.trim(),
+      'location': locationController.text.trim(),
+      if (termsController.text.isNotEmpty) 'terms_conditions': termsController.text.trim(),
+      if (email != null && email.isNotEmpty) 'email': email,
+      'particular': particulars,
+      'count': counts,
+      'amount': amounts,
+    };
+  }
+
+  Future<PurchaseBillStoredModel?> _submitBill({String? email}) async {
+    isSubmitLoading.value = true;
+    update();
+    try {
+      final payload = _buildPayload(email: email);
+      print('📦 PurchaseBill PAYLOAD: $payload');
+      return await ApiData().purchaseBillAddApi(payload);
+    } catch (e) {
+      print('Error submitting purchase bill: $e');
+      return null;
+    } finally {
+      isSubmitLoading.value = false;
+      update();
+    }
+  }
+
+  Future<void> sendWhatsApp() async {
+    final res = await _submitBill();
+    if (res == null || res.status != true) {
+      Get.snackbar('Error', res?.message ?? 'Failed to generate Purchase Bill.',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+    final url = res.whatsappUrl;
+    if (url != null && url.isNotEmpty) {
+      extractAndOpenWhatsApp(url);
+    } else {
+      Get.snackbar('Error', 'WhatsApp URL not available.',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    }
+  }
+
+  Future<void> sendMail() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty) {
+      Get.snackbar('Email Required', 'Please enter an email address.',
+          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+      return;
+    }
+    final res = await _submitBill(email: email);
+    if (res == null || res.status != true) {
+      Get.snackbar('Error', res?.message ?? 'Failed to send mail.',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+    if (res.mailSent == true) {
+      Get.snackbar('Success', 'Purchase Bill mail sent successfully!',
+          backgroundColor: Colors.green, colorText: Colors.white);
+    } else {
+      Get.snackbar('Info', res.message ?? 'Bill created. Mail status unavailable.',
+          backgroundColor: Colors.blueGrey, colorText: Colors.white);
+    }
+  }
+
+  Future<void> downloadPdf() async {
+    final res = await _submitBill();
+    if (res == null || res.status != true) {
+      Get.snackbar('Error', res?.message ?? 'Failed to generate PDF.',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+    final pdfUrl = res.pdfUrl;
+    if (pdfUrl != null && pdfUrl.isNotEmpty) {
+      final Uri uri = Uri.parse(pdfUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar('Error', 'Cannot open PDF URL.',
+            backgroundColor: Colors.redAccent, colorText: Colors.white);
+      }
+    } else {
+      Get.snackbar('Error', 'PDF URL not available.',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    }
+  }
+}

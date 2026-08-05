@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:raptor_pro/base_url.dart';
+import '../../utils/url_helper.dart';
 
 import '../../api/api_data.dart';
 import '../../model/common_success_model.dart';
@@ -75,8 +77,11 @@ class DrawingController extends GetxController{
     isLoading.value = true;
     update();
 
-    CommonFileDownloader.downloadAndOpen(
-      urls:'${imageUrl}/${data.drawingViewUrl}' ??'',
+    final downloadUrl = UrlHelper.getFullImageUrl(data.drawingViewUrl);
+    print('📥 [DOWNLOAD] URL: $downloadUrl');
+    
+    await CommonFileDownloader.downloadAndOpen(
+      urls: downloadUrl,
       context: context,
     );
 
@@ -120,5 +125,17 @@ class DrawingController extends GetxController{
     }
     isLoading.value = false;
     update();
+  }
+
+  shareViaWhatsApp(DrawingData item) async {
+    final imageUrl = UrlHelper.getFullImageUrl(item.drawingViewUrl);
+    final messageText = "Check out this drawing: ${item.drawingName ?? ''}\n$imageUrl";
+    final uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(messageText)}');
+    
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      showToastMessage("Could not launch WhatsApp. Is it installed?");
+    }
   }
 }

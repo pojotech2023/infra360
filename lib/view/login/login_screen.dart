@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
+import 'package:raptor_pro/utils/const_data.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
 import 'package:raptor_pro/utils/res/images.dart';
 import 'package:raptor_pro/utils/res/spacing.dart';
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController passwordEditingController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final LoginController loginController = Get.put(LoginController());
+  bool _obscurePassword = true;
 
 
   @override
@@ -48,8 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
                VerticalSpacing.d5px(),
                 TextFormField(
                   controller: loginEditingController,
-                  decoration:textBoxDecoration(hint:"Enter your mobile number"),
-                  validator: (text){
+                  keyboardType: TextInputType.number,
+                  inputFormatters: tenDigitPhoneFormatter(),
+                  decoration: textBoxDecoration(hint: "Enter your mobile number"),
+                  validator: (text) {
                     if (text == null || text.isEmpty) {
                       return 'Required';
                     }
@@ -58,9 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                     return null;
                   },
-
-
-
                 ),
 
                 VerticalSpacing.d15px(),
@@ -68,16 +69,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 VerticalSpacing.d5px(),
                 TextFormField(
                   controller: passwordEditingController,
-                  decoration:textBoxDecoration(hint: "Enter your Password"),
-                  validator: (text){
+                  obscureText: _obscurePassword,
+                  decoration: textBoxDecoration(hint: "Enter your Password").copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                  validator: (text) {
                     if (text == null || text.isEmpty) {
                       return 'Required';
                     }
                     return null;
                   },
-
-
-
                 ),
 
                 VerticalSpacing.d20px(),

@@ -35,14 +35,16 @@ class VendorData {
   String? name;
   String? mobileNo;
   String? address;
+  String? gst;
 
-  VendorData({this.id, this.name, this.mobileNo, this.address});
+  VendorData({this.id, this.name, this.mobileNo, this.address, this.gst});
 
   VendorData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
-    mobileNo = json['mobile_no'];
+    mobileNo = json['mobile_no']?.toString();
     address = json['address'];
+    gst = json['gst']?.toString();
   }
 
   @override
@@ -52,6 +54,7 @@ class VendorData {
     data['name'] = this.name;
     data['mobile_no'] = this.mobileNo;
     data['address'] = this.address;
+    data['gst'] = this.gst;
     return data;
   }
 }

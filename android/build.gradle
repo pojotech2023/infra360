@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '2.1.0'   // ✅ Updated to meet Flutter minimum requirement
+    ext.kotlin_version = '2.3.0'   // ✅ Updated to meet Flutter minimum requirement
 
     repositories {
         google()

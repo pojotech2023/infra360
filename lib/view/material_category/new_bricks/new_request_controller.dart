@@ -83,92 +83,38 @@ var selectedUnit = ''.obs;
 
 
   Future<void> materialUnitsListApi() async {
-
     try {
-      UnitsModel? model = await ApiData().materialUnitsListApi();
+      final unitRes = await ApiData().unitMasterListApi();
       units.clear();
+      
+      if (unitRes != null && unitRes.data != null) {
+        units.addAll(unitRes.data!.map((u) => u.unitName ?? '').where((u) => u.isNotEmpty));
+      }
+
+      // Also fetch categories if needed
+      UnitsModel? model = await ApiData().materialUnitsListApi();
       categories.clear();
 
-      if (model == null) {
-        print("❌ UnitsModel is null");
-        return;
-      }
-
-      getUnitsLists.value = model.data ?? [];
-
-      if (getUnitsLists.isEmpty) {
-        print("⚠️ No unit data found in API response");
-        return;
-      }
-
-      // 🔍 Find the material that matches the itemKey
-      UnitsData? matchedMaterial;
-
-      print("ITEM KEY : ${args.itemKey.toString()}");
-      try {
-        matchedMaterial = getUnitsLists.firstWhere((element) {
-          return element.materialType?.toLowerCase() == args.itemKey.toLowerCase();
-        });
-      } catch (e) {
-        // fallback to default if not found
+      if (model != null && model.data != null) {
+        getUnitsLists.value = model.data ?? [];
+        UnitsData? matchedMaterial;
         try {
           matchedMaterial = getUnitsLists.firstWhere(
-                (e) => e.materialType?.toLowerCase() == 'default',
-          );
-        } catch (e2) {
-          matchedMaterial = null;
-        }
-      }
-
-      if (matchedMaterial == null) {
-        print("⚠️ No matching material found for ${args.itemKey}");
-        return;
-      }
-
-      print("✅ Matched Material: ${matchedMaterial.materialType}");
-
-      // 🧱 Case 1: Bricks
-      if (matchedMaterial.materialType?.toLowerCase() == 'bricks') {
-        if (matchedMaterial.attachment == true) {
-          units.clear();
-        } else {
-          if (matchedMaterial.categoryName?.isNotEmpty ?? false) {
-            categories.addAll(matchedMaterial.categoryName!);
-          }
-          if (matchedMaterial.unit?.isNotEmpty ?? false) {
-            units.addAll(matchedMaterial.unit!);
-          }
-        }
-      }
-
-      // 🧩 Case 2: Known materials
-      else if (ConstantData.allMaterialKeys
-          .contains(matchedMaterial.materialType)) {
-        if (matchedMaterial.attachment == true) {
-          units.clear();
-        } else if (matchedMaterial.unit?.isNotEmpty ?? false) {
-          units.addAll(matchedMaterial.unit!);
-        }
-      }
-
-      // ⚙️ Case 3: Unknown → use default
-      else {
-        UnitsData? defaultMaterial;
-        try {
-          defaultMaterial = getUnitsLists.firstWhere(
-                (e) => e.materialType?.toLowerCase() == 'default',
+            (element) => element.materialType?.toLowerCase() == args.itemKey.toLowerCase()
           );
         } catch (e) {
-          defaultMaterial = null;
+          try {
+            matchedMaterial = getUnitsLists.firstWhere(
+              (e) => e.materialType?.toLowerCase() == 'default',
+            );
+          } catch (e2) {}
         }
-
-        if (defaultMaterial != null && defaultMaterial.attachment == false) {
-          units.addAll(defaultMaterial.unit ?? []);
-        } else {
-          units.clear();
+        
+        if (matchedMaterial != null && matchedMaterial.categoryName != null) {
+          categories.addAll(matchedMaterial.categoryName!);
         }
       }
-
+      
       print("✅ Units: $units");
       print("✅ Categories: $categories");
     } catch (e, stack) {
@@ -211,14 +157,11 @@ var selectedUnit = ''.obs;
     if (itemKey.toLowerCase() == "bricks") {
       requestData["category_name"] = selectedCategory.value!.toString();
     }
-    // Add only for admin
-    if (role == "admin") {
-      requestData["vendor_id"] = selectedVendorData!.id.toString();
-    }
+    
+    // Add vendor_id for all roles (if selected)
+    requestData["vendor_id"] = selectedVendorData.id.toString();
 
     // ------------------ ORDER MAP ------------------
-
-
     Map<String, String> orderData = {
       "site_id": siteId.toString(),
       "material_type": itemKey,
@@ -244,7 +187,6 @@ var selectedUnit = ''.obs;
       CommonSuccessResponseModel? res = await ApiData().updateMaterialApi(editItem!.id!, orderData);
       if (res != null && res.status == true) {
         showToastMessage(res.message ?? "Updated successfully");
-        // Refresh the parent screen
         try {
           final parentController = Get.find<BricksDetailsController>();
           parentController.fetchData();
@@ -260,7 +202,7 @@ var selectedUnit = ''.obs;
     final postedData = type == 1 ? requestData : orderData;
     final apiUrl = type == 1 ? "request-order" : "add-order";
 
-    MaterialRequestSuccessModel? res = await ApiData()
+    dynamic res = await ApiData()
         .bricksRequestApi("$baseUrl$apiUrl", postedData, attachment);
 
     if (res == null) return;
@@ -323,15 +265,21 @@ ${hasAttachment ? "Attachment: $attachmentUrl" : ""}
     }
 
     // ------------------ WHATSAPP URL ------------------
-    String phone = type == 1 ? "7540060694" : selectedVendorData.mobileNo.toString();
+    if (type == 1 && role == 'supervisor') {
+      // DO NOT send to WhatsApp immediately for Material Requests by Supervisor.
+      showToastMessage(res.message ?? "Request submitted to Admin for approval.");
+      Get.back();
+    } else {
+      String phone = type == 1 ? "7540060694" : selectedVendorData.mobileNo.toString();
 
-    String whatsappUrl =
-        "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+      String whatsappUrl =
+          "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
 
-    extractAndOpenWhatsApp(whatsappUrl);
+      extractAndOpenWhatsApp(whatsappUrl);
 
-    showToastMessage(res.message ?? "");
-    Get.back();
+      showToastMessage(res.message ?? "");
+      Get.back();
+    }
   }
 
 

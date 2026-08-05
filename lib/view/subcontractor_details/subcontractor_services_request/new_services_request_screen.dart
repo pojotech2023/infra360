@@ -108,7 +108,7 @@ class NewServiceRequestScreen extends StatelessWidget {
               /// MOBILE NUMBER
               /// ===============================
               VerticalSpacing.d15px(),
-              Text("Requestor Mobile No",
+              Text("Subcontractor Mobile No",
                   style: AppTextStyle.textFieldHeadingStyle),
               VerticalSpacing.d5px(),
               TextFormField(
@@ -122,28 +122,6 @@ class NewServiceRequestScreen extends StatelessWidget {
                   }
                   if (text.length != 10) {
                     return 'Mobile number must be 10 digits';
-                  }
-                  return null;
-                },
-              ),
-
-              /// ===============================
-              /// ADDRESS
-              /// ===============================
-              VerticalSpacing.d15px(),
-              Text("Requestor Address",
-                  style: AppTextStyle.textFieldHeadingStyle),
-              VerticalSpacing.d5px(),
-              TextFormField(
-                readOnly: true,
-                controller: controller.addressController,
-                keyboardType: TextInputType.multiline,
-                maxLines: null,
-                minLines: 2,
-                decoration: textBoxDecoration(hint: "Address"),
-                validator: (text) {
-                  if (text == null || text.isEmpty) {
-                    return 'Required';
                   }
                   return null;
                 },
@@ -168,15 +146,19 @@ class NewServiceRequestScreen extends StatelessWidget {
               ),
 
               /// ===============================
-              /// AMOUNT
+              /// ADDRESS
               /// ===============================
               VerticalSpacing.d15px(),
-              Text("Amount", style: AppTextStyle.textFieldHeadingStyle),
+              Text("Subcontractor Address",
+                  style: AppTextStyle.textFieldHeadingStyle),
               VerticalSpacing.d5px(),
               TextFormField(
-                controller: controller.amountController,
-                keyboardType: TextInputType.number,
-                decoration: textBoxDecoration(hint: "Enter amount"),
+                readOnly: true,
+                controller: controller.addressController,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
+                minLines: 2,
+                decoration: textBoxDecoration(hint: "Address"),
                 validator: (text) {
                   if (text == null || text.isEmpty) {
                     return 'Required';
@@ -211,6 +193,24 @@ class NewServiceRequestScreen extends StatelessWidget {
               ),
 
               /// ===============================
+              /// AMOUNT
+              /// ===============================
+              VerticalSpacing.d15px(),
+              Text("Amount", style: AppTextStyle.textFieldHeadingStyle),
+              VerticalSpacing.d5px(),
+              TextFormField(
+                controller: controller.amountController,
+                keyboardType: TextInputType.number,
+                decoration: textBoxDecoration(hint: "Enter amount"),
+                validator: (text) {
+                  if (text == null || text.isEmpty) {
+                    return 'Required';
+                  }
+                  return null;
+                },
+              ),
+
+              /// ===============================
               /// REMARKS
               /// ===============================
               VerticalSpacing.d15px(),
@@ -228,18 +228,33 @@ class NewServiceRequestScreen extends StatelessWidget {
               /// SUBMIT BUTTON
               /// ===============================
               VerticalSpacing.d20px(),
-             Obx(()=> controller.isLoading.value ? Center(child: CircularProgressIndicator()) : CommonButton(
-               onTap: () {
-                 if (_formKey.currentState!.validate()) {
-                   if (controller.isEditMode) {
-                     controller.updateServicesApi(args.id);
-                   } else {
-                     controller.addServicesApi(args.id);
+             Obx(()=> controller.isLoading.value ? Center(child: CircularProgressIndicator()) : SizedBox(
+               width: double.infinity,
+               child: ElevatedButton.icon(
+                 onPressed: () {
+                   if (_formKey.currentState!.validate()) {
+                     if (controller.isEditMode) {
+                       controller.updateServicesApi(args.id);
+                     } else {
+                       controller.addServicesApi(args.id);
+                     }
                    }
-                 }
-               },
-               text: controller.isEditMode ? "Update" : "Submit",
-             ),)
+                 },
+                 icon: Icon(Icons.chat, color: Colors.white), // Using chat icon as a placeholder for WhatsApp if flutter_svg is not used
+                 label: Text(
+                   controller.isEditMode ? "Update Service\nWhatsApp" : "Send Service to SubContractor\nWhatsApp",
+                   textAlign: TextAlign.center,
+                   style: TextStyle(color: Colors.white, fontSize: 16),
+                 ),
+                 style: ElevatedButton.styleFrom(
+                   backgroundColor: Colors.blue, // WhatsApp color or use standard blue like the web image
+                   padding: EdgeInsets.symmetric(vertical: 12),
+                   shape: RoundedRectangleBorder(
+                     borderRadius: BorderRadius.circular(8),
+                   ),
+                 ),
+               ),
+             ))
             ],
           ),
         ),

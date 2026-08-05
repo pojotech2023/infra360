@@ -308,6 +308,29 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                           ),
                                         ],
                                       ),
+                                      SizedBox(height: 12),
+                                      // Address info row
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_rounded,
+                                            size: 18,
+                                            color: Color(0xFF78909C),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              customerData.address != null && customerData.address!.isNotEmpty ? customerData.address! : 'N/A',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF455A64),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -324,12 +347,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           );
         }),
       ),
-      floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
-          backgroundColor: Colors.blueAccent,
-          child: Icon(Icons.add, color: Colors.white),
-          onPressed: (){
-            Get.to(() => CustomerMangementScreen(), arguments: null);
-          }) : SizedBox.shrink()),
+      // floatingActionButton: Obx(() => canAdd() ? FloatingActionButton(
+      //     backgroundColor: Colors.blueAccent,
+      //     child: Icon(Icons.add, color: Colors.white),
+      //     onPressed: (){
+      //       Get.to(() => CustomerMangementScreen(), arguments: null);
+      //     }) : SizedBox.shrink()),
     );
   }
   textWidget(String title,String value){

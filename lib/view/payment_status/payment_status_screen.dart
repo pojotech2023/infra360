@@ -38,7 +38,10 @@ class PaymentStatusScreen extends GetView<PaymentStatusController> {
                 alignment: WrapAlignment.end,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => Get.to(() => const AddPaymentScreen()),
+                    onPressed: () {
+                      controller.resetForm();
+                      Get.to(() => const AddPaymentScreen());
+                    },
                     icon: const Icon(Icons.add, color: Colors.white, size: 18),
                     label: const Text("Add Payment", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(

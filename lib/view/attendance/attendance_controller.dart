@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:raptor_pro/api/api_data.dart';
 import 'package:raptor_pro/model/attendance_list_model.dart';
@@ -27,11 +29,20 @@ class AttendanceController extends GetxController {
   RxnInt siteId = RxnInt();
   RxList<WeekDays> weekDaysList = <WeekDays>[].obs;
   RxList<Attendances> attendanceList = <Attendances>[].obs;
+  AttendanceListModel? cachedFullMonthData;
+  final Map<String, Map<String, dynamic>> datePhotoLookup = {};
 
   RxnInt totalWages = RxnInt();
   RxInt totalWorkers = 0.obs;
 
   RxBool attendanceSave = false.obs;
+
+  RxnString checkInTime = RxnString();
+  RxnString checkOutTime = RxnString();
+  Rxn<File> checkInImage = Rxn<File>();
+  Rxn<File> checkOutImage = Rxn<File>();
+  RxnString checkInImageUrl = RxnString();
+  RxnString checkOutImageUrl = RxnString();
 
   final TextEditingController masonCountController = TextEditingController();
   final TextEditingController masonAmountController = TextEditingController();
@@ -72,6 +83,9 @@ class AttendanceController extends GetxController {
   Future<void> loadFullMonthAttendance(int? id) async {
     AttendanceListModel? attendanceListModel = await ApiData().attendanceList(
         id!, selectedMonthText.value, null, null);
+    
+    cachedFullMonthData = attendanceListModel;
+    _buildDatePhotoLookup(attendanceListModel);
 
     if (attendanceListModel != null) {
       print("📊 Full Month Attendance API: TotalWages=${attendanceListModel.totalWages}, "
@@ -90,7 +104,12 @@ class AttendanceController extends GetxController {
 
         List<Attendances> allMapped = [];
         for (var dayData in attendanceListModel.groupedByDate!) {
-          allMapped.addAll(convertDataToAttendances(dayData, id));
+          final String date = dayData['date'] ?? '';
+          final dayPhotosForDate = _resolveDayPhotos(
+            date,
+            attendanceListModel.dayPhotos?[date],
+          );
+          allMapped.addAll(convertDataToAttendances(dayData, id, dayPhotosForDate));
         }
         print("📊 Mapped ${allMapped.length} records from grouped_by_date");
 
@@ -99,7 +118,7 @@ class AttendanceController extends GetxController {
         if (attendanceListModel.attendances != null) {
           for (var rec in attendanceListModel.attendances!) {
             if (rec.id != null && rec.date != null && rec.category != null) {
-              final k = "${rec.date}_${rec.category}";
+              final k = "${rec.date}_${rec.category?.toLowerCase()}";
               if (!idLookup.containsKey(k) || idLookup[k]! < rec.id!) {
                 idLookup[k] = rec.id!;
               }
@@ -109,7 +128,7 @@ class AttendanceController extends GetxController {
 
         for (var item in allMapped) {
           if (item.id == null && item.date != null && item.category != null) {
-            final lookupKey = "${item.date}_${item.category}";
+            final lookupKey = "${item.date}_${item.category?.toLowerCase()}";
             if (idLookup.containsKey(lookupKey)) {
               item.id = idLookup[lookupKey];
             }
@@ -129,6 +148,8 @@ class AttendanceController extends GetxController {
           final db = DateTime.tryParse(b.date ?? '') ?? DateTime(2000);
           return da.compareTo(db);
         });
+
+        _applyDatePhotosToRecords(filtered);
 
         final Map<String, Attendances> uniqueMap = {};
         for (var item in filtered) {
@@ -170,6 +191,8 @@ class AttendanceController extends GetxController {
           final db = DateTime.tryParse(b.date ?? '') ?? DateTime(2000);
           return da.compareTo(db);
         });
+
+        _applyDatePhotosToRecords(filtered);
 
         final Map<String, Attendances> uniqueMap = {};
         for (var item in filtered) {
@@ -255,10 +278,18 @@ class AttendanceController extends GetxController {
       List<Attendances> converted = [];
       if (model.dataList != null) {
         for (var d in model.dataList!) {
-          converted.addAll(convertDataToAttendances(d.toJson(), id));
+          final dayPhotosForDate = _resolveDayPhotos(
+            d.date ?? '',
+            model.dayPhotos?[d.date] ?? cachedFullMonthData?.dayPhotos?[d.date],
+          );
+          converted.addAll(convertDataToAttendances(d.toJson(), id, dayPhotosForDate));
         }
       } else if (model.data != null) {
-        converted.addAll(convertDataToAttendances(model.data!.toJson(), id));
+        final dayPhotosForDate = _resolveDayPhotos(
+          model.data!.date ?? '',
+          model.dayPhotos?[model.data!.date] ?? cachedFullMonthData?.dayPhotos?[model.data!.date],
+        );
+        converted.addAll(convertDataToAttendances(model.data!.toJson(), id, dayPhotosForDate));
       }
       
       // Sort ascending
@@ -355,7 +386,6 @@ class AttendanceController extends GetxController {
     selectedDate.value = day;
     print("📅 selectedDate.value set to: ${selectedDate.value}");
     update();
-    init(siteId.value);
     dateWiseAttendance(siteId.value, day);
   }
 
@@ -385,7 +415,11 @@ class AttendanceController extends GetxController {
 
     if (model != null) {
       if (model.data != null) {
-        final converted = convertDataToAttendances(model.data!.toJson(), id);
+        final dayPhotosForDate = _resolveDayPhotos(
+          model.data!.date ?? '',
+          model.dayPhotos?[model.data!.date] ?? cachedFullMonthData?.dayPhotos?[model.data!.date],
+        );
+        final converted = convertDataToAttendances(model.data!.toJson(), id, dayPhotosForDate);
         // Sorted ascending
         converted.sort((a, b) {
           final da = DateTime.tryParse(a.date ?? '') ?? DateTime(2000);
@@ -413,24 +447,172 @@ class AttendanceController extends GetxController {
     }
   }
 
-  List<Attendances> convertDataToAttendances(Map<String, dynamic> data, int siteId) {
+  void _buildDatePhotoLookup(AttendanceListModel? model) {
+    datePhotoLookup.clear();
+    if (model == null) return;
+
+    void merge(String? date, Map<String, dynamic> info) {
+      if (date == null || date.isEmpty) return;
+      final existing = datePhotoLookup.putIfAbsent(date, () => <String, dynamic>{});
+      for (final entry in info.entries) {
+        final value = entry.value;
+        if (value != null && value.toString().trim().isNotEmpty) {
+          existing[entry.key] = value;
+        }
+      }
+    }
+
+    model.dayPhotos?.forEach((date, value) {
+      if (value is Map) {
+        merge(date, Map<String, dynamic>.from(value));
+      }
+    });
+
+    for (final day in model.groupedByDate ?? <Map<String, dynamic>>[]) {
+      merge(day['date']?.toString(), {
+        'check_in_time': day['check_in_time'] ?? day['time'],
+        'check_in_photo': day['check_in_photo'] ?? day['image_url'],
+        'check_out_time': day['check_out_time'] ?? day['out_time'],
+        'check_out_photo': day['check_out_photo'] ?? day['out_image_url'],
+      });
+    }
+
+    for (final day in model.attendances ?? <Attendances>[]) {
+      merge(day.date?.toString(), {
+        'check_in_time': day.time,
+        'check_in_photo': day.imageUrl,
+        'check_out_time': day.checkOutTime,
+        'check_out_photo': day.checkOutPhoto,
+      });
+    }
+
+    // ✅ UI WORKAROUND: If backend automatically copied Check-In time to Check-Out, discard it globally
+    datePhotoLookup.forEach((date, data) {
+      if (data['check_in_time'] != null && data['check_out_time'] == data['check_in_time']) {
+        data['check_out_time'] = null;
+        data['check_out_photo'] = null;
+      }
+    });
+  }
+
+  Map<String, dynamic>? _resolveDayPhotos(String date, dynamic dayPhotosForDate) {
+    final merged = <String, dynamic>{};
+
+    void addFrom(dynamic source) {
+      if (source is! Map) return;
+      for (final entry in Map<String, dynamic>.from(source).entries) {
+        final value = entry.value;
+        if (value != null && value.toString().trim().isNotEmpty) {
+          merged[entry.key] = value;
+        }
+      }
+    }
+
+    addFrom(datePhotoLookup[date]);
+    addFrom(dayPhotosForDate);
+    return merged.isEmpty ? null : merged;
+  }
+
+  String? _firstNonEmpty(List<dynamic> values) {
+    for (final value in values) {
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+    return null;
+  }
+
+  void _applyDatePhotosToRecords(List<Attendances> records) {
+    for (final record in records) {
+      final photos = datePhotoLookup[record.date ?? ''];
+      if (photos == null) continue;
+
+      record.time ??= photos['check_in_time']?.toString();
+      record.imageUrl ??= photos['check_in_photo']?.toString();
+      record.checkOutTime ??= photos['check_out_time']?.toString();
+      record.checkOutPhoto ??= photos['check_out_photo']?.toString();
+    }
+  }
+
+  List<Attendances> convertDataToAttendances(Map<String, dynamic> data, int siteId, [Map<String, dynamic>? dayPhotosForDate]) {
     final String date = data['date'] ?? '';
-    final categories = [
-      {'key': 'mason',           'label': 'Mason'},
-      {'key': 'helper',          'label': 'Helper'},
-      {'key': 'fitter',          'label': 'Fitter'},
-      {'key': 'centring_helper', 'label': 'Centring Helper'},
-    ];
+    final String? checkInTime = _firstNonEmpty([
+      dayPhotosForDate?['check_in_time'],
+      data['check_in_time'],
+      data['time'],
+      datePhotoLookup[date]?['check_in_time'],
+    ]);
+    final String? checkInPhoto = _firstNonEmpty([
+      dayPhotosForDate?['check_in_photo'],
+      data['check_in_photo'],
+      data['image_url'],
+      datePhotoLookup[date]?['check_in_photo'],
+    ]);
+    String? checkOutTime = _firstNonEmpty([
+      dayPhotosForDate?['check_out_time'],
+      data['check_out_time'],
+      data['out_time'],
+      datePhotoLookup[date]?['check_out_time'],
+    ]);
+    String? checkOutPhoto = _firstNonEmpty([
+      dayPhotosForDate?['check_out_photo'],
+      data['check_out_photo'],
+      data['out_image_url'],
+      datePhotoLookup[date]?['check_out_photo'],
+    ]);
+
+    // ✅ UI WORKAROUND: If backend automatically copied Check-In time to Check-Out, discard it
+    if (checkInTime != null && checkOutTime == checkInTime) {
+      checkOutTime = null;
+      checkOutPhoto = null;
+    }
+    
+    // ✅ UI WORKAROUND: Discard old/stale Check-Out times that are before Check-In
+    if (checkInTime != null && checkOutTime != null) {
+      try {
+        final format = DateFormat("HH:mm:ss");
+        final inTime = format.parse(checkInTime);
+        final outTime = format.parse(checkOutTime);
+        if (outTime.isBefore(inTime)) {
+          checkOutTime = null;
+          checkOutPhoto = null;
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+    
+    print("DEBUG_API_MAPPING_EXTREME: date=$date");
+    print("DEBUG_API_MAPPING_EXTREME: data keys = ${data.keys.toList()}");
+    print("DEBUG_API_MAPPING_EXTREME: data['check_in_photo'] = ${data['check_in_photo']}");
+    print("DEBUG_API_MAPPING_EXTREME: dayPhotosForDate = $dayPhotosForDate");
+    print("DEBUG_API_MAPPING_EXTREME: check_in_photo = $checkInPhoto");
+    
     final List<Attendances> list = [];
-    for (var cat in categories) {
-      final key   = cat['key']!;
-      final label = cat['label']!;
+    final reservedKeys = {
+      'date', 'total', 'check_in_time', 'check_in_photo', 'check_out_time', 'check_out_photo',
+      'time', 'image_url', 'out_time', 'out_image_url', 'id', 'site_id', 'created_at',
+      'updated_at', 'created_by', 'updated_by'
+    };
+
+    final Map<String, String> categoryLabels = {
+      'mason': 'Mason',
+      'helper': 'Helper',
+      'fitter': 'Fitter',
+      'centring_helper': 'Centring Helper',
+    };
+
+    for (var key in data.keys) {
+      if (reservedKeys.contains(key) || key.endsWith('_wage') || key.endsWith('_id')) {
+        continue;
+      }
+      
+      final label = categoryLabels[key] ?? (key.isNotEmpty ? key[0].toUpperCase() + key.substring(1).replaceAll('_', ' ') : key);
       final count = data[key] ?? 0;
       final rawWage = data['${key}_wage'];
       final amount = double.tryParse(rawWage?.toString() ?? '0') ?? 0.0;
-      
-      // ✅ Include record even if count is 0, as long as amount > 0 or there's an ID
       final id = data['${key}_id'];
+
       if (count > 0 || amount > 0 || id != null) {
         print("💰 [$date] $label → count=$count, wage=${rawWage} → amount=$amount, id=$id");
         list.add(Attendances(
@@ -440,6 +622,10 @@ class AttendanceController extends GetxController {
           amount: amount, 
           date: date,
           id: id is int ? id : (id is String ? int.tryParse(id) : null),
+          time: checkInTime,
+          imageUrl: checkInPhoto,
+          checkOutTime: checkOutTime,
+          checkOutPhoto: checkOutPhoto,
         ));
       }
     }
@@ -458,7 +644,7 @@ class AttendanceController extends GetxController {
     update();
   }
 
-  attendanceAddWages(String date, String type) async {
+  attendanceAddWages(String date, String type, {String? attendanceRowsJson}) async {
     attendanceSave.value = true;
     update();
     
@@ -495,8 +681,24 @@ class AttendanceController extends GetxController {
             ? postAttendanceData
             : editWagesAndAttendance;
 
+    if (attendanceRowsJson != null && attendanceRowsJson.isNotEmpty) {
+      sendOutput['attendance_rows'] = attendanceRowsJson;
+    }
+
+    if (checkInTime.value != null && checkInTime.value!.isNotEmpty) {
+      sendOutput['check_in_time'] = checkInTime.value;
+    }
+    if (checkOutTime.value != null && checkOutTime.value!.isNotEmpty) {
+      sendOutput['check_out_time'] = checkOutTime.value;
+    }
+
     CommonSuccessResponseModel? commonSuccessResponseModel =
-        await ApiData().addWagesApi(sendOutput, type);
+        await ApiData().addWagesApi(
+          sendOutput, 
+          type,
+          checkInFile: checkInImage.value,
+          checkOutFile: checkOutImage.value,
+        );
     
     if (commonSuccessResponseModel != null) {
       showToastMessage(commonSuccessResponseModel.message ?? "Updated successfully");
@@ -535,6 +737,45 @@ class AttendanceController extends GetxController {
 
     centringHelperCountController.clear();
     centringHelperAmountController.clear();
+
+    checkInTime.value = null;
+    checkOutTime.value = null;
+    checkInImage.value = null;
+    checkOutImage.value = null;
+    checkInImageUrl.value = null;
+    checkOutImageUrl.value = null;
+  }
+
+  Future<void> pickTime(BuildContext context, bool isCheckIn) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final formattedTime = picked.format(context);
+      if (isCheckIn) {
+        checkInTime.value = formattedTime;
+      } else {
+        checkOutTime.value = formattedTime;
+      }
+    }
+  }
+
+  Future<void> pickImage(bool isCheckIn, ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source, imageQuality: 70);
+    if (image != null) {
+      final file = File(image.path);
+      print("📸 Image Picked -> Path: ${file.path}");
+      file.length().then((size) => print("📸 Image Picked -> Size: $size bytes"));
+      print("📸 Image Picked -> Ext: ${file.path.split('.').last}");
+
+      if (isCheckIn) {
+        checkInImage.value = file;
+      } else {
+        checkOutImage.value = file;
+      }
+    }
   }
 
   /// Deletes attendance by [attendanceId] (individual record ID).

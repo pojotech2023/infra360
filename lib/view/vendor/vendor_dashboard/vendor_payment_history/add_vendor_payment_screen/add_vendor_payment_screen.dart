@@ -33,7 +33,7 @@ class _AddVendorPaymentScreenState extends State<AddVendorPaymentScreen> {
     // TODO: implement build
     return Scaffold(
         appBar: CommonAppBar.appBar(
-            title: "Add Vendor Payment",
+            title: controller.isEditMode ? "Edit Vendor Payment" : "Add Vendor Payment",
             onTap: (){
               Get.back();
 
@@ -150,26 +150,19 @@ class _AddVendorPaymentScreenState extends State<AddVendorPaymentScreen> {
 
               VerticalSpacing.d20px(),
 
-                  Obx(() =>
+                  Obx(()=> controller.isLoading.value?Center(child: CommonLoader(),):  CommonButton(onTap: (){
 
-                  controller.isLoading.value?Center(child: CommonLoader()):
-                  CommonButton(onTap: () {
-                    if(_formKey.currentState!.validate()){
-
+                    if (_formKey.currentState!.validate()) {
                       controller.addPayment();
-
 
                     }
 
-                  }, text: "Submit"))
+
+                  }, text: controller.isEditMode ? "Update" : "Submit"))
 
                 ],
-
           )),
         ));
-
-
-
   }
   Future<void> _selectDate() async {
     DateTime now = DateTime.now();

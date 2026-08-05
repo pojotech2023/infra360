@@ -1,3 +1,5 @@
+import 'package:raptor_pro/model/site_management_model.dart';
+
 /// Top-level response model
 class SupervisorPermissionsModel {
   int? responseCode;
@@ -6,6 +8,7 @@ class SupervisorPermissionsModel {
   int? supervisorId;
   String? supervisor;
   PermissionsData? permissions;
+  List<SiteManagementList>? assignedSites;
 
   SupervisorPermissionsModel({
     this.responseCode,
@@ -14,6 +17,7 @@ class SupervisorPermissionsModel {
     this.supervisorId,
     this.supervisor,
     this.permissions,
+    this.assignedSites,
   });
 
   SupervisorPermissionsModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +29,12 @@ class SupervisorPermissionsModel {
     permissions  = json['permissions'] != null
         ? PermissionsData.fromJson(json['permissions'])
         : null;
+    if (json['assigned_sites'] != null) {
+      assignedSites = <SiteManagementList>[];
+      json['assigned_sites'].forEach((v) {
+        assignedSites!.add(SiteManagementList.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() => {
@@ -34,6 +44,7 @@ class SupervisorPermissionsModel {
         'supervisor_id':  supervisorId,
         'supervisor':     supervisor,
         'permissions':    permissions?.toJson(),
+        'assigned_sites': assignedSites?.map((v) => v.toJson()).toList(),
       };
 }
 
@@ -95,6 +106,9 @@ class SiteManagementPerms {
   int? viewDrawing;
   int? editSite;
   int? deleteSite;
+  int? viewSalesBill;
+  int? viewPurchaseBill;
+  int? viewMaterialEstimation;
 
   SiteManagementPerms({
     this.addSite,
@@ -108,6 +122,9 @@ class SiteManagementPerms {
     this.viewDrawing,
     this.editSite,
     this.deleteSite,
+    this.viewSalesBill,
+    this.viewPurchaseBill,
+    this.viewMaterialEstimation,
   });
 
   SiteManagementPerms.fromJson(Map<String, dynamic> json) {
@@ -122,6 +139,9 @@ class SiteManagementPerms {
     viewDrawing          = json['view_drawing'];
     editSite             = json['edit_site'];
     deleteSite           = json['delete_site'];
+    viewSalesBill        = json['view_sales_bill'];
+    viewPurchaseBill     = json['view_purchase_bill'];
+    viewMaterialEstimation = json['view_material_estimation'];
   }
 
   // ── Convenience bool getters (1 = visible, 0 = hidden) ───────────────────
@@ -132,6 +152,9 @@ class SiteManagementPerms {
   bool get canViewChecklist     => viewChecklist       == 1;
   bool get canViewTickets       => viewTickets         == 1;
   bool get canViewDrawing       => viewDrawing         == 1;
+  bool get canViewSalesBill     => viewSalesBill       == 1;
+  bool get canViewPurchaseBill  => viewPurchaseBill    == 1;
+  bool get canViewMaterialEstimation => viewMaterialEstimation == 1;
 
   Map<String, dynamic> toJson() => {
         'add_site':               addSite,
@@ -145,6 +168,9 @@ class SiteManagementPerms {
         'view_drawing':           viewDrawing,
         'edit_site':              editSite,
         'delete_site':            deleteSite,
+        'view_sales_bill':        viewSalesBill,
+        'view_purchase_bill':     viewPurchaseBill,
+        'view_material_estimation': viewMaterialEstimation,
       };
 }
 

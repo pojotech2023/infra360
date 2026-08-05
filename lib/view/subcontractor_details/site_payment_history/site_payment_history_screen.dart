@@ -7,6 +7,7 @@ import 'package:raptor_pro/utils/res/colors.dart';
 import 'package:raptor_pro/view/subcontractor_details/site_payment_history/site_payment_history_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/widgets/log_out.dart';
 import 'package:raptor_pro/utils/res/date_picker.dart';
 
 class SitePaymentHistoryScreen extends StatelessWidget {
@@ -36,7 +37,10 @@ class SitePaymentHistoryScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => _showAddPaymentDialog(context, controller),
+                    onPressed: () {
+                      controller.resetForm();
+                      _showAddPaymentDialog(context, controller);
+                    },
                     icon: const Icon(Icons.add, color: Colors.white, size: 18),
                     label: const Text("+ Add Payment", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
@@ -96,7 +100,7 @@ class SitePaymentHistoryScreen extends StatelessWidget {
                   itemCount: list.length,
                   itemBuilder: (context, index) {
                     final item = list[index];
-                    return _buildCard(item, index + 1);
+                    return _buildCard(item, index + 1, controller);
                   },
                 );
               }),
@@ -133,7 +137,7 @@ class SitePaymentHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCard(PaymentHistoryList item, int index) {
+  Widget _buildCard(PaymentHistoryList item, int index, SitePaymentHistoryController controller) {
     String formattedDate = item.date ?? '';
     try {
       if (formattedDate.isNotEmpty) {
@@ -177,6 +181,30 @@ class SitePaymentHistoryScreen extends StatelessWidget {
             valueColor: Colors.green.shade700,
             bold: true,
           ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: () {
+                  controller.openEditMode(item);
+                  _showAddPaymentDialog(Get.context!, controller);
+                },
+                child: const Icon(Icons.edit, color: Colors.blue, size: 20),
+              ),
+              const SizedBox(width: 16),
+              InkWell(
+                onTap: () {
+                  if (item.id != null) {
+                    deleteDialog(Get.context!, () {
+                      controller.deletePayment(item.id!);
+                    });
+                  }
+                },
+                child: const Icon(Icons.delete, color: Colors.red, size: 20),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -204,10 +232,6 @@ class SitePaymentHistoryScreen extends StatelessWidget {
   }
 
   void _showAddPaymentDialog(BuildContext context, SitePaymentHistoryController controller) {
-    controller.paymentCtrl.clear();
-    controller.dateCtrl.clear();
-    controller.remarksCtrl.clear();
-    controller.selectedPaymentMode.value = null;
 
     showDialog(
       context: context,
@@ -215,7 +239,7 @@ class SitePaymentHistoryScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Add Payment"),
+              title: Obx(() => Text(controller.isEditMode.value ? "Edit Payment" : "Add Payment")),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -285,7 +309,7 @@ class SitePaymentHistoryScreen extends StatelessWidget {
                       ? const SizedBox(
                           width: 16, height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text("Save", style: TextStyle(color: Colors.white)),
+                      : Text(controller.isEditMode.value ? "Update" : "Save", style: const TextStyle(color: Colors.white)),
                 )),
               ],
             );

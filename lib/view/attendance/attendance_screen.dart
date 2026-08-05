@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:raptor_pro/model/attendance_list_model.dart';
+import 'package:raptor_pro/api/api_data.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/const_data.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
@@ -15,7 +16,9 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
+import 'package:raptor_pro/view/widgets/full_screen_image_viewer.dart';
 
+import '../../utils/url_helper.dart';
 import 'add_wages.dart';
 import 'export_attendance.dart';
 
@@ -549,7 +552,12 @@ mainAxisAlignment: MainAxisAlignment.center,
                                                       print("⚠️ Skipping delete for ${item.category} because ID is NULL");
                                                     }
                                                   }
-                                                  print("Delete operation completed. Fetching latest data...");
+                                                  print("Delete operation completed. Now deleting wages for $displayDate");
+                                                  await ApiData().deleteWagesRowApi({
+                                                    "site_id": controller.siteId.value,
+                                                    "date": rawDate,
+                                                  });
+                                                  print("Wages deletion requested. Fetching latest data...");
                                                   await controller.init(controller.siteId.value);
                                                 },
                                               ),
@@ -576,7 +584,7 @@ mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Expanded(flex: 2, child: Text("Category", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700))),
                               Expanded(flex: 1, child: Text("Count", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700), textAlign: TextAlign.center)),
-                              Expanded(flex: 1, child: Text("Wages", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700), textAlign: TextAlign.right)),
+                              Expanded(flex: 2, child: Text("Wages", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700), textAlign: TextAlign.right)),
                             ],
                           ),
                         ),
@@ -595,7 +603,7 @@ mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Expanded(flex: 2, child: Text(item.category ?? "-", style: AppTextStyle.textMedium.copyWith(fontSize: 14))),
                                   Expanded(flex: 1, child: Text("${item.count ?? 0}", style: AppTextStyle.textMedium.copyWith(fontSize: 14), textAlign: TextAlign.center)),
-                                  Expanded(flex: 1, child: Text(
+                                  Expanded(flex: 2, child: Text(
                                     () {
                                       final total = (item.amount ?? 0) * (item.count ?? 0);
                                       return total == total.roundToDouble()
@@ -610,7 +618,7 @@ mainAxisAlignment: MainAxisAlignment.center,
                             );
                           },
                         ),
-                        SizedBox(height: 8),
+                        if (items.isNotEmpty) _buildCardFooterPhotos(items, context),
                       ],
                     ),
                   );
@@ -737,6 +745,146 @@ mainAxisAlignment: MainAxisAlignment.center,
           },
         );
       },
+    );
+  }
+
+  String _formatTime(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return '';
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        int hour = int.parse(parts[0]);
+        int min = int.parse(parts[1]);
+        String ampm = hour >= 12 ? 'PM' : 'AM';
+        int h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return "${h.toString().padLeft(2, '0')}:${min.toString().padLeft(2, '0')} $ampm";
+      }
+    } catch (e) {
+      return timeStr;
+    }
+    return timeStr;
+  }
+
+  String _resolvePhotoUrl(String? path) => UrlHelper.getFullImageUrl(path);
+
+  Attendances? _photoSourceForDate(List<Attendances> items) {
+    // First check individual records for photos
+    for (final item in items) {
+      final hasCheckIn = item.imageUrl != null && item.imageUrl!.trim().isNotEmpty;
+      final hasCheckOut = item.checkOutPhoto != null && item.checkOutPhoto!.trim().isNotEmpty;
+      if (hasCheckIn || hasCheckOut) return item;
+    }
+    
+    // If no individual records have photos, check the controller's datePhotoLookup for day-level photos
+    if (items.isNotEmpty) {
+      final date = items.first.date;
+      if (date != null) {
+        final dayPhotos = controller.datePhotoLookup[date];
+        if (dayPhotos != null) {
+          final checkInPhoto = dayPhotos['check_in_photo']?.toString();
+          final checkOutPhoto = dayPhotos['check_out_photo']?.toString();
+          final hasCheckIn = checkInPhoto != null && checkInPhoto.trim().isNotEmpty;
+          final hasCheckOut = checkOutPhoto != null && checkOutPhoto.trim().isNotEmpty;
+          
+          if (hasCheckIn || hasCheckOut) {
+            // Return the first item with day-level photos applied
+            final item = items.first;
+            item.imageUrl = checkInPhoto;
+            item.checkOutPhoto = checkOutPhoto;
+            item.time = dayPhotos['check_in_time']?.toString();
+            item.checkOutTime = dayPhotos['check_out_time']?.toString();
+            return item;
+          }
+        }
+      }
+    }
+    
+    return items.isNotEmpty ? items.first : null;
+  }
+
+  Widget _buildCardFooterPhotos(List<Attendances> items, BuildContext context) {
+    final item = _photoSourceForDate(items);
+    if (item == null) return const SizedBox.shrink();
+
+    final checkInUrl = _resolvePhotoUrl(item.imageUrl);
+    final checkOutUrl = _resolvePhotoUrl(item.checkOutPhoto);
+    final hasCheckIn = checkInUrl.isNotEmpty;
+    final hasCheckOut = checkOutUrl.isNotEmpty;
+
+    if (!hasCheckIn && !hasCheckOut) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Photos", style: AppTextStyle.textBold.copyWith(fontSize: 13, color: Colors.grey.shade700)),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasCheckIn)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 24.0),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => FullScreenImageViewer.show(context, checkInUrl),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                checkInUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.image, size: 24, color: Colors.grey);
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text("In: ${_formatTime(item.time)}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  if (hasCheckOut)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => FullScreenImageViewer.show(context, checkOutUrl),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                checkOutUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.image, size: 24, color: Colors.grey);
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text("Out: ${_formatTime(item.checkOutTime)}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

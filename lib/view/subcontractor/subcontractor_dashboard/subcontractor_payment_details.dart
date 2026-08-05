@@ -27,6 +27,11 @@ class _SubcontractorPaymentDetailsState extends State<SubcontractorPaymentDetail
     if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
     return dashboardController.supervisorPermissions.value?.subcontractorManagement?.addPayment == 1;
   }
+  
+  bool canViewPaymentHistory() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.paymentHistory == 1;
+  }
 
 
   @override
@@ -64,17 +69,19 @@ class _SubcontractorPaymentDetailsState extends State<SubcontractorPaymentDetail
                         text: 'Add Payment',
                       ),
                     ),
-                  SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: CommonButton(
-                      customColor: AppColor.buttonLightBlue,
-                      onTap: () {
-                        Get.to(() => SubcontractorPaymentHistoryScreen(), arguments: controller.subcontractorId.value);
-                      },
-                      text: 'Payment History',
+                  if (canViewPaymentHistory()) ...[
+                    SizedBox(width: 10),
+                    SizedBox(
+                      width: 150,
+                      child: CommonButton(
+                        customColor: AppColor.buttonLightBlue,
+                        onTap: () {
+                          Get.to(() => SubcontractorPaymentHistoryScreen(), arguments: controller.subcontractorId.value);
+                        },
+                        text: 'Payment History',
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
 

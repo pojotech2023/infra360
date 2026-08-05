@@ -49,7 +49,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
 
     canShow =
         (role == 'admin' && (type == 1 || type == 2)) ||
-            (role == 'supervisor' && type == 2);
+            (role == 'supervisor' && (type == 1 || type == 2));
 
     // Pre-fill form if editing
     if (widget.editItem != null) {
@@ -92,7 +92,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
             ? "Edit ${controller.itemKey} Order"
             : widget.type == 1
                 ? "Add ${controller.itemKey} Request"
-                : "Add ${controller.itemKey} Order",
+                : "Inward ${controller.itemKey} Order",
         onTap: () => Get.back(),
       ),
       body: SafeArea(
@@ -109,18 +109,20 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
             _buildVendorDropdown(),
           _buildMobileNumberField(),
           _buildAddressField(),
+          if (widget.type != 2) _buildItemField(),
+          if (widget.type == 2) _buildVendorGstField(),
           ],
               _buildQuantityField(),
 
               _buildCategoryDropdown(),
               _buildUnitDropdown(),
-           //   _buildattachemnt(),
 
               _buildDate(),
                _buildAmountField(),
-               _buildGstField(),
+               if (widget.type != 2) _buildGstField(),
               _buildSupervisorNameField(),
               _buildSupervisorMobField(),
+              _buildAttachment(),
               _buildSubmitButton(),
             ],
           ),
@@ -160,6 +162,9 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                 controller.selectedVendorData = value;
                 controller.mobileNoController.text = value.mobileNo ?? '';
                 controller.addressController.text = value.address ?? '';
+                if (widget.type == 2) {
+                  controller.gstController.text = value.gst ?? '';
+                }
                 controller.update();
               }
 print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
@@ -185,7 +190,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
   }
 
   Widget _buildMobileNumberField() => _textField(
-    label: "Requestor Mobile No",
+    label: "Vendor Mobile No",
     controller: controller.mobileNoController,
     hint: "Mobile number",
     readOnly: true,
@@ -197,12 +202,30 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
   );
 
   Widget _buildAddressField() => _textField(
-    label: "Request Address",
+    label: "Vendor Address",
     controller: controller.addressController,
-    hint: "Address",
+    hint: widget.type == 2 ? "Auto-filled on selecting vendor" : "Vendor Address",
     readOnly: true,
     minLines: 2,
   );
+
+  Widget _buildVendorGstField() => _textField(
+    label: "Vendor GST",
+    controller: controller.gstController,
+    hint: "Auto-filled on selecting vendor",
+    readOnly: true,
+  );
+
+  Widget _buildItemField() {
+    String val = controller.itemKey.value;
+    String capitalizedItem = val.isNotEmpty ? '${val[0].toUpperCase()}${val.substring(1)}' : '';
+    return _textField(
+      label: "Items",
+      controller: TextEditingController(text: capitalizedItem),
+      hint: "Item",
+      readOnly: true,
+    );
+  }
 
   Widget _buildQuantityField() => _textField(
     label: "Quantity",
@@ -212,9 +235,9 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
   );
 
   Widget _buildAmountField() => _textField(
-    label: "Price",
+    label: widget.type == 2 ? "Total Price" : "Price",
     controller: controller.amountController,
-    hint: "Enter Price",
+    hint: widget.type == 2 ? "Enter total price" : "Enter Price",
     keyboardType: TextInputType.number,
   );
 
@@ -327,48 +350,77 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
     });
   }
 
-  // 🔹 VENDOR DROPDOWN (Reactive)
-  Widget _buildattachemnt() {
-    return  GetBuilder<NewRequestController>(builder: (ctrl) {
-      if (ctrl.units.isNotEmpty) return const SizedBox.shrink();
-      return  Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if ( attachment != null)
-              FilePreview(
-                file: attachment!,
-                isImage: true,
-                onRemove: () {
-                  setState(() {
-                    attachment = null;
-                  });
-                },), VerticalSpacing.d5px(),
+  Widget _buildAttachment() {
+    if (widget.type != 2) return const SizedBox.shrink();
 
-            OutlinedButton(
-              onPressed: () => _showAttachmentOptions(context),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: AppColor.textFieldBorder,
-                side: BorderSide(color: AppColor.textFieldBorder),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(7),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (attachment != null)
+          FilePreview(
+            file: attachment!,
+            isImage: true,
+            onRemove: () {
+              setState(() {
+                attachment = null;
+              });
+            },
+          )
+        else if (widget.editItem?.imageUrl != null && widget.editItem!.imageUrl!.isNotEmpty)
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                height: 100,
+                width: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(widget.editItem!.imageUrl!),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add),
-                  SizedBox(width: 8),
-                  Text("Upload Drawing Image / Video"),
-                ],
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    widget.editItem!.imageUrl = null; // Mark as removed in memory
+                  });
+                },
+                child: Container(
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                  child: const Icon(Icons.cancel, color: Colors.red),
+                ),
               ),
+            ],
+          ),
+        VerticalSpacing.d5px(),
+        OutlinedButton(
+          onPressed: () => _showAttachmentOptions(context),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: AppColor.textFieldBorder,
+            side: BorderSide(color: AppColor.textFieldBorder),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(7),
             ),
-
-
-            VerticalSpacing.d15px(),
-          ],
-        );
-    });
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image, color: AppColor.black, size: 20),
+              HorizontalSpacing.d5px(),
+              Text(
+                widget.type == 2 ? 'Invoice' : 'Upload Image',
+                style: AppTextStyle.textRegular15.copyWith(color: AppColor.black),
+              ),
+            ],
+          ),
+        ),
+        VerticalSpacing.d15px(),
+      ],
+    );
   }
 
   // 🔹 DELIVERY DROPDOWN
@@ -430,7 +482,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
           controller.addMaterialApi(attachment,widget.type);
         }
       },
-      text: "Submit",
+      text: widget.type == 2 ? "Inward Order" : "Send Request to Vendor WhatsApp",
     );
   }
 

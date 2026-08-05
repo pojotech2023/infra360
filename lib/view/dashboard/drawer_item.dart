@@ -16,7 +16,9 @@ import 'package:raptor_pro/view/widgets/log_out.dart';
 
 import '../quotation/generate_quotation_controller.dart';
 import '../quotation/generate_quotation_screen.dart';
+import '../quotation/quotation_history_screen.dart';
 import '../subcontractor/subcontractor_main_screen.dart';
+import '../unit_master/unit_master_screen.dart';
 
 class DrawerWidget extends StatelessWidget {
   const DrawerWidget({super.key});
@@ -38,11 +40,11 @@ class DrawerWidget extends StatelessWidget {
 
           /// Returns true if the drawer item should be shown.
           /// - Admin: always true.
-          /// - Supervisor with no perms: default true (show all).
-          /// - Supervisor with perms: respect the value.
+          /// - Supervisor with perms loaded: respect the value.
+          /// - Supervisor with perms not yet loaded: false (deny while loading prevents flicker).
           bool canShow(bool Function(PermissionsData p) check) {
             if (!isSupervisor) return true;
-            if (perms == null) return true;
+            if (perms == null) return false; // hide until permissions are confirmed
             return check(perms);
           }
 
@@ -113,16 +115,27 @@ class DrawerWidget extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Generate Quotation — permission controlled for supervisor
+                      // Quotation Menu — permission controlled for supervisor
                       if (canShow((p) => p.quotation?.canAccessQuotation ?? false))
-                        drawerItem(Images.quotation, 'Generate Quotation',
-                            onTap: () {
-                          if (Get.isRegistered<GenerateQuotationController>()) {
-                            Get.delete<GenerateQuotationController>(
-                                force: true);
-                          }
-                          Get.to(() => GenerateQuotationScreen());
-                        }),
+                        Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                            leading: SvgPicture.asset(Images.quotation),
+                            title: Text('Quotation', style: AppTextStyle.textMedium.copyWith(color: AppColor.black)),
+                            children: [
+                              drawerItem(Images.quotation, 'Generate Quotation', onTap: () {
+                                if (Get.isRegistered<GenerateQuotationController>()) {
+                                  Get.delete<GenerateQuotationController>(force: true);
+                                }
+                                Get.to(() => GenerateQuotationScreen());
+                              }),
+                              drawerItem(Images.quotation, 'Quotation History', onTap: () {
+                                Get.to(() => QuotationHistoryScreen());
+                              }),
+                            ],
+                          ),
+                        ),
 
                       // Customer List — permission controlled for supervisor
                       if (canShow((p) => p.customerManagement?.canAccessCustomer ?? false))
@@ -149,6 +162,13 @@ class DrawerWidget extends StatelessWidget {
                         drawerItem(Images.supervisor, 'Supervisor Creation',
                             onTap: () {
                           Get.to(SuperVisorManagementScreen());
+                        }),
+
+                      // Unit Master — admin only
+                      if (controller.userDetails.data!.role!.toLowerCase() ==
+                          'admin')
+                        drawerItem(Images.properties, 'Unit Master', onTap: () {
+                          Get.to(() => const UnitMasterScreen());
                         }),
 
                       // Profile — always visible

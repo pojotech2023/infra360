@@ -59,4 +59,18 @@ class FilePickerHelper {
 
     return null;
   }
+
+  /// Pick drawing files with specific supported extensions
+  static Future<File?> pickDrawingFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'xls', 'xlsx', 'dwg'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      return File(result.files.single.path!);
+    }
+
+    return null;
+  }
 }

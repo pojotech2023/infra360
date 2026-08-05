@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/service/shared_preference_service.dart';
 import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
+import 'package:raptor_pro/service/location_service.dart';
 
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ void showLogoutDialog(BuildContext context) {
               final controller = Get.find<DashboardController>();
               controller.stopPermissionPolling();
             }
+            LocationService.stopService();
             
             PreferenceUtils().init();
             PreferenceUtils().clear();

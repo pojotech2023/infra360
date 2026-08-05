@@ -19,6 +19,8 @@ import '../tickets/ticket_list_screen.dart';
 import '../payment_status/payment_status_screen.dart';
 import '../dashboard/dashboard_controller.dart';
 import '../sales_bill/sales_bill_screen.dart';
+import '../purchase_bill/purchase_bill_screen.dart';
+import '../material_estimation_request/material_estimation_screen.dart';
 
 class MaterialCategoryScreen extends StatefulWidget {
   @override
@@ -54,6 +56,9 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
         print("   tickets=${ s?.viewTickets} canTickets=${ s?.canViewTickets}");
         print("   drawing=${ s?.viewDrawing} canDrawing=${ s?.canViewDrawing}");
         print("   payment_status=${ s?.viewPaymentStatus} canPaymentStatus=${ s?.canViewPaymentStatus}");
+        print("viewSalesBill = ${s?.viewSalesBill}");
+        print("viewPurchaseBill = ${s?.viewPurchaseBill}");
+        print("viewMaterialEstimation = ${s?.viewMaterialEstimation}");
       }
     }
 
@@ -118,13 +123,42 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
           "onTap": () => Get.to(() => const PaymentStatusScreen(),
               arguments: siteManagementList.id),
         },
-      // Sales Bill — always visible (no specific permission flag yet)
-      {
-        "title": "Sales Bill",
-        "image": Images.salesBill,
-        "onTap": () => Get.to(() => const SalesBillScreen(),
-            arguments: siteManagementList.id),
-      },
+      // Sales Bill
+      if (canShow((p) {
+        final can = p.siteManagement?.canViewSalesBill ?? false;
+        if (can || !isSupervisor) print("Adding Sales Bill");
+        return can;
+      }))
+        {
+          "title": "Sales Bill",
+          "image": Images.salesBill,
+          "onTap": () => Get.to(() => const SalesBillScreen(),
+              arguments: siteManagementList.id),
+        },
+      // Purchase Bill
+      if (canShow((p) {
+        final can = p.siteManagement?.canViewPurchaseBill ?? false;
+        if (can || !isSupervisor) print("Adding Purchase Bill");
+        return can;
+      }))
+        {
+          "title": "Purchase Bill",
+          "image": Images.purchaseBill,
+          "onTap": () => Get.to(() => const PurchaseBillScreen(),
+              arguments: siteManagementList.id),
+        },
+      // Material Estimation Request
+      if (canShow((p) {
+        final can = p.siteManagement?.canViewMaterialEstimation ?? false;
+        if (can || !isSupervisor) print("Adding Material Estimation");
+        return can;
+      }))
+        {
+          "title": "Material Estimation Request",
+          "image": Images.materialEstimation,
+          "onTap": () => Get.to(() => const MaterialEstimationScreen(),
+              arguments: siteManagementList.id),
+        },
     ];
 
     print("📋 [MATERIAL_CATEGORY] Showing ${items.length} item(s): ${items.map((e) => e['title']).toList()}");

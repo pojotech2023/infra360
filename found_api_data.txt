@@ -1,0 +1,35 @@
+Created At: 2026-08-04T09:06:13Z
+Tool is running as a background task with task id: ce2cf621-846e-40d4-8dc8-c41660d5141d/task-1066
+Task Description: python -c "
+import os
+
+history_dir = r'C:\Users\pojot\AppData\Roaming\Code\User\History'
+found_files = []
+
+if os.path.exists(history_dir):
+    for root, _, files in os.walk(history_dir):
+        for f in files:
+            path = os.path.join(root, f)
+            try:
+                with open(path, 'r', encoding='utf-8') as file:
+                    content = file.read()
+                    # Check for indicators of the correct api_data.dart
+                    if 'class ApiData {' in content and 'addCustomer' in content and 'purchaseBillFormApi' in content:
+                        found_files.append((os.path.getmtime(path), path))
+            except:
+                pass
+
+if found_files:
+    found_files.sort(reverse=True)
+    best_file = found_files[0][1]
+    print(f'Found best backup: {best_file}')
+    
+    # Copy it over
+    target = r'C:\Users\pojot\StudioProjects\Pojo Infra360\lib\api\api_data.dart'
+    import shutil
+    shutil.copy2(best_file, target)
+    print('Restored successfully.')
+else:
+    print('No backup found.')
+"
+Task logs are available at: file:///C:/Users/pojot/.gemini/antigravity-ide/brain/ce2cf621-846e-40d4-8dc8-c41660d5141d/.system_generated/tasks/task-1066.log

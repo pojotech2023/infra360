@@ -34,12 +34,6 @@ class DashboardController extends GetxController {
   /// null = admin login or permissions not yet loaded.
   var supervisorPermissions = Rxn<PermissionsData>();
 
-  /// Timer for automatic permission polling
-  Timer? _permissionPollTimer;
-  
-  /// Polling interval in seconds (default: 30 seconds)
-  static const int _permissionPollInterval = 30;
-
   @override
   void onInit() {
     final data = jsonDecode(PreferenceUtils().getUserInfo());
@@ -50,17 +44,11 @@ class DashboardController extends GetxController {
 
     init();
     
-    // Start automatic permission polling for supervisors
-    if (profileRole.value.toLowerCase() == 'supervisor') {
-      _startPermissionPolling();
-    }
-    
     super.onInit();
   }
 
   @override
   void onClose() {
-    // Stop permission polling when controller is disposed
     stopPermissionPolling();
     super.onClose();
   }
@@ -122,32 +110,50 @@ class DashboardController extends GetxController {
 
     final model = await ApiData().getSupervisorPermissions(supervisorId);
 
-    if (model != null && model.permissions != null) {
-      supervisorPermissions.value = model.permissions;
+    if (model != null) {
+      if (model.permissions != null) {
+        supervisorPermissions.value = model.permissions;
+      }
+      
+      if (model.assignedSites != null) {
+        final assignedIds = model.assignedSites!.map((s) => s.id).toSet();
+        siteManagementList = siteManagementList.where((site) => assignedIds.contains(site.id)).toList();
+        print("✅ [PERMISSIONS] Assigned sites applied to dashboard. Count: ${siteManagementList.length}");
+        for (final site in siteManagementList) {
+          print("Assigned Site: ${site.id} - ${site.siteName}");
+        }
+      }
 
-      // Cache the permissions JSON for offline/restart usage
-      final encoded = jsonEncode(model.permissions!.toJson());
+      // Cache the full model JSON for offline/restart usage
+      final encoded = jsonEncode(model.toJson());
       PreferenceUtils().setSupervisorPermissions(encoded);
-      print("💾 [PERMISSIONS] Cached to SharedPreferences: $encoded");
+      print("💾 [PERMISSIONS] Cached to SharedPreferences");
       
       // Force UI update to reflect permission changes
       update();
     } else {
-      // Fallback: restore from cache
+      // Fallback: restore from cache — do NOT reset to null (that causes menu flicker)
       print("⚠️ [PERMISSIONS] API failed — attempting to load from cache...");
       final cached = PreferenceUtils().getSupervisorPermissions();
       if (cached.isNotEmpty) {
         try {
-          supervisorPermissions.value =
-              PermissionsData.fromJson(jsonDecode(cached));
+          final cachedModel = SupervisorPermissionsModel.fromJson(jsonDecode(cached));
+          if (cachedModel.permissions != null) {
+            supervisorPermissions.value = cachedModel.permissions;
+          }
+          if (cachedModel.assignedSites != null) {
+            final assignedIds = cachedModel.assignedSites!.map((s) => s.id).toSet();
+            siteManagementList = siteManagementList.where((site) => assignedIds.contains(site.id)).toList();
+            print("📦 [PERMISSIONS] Assigned sites loaded from cache. Count: ${siteManagementList.length}");
+          }
           print("📦 [PERMISSIONS] Loaded from cache successfully");
         } catch (e) {
           print("❌ [PERMISSIONS] Failed to parse cached permissions: $e");
-          supervisorPermissions.value = null;
+          // Keep existing value rather than resetting to null
         }
       } else {
-        print("❌ [PERMISSIONS] No cache found — all options default to VISIBLE");
-        supervisorPermissions.value = null;
+        // No cache — keep last known value, don't reset to null which shows everything
+        print("⚠️ [PERMISSIONS] No cache found — keeping current permissions state");
       }
       update();
     }
@@ -172,45 +178,15 @@ class DashboardController extends GetxController {
     print("✅ [PERMISSIONS] Refresh complete");
   }
 
-  /// Starts automatic permission polling for supervisors
-  /// Polls every 30 seconds to check for permission changes
-  /// Only supervisors can use polling, and only one timer exists at a time
-  void _startPermissionPolling() {
-    // Double-check role is supervisor (defensive programming)
-    if (profileRole.value.toLowerCase() != 'supervisor') {
-      print("⏱️ [PERMISSIONS] Not a supervisor - skipping polling start");
-      return;
-    }
-    
-    // Stop any existing timer to prevent duplicates
-    stopPermissionPolling();
-    
-    // Check if timer is already running (shouldn't happen after stop, but defensive)
-    if (_permissionPollTimer != null && _permissionPollTimer!.isActive) {
-      print("⏱️ [PERMISSIONS] Timer already running - skipping duplicate");
-      return;
-    }
-    
-    print("⏱️ [PERMISSIONS] Starting automatic polling (every ${_permissionPollInterval}s)");
-    
-    _permissionPollTimer = Timer.periodic(
-      Duration(seconds: _permissionPollInterval),
-      (timer) async {
-        print("⏱️ [PERMISSIONS] Polling for permission changes...");
-        await refreshPermissions();
-      },
-    );
+  /// Stops the automatic permission polling.
+  /// Called on controller close (logout) to clean up any running timer.
+  void stopPermissionPolling() {
+    _permissionPollTimer?.cancel();
+    _permissionPollTimer = null;
   }
 
-  /// Stops the automatic permission polling
-  /// Can be called externally (e.g., during logout)
-  void stopPermissionPolling() {
-    if (_permissionPollTimer != null) {
-      print("⏱️ [PERMISSIONS] Stopping permission polling");
-      _permissionPollTimer?.cancel();
-      _permissionPollTimer = null;
-    }
-  }
+  // Keep _permissionPollTimer as a nullable field for logout cleanup
+  Timer? _permissionPollTimer;
 
   deleteSite(int siteId) async {
     isLoading = true;

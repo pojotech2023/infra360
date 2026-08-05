@@ -15,10 +15,10 @@ class AddPaymentScreen extends GetView<PaymentStatusController> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          "Add Payment",
-          style: TextStyle(color: Color(0xFF252C58), fontWeight: FontWeight.bold),
-        ),
+        title: Obx(() => Text(
+          controller.isEditMode.value ? "Edit Payment" : "Add Payment",
+          style: const TextStyle(color: Color(0xFF252C58), fontWeight: FontWeight.bold),
+        )),
         actions: [
           IconButton(
             icon: const Icon(Icons.close, color: Colors.grey),
@@ -141,7 +141,7 @@ class AddPaymentScreen extends GetView<PaymentStatusController> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         SizedBox(
-                          width: 100,
+                          width: 120,
                           height: 45,
                           child: ElevatedButton(
                             onPressed: () => controller.addPayment(),
@@ -149,12 +149,12 @@ class AddPaymentScreen extends GetView<PaymentStatusController> {
                               backgroundColor: const Color(0xFF1877F2),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                             ),
-                            child: const Text("Add", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: Obx(() => Text(controller.isEditMode.value ? "Update" : "Add", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                           ),
                         ),
                         const SizedBox(width: 16),
                         SizedBox(
-                          width: 100,
+                          width: 120,
                           height: 45,
                           child: ElevatedButton(
                             onPressed: () => Get.back(),

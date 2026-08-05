@@ -160,7 +160,7 @@ class DashboardScreen extends StatelessWidget {
                                       Container(),
                                       Center(
                                         child: Text(
-                                          "Site Name : ${siteManagementList.id}  -  ${siteManagementList.siteName}",
+                                          "${siteManagementList.siteName}",
                                           style: AppTextStyle.textMedium,
                                         ),
                                       ),
@@ -299,8 +299,13 @@ class DashboardScreen extends StatelessWidget {
         child: GetBuilder<DashboardController>(
           builder: (controller) => controller.isLoading
               ? Center(child: CommonLoader())
-              : SingleChildScrollView(
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await controller.init();
+                  },
+                  child: SingleChildScrollView(
             padding: EdgeInsets.all(16),
+            physics: AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
               // ---------------- TABS ----------------
@@ -349,7 +354,7 @@ class DashboardScreen extends StatelessWidget {
                 if (controller.profileRole.value.toLowerCase() == 'supervisor') {
                   final perms = controller.supervisorPermissions.value;
                   if (perms != null) {
-                    canViewSiteList = perms.siteManagement?.viewSite == 1;
+                    canViewSiteList = perms.siteManagement?.viewSite == 1 || controller.siteManagementList.isNotEmpty;
                   }
                 }
 
@@ -468,7 +473,7 @@ class DashboardScreen extends StatelessWidget {
                             child: SizedBox(
                               width: MediaQuery.of(context).size.width - 32,
                               child: Text(
-                                "${site.id} - ${site.siteName}",
+                                "${site.siteName ?? ''}",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
@@ -646,6 +651,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

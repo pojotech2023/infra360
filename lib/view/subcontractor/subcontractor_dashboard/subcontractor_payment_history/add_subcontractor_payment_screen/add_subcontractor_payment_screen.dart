@@ -33,7 +33,7 @@ class _AddSubcontractorPaymentScreenState extends State<AddSubcontractorPaymentS
     // TODO: implement build
     return Scaffold(
         appBar: CommonAppBar.appBar(
-            title: "Add Subcontractor Payment",
+            title: controller.isEditMode ? "Edit Subcontractor Payment" : "Add Subcontractor Payment",
             onTap: (){
               Get.back();
 
@@ -150,18 +150,15 @@ class _AddSubcontractorPaymentScreenState extends State<AddSubcontractorPaymentS
 
               VerticalSpacing.d20px(),
 
-                  Obx(() =>
+                  Obx(()=> controller.isLoading.value?Center(child: CommonLoader(),):  CommonButton(onTap: (){
 
-                  controller.isLoading.value?Center(child: CommonLoader()):
-                  CommonButton(onTap: () {
-                    if(_formKey.currentState!.validate()){
-
+                    if (_formKey.currentState!.validate()) {
                       controller.addPayment();
-
 
                     }
 
-                  }, text: "Submit"))
+
+                  }, text: controller.isEditMode ? "Update" : "Submit"))
 
                 ],
 

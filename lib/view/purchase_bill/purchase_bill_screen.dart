@@ -1,0 +1,371 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:raptor_pro/utils/app_text_style.dart';
+import 'package:raptor_pro/utils/res/date_picker.dart';
+import 'package:raptor_pro/utils/res/spacing.dart';
+import 'package:raptor_pro/utils/text_form_style.dart';
+import 'package:raptor_pro/view/widgets/common_app_bar.dart';
+import '../../model/purchase_bill_model.dart';
+
+import 'purchase_bill_controller.dart';
+
+class PurchaseBillScreen extends StatelessWidget {
+  const PurchaseBillScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(PurchaseBillController());
+    final formKey = GlobalKey<FormState>();
+
+    return Scaffold(
+      appBar: CommonAppBar.appBar(
+        title: 'Generate Purchase Bill',
+        onTap: () => Get.back(),
+      ),
+      body: SafeArea(
+        child: GetBuilder<PurchaseBillController>(
+          builder: (ctrl) {
+            if (ctrl.isFormLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  // ─── Vendor Name ────────────────────────────────────────────────
+                  _label('Vendor Name'),
+                  TextFormField(
+                    controller: ctrl.nameController,
+                    focusNode: ctrl.vendorFocusNode,
+                    decoration: textBoxDecoration(hint: 'Type Vendor Name...'),
+                    onChanged: (val) => ctrl.filterVendors(val),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  if (ctrl.isVendorListVisible && ctrl.filteredVendors.isNotEmpty)
+                    Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.only(top: 4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: ctrl.filteredVendors.length,
+                          itemBuilder: (context, index) {
+                            final vendor = ctrl.filteredVendors[index];
+                            return InkWell(
+                              onTap: () => ctrl.onVendorSelected(vendor),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(vendor.name ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                    if (vendor.mobileNo != null && vendor.mobileNo!.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Text(vendor.mobileNo!, style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  VerticalSpacing.d15px(),
+
+                  // ─── Mobile No ───────────────────────────────────────────
+                  _label('Mobile No'),
+                  TextFormField(
+                    controller: ctrl.mobileController,
+                    keyboardType: TextInputType.phone,
+                    decoration: textBoxDecoration(hint: 'Enter Mobile Number'),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  // ─── Email ───────────────────────────────────────────────
+                  _label('Email'),
+                  TextFormField(
+                    controller: ctrl.emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: textBoxDecoration(hint: 'Enter Email (for Send Mail)'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  // ─── Date ────────────────────────────────────────────────
+                  _label('Date'),
+                  TextFormField(
+                    controller: ctrl.dateController,
+                    readOnly: true,
+                    decoration: textBoxDecoration(
+                      hint: 'yyyy-MM-dd',
+                      suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey),
+                    ),
+                    onTap: () async {
+                      final picked = await selectDate(context);
+                      if (picked.isNotEmpty) {
+                        ctrl.dateController.text = picked;
+                      }
+                    },
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  // ─── Subject ─────────────────────────────────────────────
+                  _label('Subject'),
+                  TextFormField(
+                    controller: ctrl.subjectController,
+                    decoration: textBoxDecoration(hint: 'Subject of Purchase Bill'),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  // ─── Location ────────────────────────────────────────────
+                  _label('Location'),
+                  TextFormField(
+                    controller: ctrl.locationController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: textBoxDecoration(hint: 'Enter Location'),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  VerticalSpacing.d20px(),
+
+                  // ─── Particulars section ──────────────────────────────────
+                  Text('Particulars', style: AppTextStyle.textFieldHeadingStyle.copyWith(fontSize: 16)),
+                  VerticalSpacing.d10px(),
+
+                  Obx(() => Column(
+                    children: ctrl.itemList.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final item = entry.value;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Particular
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                controller: item.particular,
+                                decoration: textBoxDecoration(hint: 'Particular (e.g. Bricks)'),
+                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Count
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: item.count,
+                                keyboardType: TextInputType.number,
+                                decoration: textBoxDecoration(hint: 'Count'),
+                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Amount
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: item.amount,
+                                keyboardType: TextInputType.number,
+                                decoration: textBoxDecoration(hint: 'Amount'),
+                                onChanged: (_) => ctrl.recalcTotal(),
+                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            // Delete button
+                            InkWell(
+                              onTap: () => ctrl.removeItem(idx),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  )),
+
+                  // ─── Add Row button ───────────────────────────────────────
+                  TextButton.icon(
+                    onPressed: () => ctrl.addItem(),
+                    icon: const Icon(Icons.add, color: Colors.white, size: 16),
+                    label: const Text('+ Add Row', style: TextStyle(color: Colors.white)),
+                    style: TextButton.styleFrom(
+                      backgroundColor: const Color(0xFF5C4DB1), // purple like screenshot
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+
+                  VerticalSpacing.d15px(),
+
+                  // ─── Total ────────────────────────────────────────────────
+                  Obx(() => Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'Total: ₹ ${ctrl.totalAmount.value.toStringAsFixed(2)}',
+                      style: AppTextStyle.textFieldHeadingStyle.copyWith(
+                        fontSize: 15,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  )),
+
+                  // ─── Terms & Conditions ──────────────────────────────────────────
+                  _label('Terms & Conditions'),
+                  TextFormField(
+                    controller: ctrl.termsController,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                  ),
+                  VerticalSpacing.d20px(),
+
+                  // ─── Action Buttons ───────────────────────────────────────
+                  GetBuilder<PurchaseBillController>(
+                    builder: (c) => c.isSubmitLoading.value
+                        ? const Center(child: CircularProgressIndicator())
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  // Send WhatsApp
+                                  SizedBox(
+                                    width: 150,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.sendWhatsApp();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Send WhatsApp',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                  // Send Mail
+                                  SizedBox(
+                                    width: 140,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.sendMail();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Send Mail',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                  // Download PDF
+                                  SizedBox(
+                                    width: 160,
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.downloadPdf();
+                                        }
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        side: const BorderSide(color: Colors.blue, width: 1.5),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Download PDF',
+                                          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              VerticalSpacing.d15px(),
+                              // Reset Button
+                              Align(
+                                alignment: Alignment.center,
+                                child: SizedBox(
+                                  width: 200,
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text('The App Says'),
+                                            content: const Text('Reset the form? All entered data will be lost.'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  c.resetForm();
+                                                },
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      side: BorderSide(color: Colors.red.shade300, width: 1.5),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(7)),
+                                    ),
+                                    child: Text('Reset',
+                                        style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      ),
+    );
+  }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text, style: AppTextStyle.textFieldHeadingStyle),
+      );
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:raptor_pro/api/api_data.dart';
@@ -99,6 +100,27 @@ class NewServicesRequestController extends GetxController {
           RequestDetailsController detailsController = Get.find();
           detailsController.fetchData();
         } catch (_) {}
+        
+        // Launch WhatsApp
+        final phone = mobileNoController.text.trim();
+        final String message = "Service Details:\n"
+            "Subcontractor Name: ${selectedSubContractorData.value?.name ?? ''}\n"
+            "Mobile No: $phone\n"
+            "No Of Counts: ${countController.text}\n"
+            "Address: ${addressController.text}\n"
+            "Date: $apiDate\n"
+            "Amount: ${amountController.text}\n"
+            "Remarks: ${remarksController.text}";
+            
+        final encodedMessage = Uri.encodeComponent(message);
+        final whatsappUrl = Uri.parse("whatsapp://send?phone=+91$phone&text=$encodedMessage");
+        
+        try {
+          await launchUrl(whatsappUrl);
+        } catch (_) {
+          showToastMessage("Could not launch WhatsApp");
+        }
+        
         Get.back();
       } else {
         showToastMessage(res.message ?? "Failed to add");

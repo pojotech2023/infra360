@@ -79,9 +79,10 @@ class BricksList {
   int? price;
   String? gst;
  // Null? availableUnitCount;
-  int? status;
+  dynamic status;
   String? createdAt;
   String? updatedAt;
+  String? imageUrl;
 
   BricksList(
       {this.id,
@@ -94,6 +95,7 @@ class BricksList {
         this.unit,
         this.price,
         this.gst,
+        this.imageUrl,
        // this.availableUnitCount,
         this.status,
         this.createdAt,
@@ -118,7 +120,9 @@ class BricksList {
     unit = json['unit'];
     price = json['price'] != null ? double.tryParse(json['price'].toString())?.toInt() : json['amount'] != null ? double.tryParse(json['amount'].toString())?.toInt() : null;
     gst = json['gst']?.toString();
-    status = json['status'];
+    imageUrl = (json['image_url'] ?? json['image'] ?? json['imageUrl'])?.toString();
+    print("🧱 BRICKS JSON: $json");
+    status = json['status'] ?? json['approval_status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
   }

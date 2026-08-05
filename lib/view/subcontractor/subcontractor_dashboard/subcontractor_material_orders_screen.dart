@@ -9,6 +9,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'subcontractor_material_orders_controller.dart';
 import 'subcontractor_payment_details.dart';
 import 'subcontractor_payment_history/subcontractor_payment_history_screen.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class SubcontractorMaterialOrdersScreen extends StatefulWidget {
   const SubcontractorMaterialOrdersScreen({Key? key}) : super(key: key);
@@ -25,6 +26,12 @@ class _SubcontractorMaterialOrdersScreenState extends State<SubcontractorMateria
   void initState() {
     super.initState();
     controller = Get.put(SubcontractorMaterialOrdersController(subcontractorId: subcontractorId));
+  }
+
+  bool canViewPaymentHistory() {
+    DashboardController dashboardController = Get.find<DashboardController>();
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.subcontractorManagement?.paymentHistory == 1;
   }
 
   @override
@@ -75,17 +82,18 @@ class _SubcontractorMaterialOrdersScreenState extends State<SubcontractorMateria
                         child: Text('Payment', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
                       ),
                       HorizontalSpacing.d10px(),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.to(() => SubcontractorPaymentHistoryScreen(), arguments: subcontractorId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.buttonBlue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      if (canViewPaymentHistory())
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.to(() => SubcontractorPaymentHistoryScreen(), arguments: subcontractorId);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColor.buttonBlue,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          child: Text('Payment History', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
                         ),
-                        child: Text('Payment History', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
-                      ),
                     ],
                   ),
                 ],

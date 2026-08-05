@@ -10,8 +10,10 @@ import 'package:raptor_pro/model/common_success_model.dart';
 import 'package:raptor_pro/model/customer_model.dart';
 import 'package:raptor_pro/model/login_response.dart';
 import 'package:raptor_pro/model/material_list_model.dart';
+import 'package:raptor_pro/model/material_request_list_model.dart';
 import 'package:raptor_pro/model/other_utilities_model.dart';
 import 'package:raptor_pro/model/property_list_model.dart';
+import 'package:raptor_pro/model/unit_master_model.dart';
 import 'package:raptor_pro/model/site_management_model.dart';
 import 'package:raptor_pro/model/subcontractor_dashboard_model.dart';
 import 'package:raptor_pro/model/subcontractor_material_orders_model.dart';
@@ -29,6 +31,8 @@ import 'package:raptor_pro/model/vendor_payment_history_model.dart';
 import 'package:raptor_pro/model/site_payment_summary_model.dart';
 import 'package:raptor_pro/model/site_payment_history_model.dart';
 import 'package:raptor_pro/model/sales_bill_model.dart';
+import 'package:raptor_pro/model/purchase_bill_model.dart';
+import 'package:raptor_pro/model/material_estimation_model.dart';
 import 'package:raptor_pro/service/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:raptor_pro/service/shared_preference_service.dart';
@@ -43,6 +47,7 @@ import '../model/my_subcontractor_list_model.dart';
 import '../model/profile_update_success_model.dart';
 import '../model/quotation_model.dart';
 import '../model/quotation_stored_model.dart';
+import '../model/quotation_history_model.dart';
 import '../model/subcontractor_amount_model.dart';
 import '../model/subcontractor_list_model.dart';
 import '../model/ticket_detail_model.dart';
@@ -520,16 +525,9 @@ required String status,
     return null;
   }
 
-  Future<CommonSuccessResponseModel?> updateMaterialApi(int id, Map<String, dynamic> data) async {
-    final response = await ApiService().sendAsync("POST", "material-update/$id", data, true);
-    if (response != null) {
-      final Map<String, dynamic> body = json.decode(response.body);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return CommonSuccessResponseModel.fromJson(body);
-      }
-    }
-    return null;
-  }
+  
+
+  
 
   Future<CommonSuccessResponseModel?> updateOtherUtilityApi(int id, Map<String, dynamic> data) async {
     final response = await ApiService().sendAsync("POST", "update-utility/$id", data, true);
@@ -1007,41 +1005,60 @@ print("uri ${uri}");
   }
 
 
-  Future<CommonSuccessResponseModel?> addWagesApi(Map<String,dynamic>data,String type) async {
+  Future<CommonSuccessResponseModel?> addWagesApi(Map<String,dynamic>data,String type, {File? checkInFile, File? checkOutFile}) async {
+    var url = type =="1" ?  'add-wages' : type =="2"?'attendance/update':"update-attendance-wages";
 
-
-   var url = type =="1" ?  'add-wages' : type =="2"?'attendance/update':"update-attendance-wages";
-
-   print("📤 Attendance Update API Call");
-   print("📤 URL: $url");
-   print("📤 Type: $type");
-   print("📤 Request Body: ${jsonEncode(data)}");
-   print("📤 Category values in request:");
-   print("   - mason: ${data['mason']}");
-   print("   - helper: ${data['helper']}");
-   print("   - fitter: ${data['fitter']}");
-   print("   - centring_helper: ${data['centring_helper']}");
-   print("   - mason_wage: ${data['mason_wage']}");
-   print("   - helper_wage: ${data['helper_wage']}");
-   print("   - fitter_wage: ${data['fitter_wage']}");
-   print("   - centring_helper_wage: ${data['centring_helper_wage']}");
-
-    final response =
-    await ApiService().sendAsync("POST", url, data, true);
-
-
-    if (response != null) {
-      final Map<String, dynamic> body = json.decode(response.body);
-print("📥 RESPONSE Status Code: ${response.statusCode}");
-print("📥 RESPONSE Body: ${jsonEncode(body)}");
-
-      if (response.statusCode == 200) {
-        return CommonSuccessResponseModel.fromJson(body);
+    print("📤 Attendance Update API Call");
+    print("📤 URL: $url");
+    print("📤 Type: $type");
+    
+    if (checkInFile != null || checkOutFile != null) {
+      final uri = Uri.parse("${baseUrl}$url");
+      final token = PreferenceUtils().getSessionToken();
+      final request = http.MultipartRequest('POST', uri);
+      
+      data.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+      
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+      
+      if (checkInFile != null && checkInFile.path.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('check_in_photo', checkInFile.path));
       }
+      if (checkOutFile != null && checkOutFile.path.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('check_out_photo', checkOutFile.path));
+      }
+      
+      try {
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return CommonSuccessResponseModel.fromJson(json.decode(response.body));
+        }
+      } catch (e) {
+        print("❌ Error: $e");
+      }
+      return null;
+    } else {
+      final response = await ApiService().sendAsync("POST", url, data, true);
+      if (response != null) {
+        try {
+          final Map<String, dynamic> body = json.decode(response.body);
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            return CommonSuccessResponseModel.fromJson(body);
+          }
+        } catch (e) {
+          print("❌ Error: $e");
+        }
+      }
+      return null;
     }
-
-    return null;
   }
+
 
 
   Future<PropertyListModel?> propertyList() async {
@@ -2092,7 +2109,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<ExcelAttendanceDownloadModel?> downloadQuotationPdf(int quotationId) async {
-    final response = await ApiService().sendAsync("GET", "quotation-pdf/$quotationId", null, true);
+    final response = await ApiService().sendAsync("GET", "quotation/pdf/$quotationId", null, true);
     if (response != null) {
       if (response.statusCode == 200) {
         return ExcelAttendanceDownloadModel.fromJson(json.decode(response.body));
@@ -2492,6 +2509,8 @@ print("REQUEST HEADER ${request.headers}");
     return null;
   }
 
+
+
   /// GET /subcontractor-{typeSlug}/{siteId}/export
   Future<ExcelAttendanceDownloadModel?> sitePaymentHistoryExportApi(int siteId, String type) async {
     final typeSlug = type.toLowerCase().replaceAll(' ', '-');
@@ -2499,6 +2518,539 @@ print("REQUEST HEADER ${request.headers}");
     if (response != null && response.statusCode == 200) {
       final url = "${baseUrl}subcontractor-$typeSlug/$siteId/export";
       return ExcelAttendanceDownloadModel(downloadUrl: url);
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> addSubcontractorTypeApi(String name, dynamic imageFile) async {
+    final uri = Uri.parse("${baseUrl}subcontractor-type-add");
+    print("🔍 addSubcontractorTypeApi REQUEST: POST $uri  name=$name");
+
+    final token = PreferenceUtils().getSessionToken();
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    request.fields['name'] = name;
+
+    if (imageFile != null && imageFile.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    }
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    } catch (e) {
+      print("❌ addSubcontractorTypeApi EXCEPTION: $e");
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> addMaterialTypeApi(String name, dynamic imageFile) async {
+    final uri = Uri.parse("${baseUrl}material-type-add");
+    print("≡ƒöì addMaterialTypeApi REQUEST: POST $uri  name=$name  hasImage=${imageFile != null}");
+
+    final token = PreferenceUtils().getSessionToken();
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    request.fields['name'] = name;
+
+    if (imageFile != null && imageFile.path.isNotEmpty) {
+      print("≡ƒôÄ addMaterialTypeApi: attaching image ${imageFile.path}");
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    }
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      print("≡ƒôÑ addMaterialTypeApi RESPONSE: statusCode=${response.statusCode}");
+      print("≡ƒôÑ addMaterialTypeApi BODY: ${response.body}");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      } else {
+        print("Γ¥î addMaterialTypeApi ERROR: ${response.statusCode} ΓåÆ ${response.body}");
+      }
+    } catch (e) {
+      print("Γ¥î addMaterialTypeApi EXCEPTION: $e");
+    }
+    return null;
+  }
+
+  /// DELETE /api/material-type-delete/{id}
+  /// Deletes a DYNAMIC (user-added) material type by numeric ID.
+  Future<CommonSuccessResponseModel?> deleteDynamicMaterialTypeApi(int id) async {
+    final endpoint = "material-type-delete/$id";
+    print("≡ƒöì deleteDynamicMaterialTypeApi REQUEST: DELETE $endpoint  id=$id");
+    final response = await ApiService().sendAsync("DELETE", endpoint, null, true);
+    print("≡ƒôÑ deleteDynamicMaterialTypeApi RESPONSE: statusCode=${response?.statusCode}");
+    print("≡ƒôÑ deleteDynamicMaterialTypeApi BODY: ${response?.body}");
+    if (response != null) {
+      try {
+        final Map<String, dynamic> body = json.decode(response.body);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return CommonSuccessResponseModel.fromJson(body);
+        } else {
+          print("Γ¥î deleteDynamicMaterialTypeApi ERROR: ${response.statusCode} ΓåÆ ${response.body}");
+        }
+      } catch (e) {
+        print("Γ¥î deleteDynamicMaterialTypeApi PARSE ERROR: $e");
+      }
+    }
+    return null;
+  }
+
+  /// DELETE /api/material-type-hide/{slug}
+  /// Hides a BUILT-IN material card from the grid by its slug (e.g. "bricks", "cement").
+  Future<CommonSuccessResponseModel?> hideBuiltInMaterialTypeApi(String slug) async {
+    final endpoint = "material-type-hide/$slug";
+    print("≡ƒöì hideBuiltInMaterialTypeApi REQUEST: DELETE $endpoint  slug=$slug");
+    final response = await ApiService().sendAsync("DELETE", endpoint, null, true);
+    print("≡ƒôÑ hideBuiltInMaterialTypeApi RESPONSE: statusCode=${response?.statusCode}");
+    print("≡ƒôÑ hideBuiltInMaterialTypeApi BODY: ${response?.body}");
+    if (response != null) {
+      try {
+        final Map<String, dynamic> body = json.decode(response.body);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return CommonSuccessResponseModel.fromJson(body);
+        } else {
+          print("Γ¥î hideBuiltInMaterialTypeApi ERROR: ${response.statusCode} ΓåÆ ${response.body}");
+        }
+      } catch (e) {
+        print("Γ¥î hideBuiltInMaterialTypeApi PARSE ERROR: $e");
+      }
+    }
+    return null;
+  }
+
+  // ΓöÇΓöÇΓöÇ Unit Master APIs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  Future<UnitMasterListResponse?> unitMasterListApi() async {
+    print("📋 unitMasterListApi REQUEST: unit-master");
+    final response = await ApiService().sendAsync("GET", "unit-master", null, true);
+    print("📋 unitMasterListApi RESPONSE: ${response?.statusCode} → ${response?.body}");
+    if (response != null && response.statusCode == 200) {
+      return UnitMasterListResponse.fromJson(json.decode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> unitMasterAddApi(Map<String, dynamic> data) async {
+    print("≡ƒôï unitMasterAddApi REQUEST: $data");
+    final response = await ApiService().sendAsync("POST", "unit-add", data, true);
+    print("≡ƒôï unitMasterAddApi RESPONSE: ${response?.statusCode} ΓåÆ ${response?.body}");
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(json.decode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> unitMasterUpdateApi(int id, Map<String, dynamic> data) async {
+    print("≡ƒôï unitMasterUpdateApi REQUEST: unit-update/$id with data $data");
+    final response = await ApiService().sendAsync("PATCH", "unit-update/$id", data, true);
+    print("≡ƒôï unitMasterUpdateApi RESPONSE: ${response?.statusCode} ΓåÆ ${response?.body}");
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(json.decode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> unitMasterDeleteApi(int id) async {
+    print("≡ƒôï unitMasterDeleteApi REQUEST: unit-delete/$id");
+    final response = await ApiService().sendAsync("DELETE", "unit-delete/$id", null, true);
+    print("≡ƒôï unitMasterDeleteApi RESPONSE: ${response?.statusCode} ΓåÆ ${response?.body}");
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(json.decode(response.body));
+    }
+    return null;
+  }
+
+
+  /// PATCH /payment-update/{id} ΓÇö updates a vendor payment row
+  Future<CommonSuccessResponseModel?> updatePaymentApi(int id, Map<String, dynamic> data) async {
+    final endpoint = "payment-update/$id";
+    print("Γ£Å∩╕Å  updatePaymentApi REQUEST  ΓåÆ PATCH $endpoint  body=$data");
+    final response = await ApiService().sendAsync("PATCH", endpoint, data, true);
+    print("Γ£Å∩╕Å  updatePaymentApi RESPONSE ΓåÆ statusCode=${response?.statusCode}  body=${response?.body}");
+    if (response != null && response.statusCode == 200) {
+      try {
+        return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+      } catch (e) {
+        print("Γ£Å∩╕Å  updatePaymentApi PARSE ERROR: $e");
+      }
+    }
+    return null;
+  }
+
+  /// DELETE /payment-delete/{id} ΓÇö deletes a vendor payment row
+  Future<CommonSuccessResponseModel?> deletePaymentApi(int id) async {
+    final endpoint = "payment-delete/$id";
+    print("≡ƒùæ∩╕Å  deletePaymentApi REQUEST  ΓåÆ DELETE $endpoint");
+    final response = await ApiService().sendAsync("DELETE", endpoint, null, true);
+    print("≡ƒùæ∩╕Å  deletePaymentApi RESPONSE ΓåÆ statusCode=${response?.statusCode}  body=${response?.body}");
+    if (response != null && (response.statusCode == 200 || response.statusCode == 302)) {
+      try {
+        if (response.statusCode == 302) {
+          return CommonSuccessResponseModel(status: true, message: 'Payment deleted successfully');
+        }
+        return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+      } catch (e) {
+        print("≡ƒùæ∩╕Å  deletePaymentApi PARSE ERROR: $e");
+      }
+    }
+    return null;
+  }
+
+
+  Future<CommonSuccessResponseModel?> updateSitePaymentApi(int id, Map<String, dynamic> data) async {
+    final response = await ApiService().sendAsync("POST", "site-payment-update/$id", data, true);
+    if (response != null) {
+      final Map<String, dynamic> body = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteSitePaymentApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "site-payment-delete/$id", null, true);
+    if (response != null) {
+      final Map<String, dynamic> body = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
+
+  // ΓöÇΓöÇΓöÇ RECREATED MISSING METHODS ΓöÇΓöÇΓöÇ
+
+  Future<CommonSuccessResponseModel?> updateMaterialApi(int materialId, Map<String, dynamic> data, {dynamic attachment}) async {
+    if (attachment != null && attachment is File && attachment.path.isNotEmpty) {
+      final token = PreferenceUtils().getSessionToken();
+      final uri = Uri.parse("${baseUrl}material-update/$materialId");
+      var request = http.MultipartRequest('POST', uri);
+      
+      data.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+      
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+      
+      request.files.add(await http.MultipartFile.fromPath('attachment', attachment.path));
+      
+      try {
+        final response = await request.send();
+        final res = await http.Response.fromStream(response);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return CommonSuccessResponseModel.fromJson(jsonDecode(res.body));
+        }
+      } catch (e) {
+        print("Exception in updateMaterialApi: $e");
+      }
+      return null;
+    } else {
+      final response = await ApiService().sendAsync("POST", "material-update/$materialId", data, true);
+      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+        return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    }
+  }
+
+  Future<bool> saveLocation(double lat, double lng) async {
+    final response = await ApiService().sendAsync("POST", "save-location", {'latitude': lat, 'longitude': lng}, true);
+    return response != null && (response.statusCode == 200 || response.statusCode == 201);
+  }
+
+  Future<dynamic> checkDateApi(int siteId, String formattedDate) async {
+    final response = await ApiService().sendAsync("POST", "check-date", {'site_id': siteId, 'date': formattedDate}, true);
+    return response != null ? jsonDecode(response.body) : null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteAttendanceByDateApi(int siteId, String formattedDate) async {
+    final response = await ApiService().sendAsync("DELETE", "delete-attendance-by-date", {'site_id': siteId, 'date': formattedDate}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> updateWagesRowApi(Map<String, dynamic> data) async {
+    final response = await ApiService().sendAsync("PATCH", "update-wages-row", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteWagesRowApi(Map<String, dynamic> data) async {
+    final response = await ApiService().sendAsync("DELETE", "delete-wages-row", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> editStageApi(int id, String newName) async {
+    final response = await ApiService().sendAsync("POST", "checklist-stage-update/$id", {'stage': newName}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteStageApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "checklist-stage/$id", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 302)) {
+      if (response.statusCode == 302) return CommonSuccessResponseModel(status: true, message: 'Stage deleted successfully');
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> addTaskApi(int checklistId, String taskName) async {
+    final response = await ApiService().sendAsync("POST", "checklist-task-add", {'checklist_id': checklistId, 'task_name': taskName}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> editTaskApi(int id, String newName) async {
+    final response = await ApiService().sendAsync("POST", "checklist-task-update/$id", {'task_name': newName}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteTaskApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "checklist-task/$id", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 302)) {
+      if (response.statusCode == 302) return CommonSuccessResponseModel(status: true, message: 'Task deleted successfully');
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> reorderStagesApi(List<int> orderedIds) async {
+    final response = await ApiService().sendAsync("POST", "checklist-stages-reorder", {'checklist_ids': orderedIds}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> reorderTasksApi(List<int> orderedIds) async {
+    final response = await ApiService().sendAsync("POST", "checklist-tasks-reorder", {'task_ids': orderedIds}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> updateSubPaymentApi(int id, Map<String, dynamic> data) async {
+    final response = await ApiService().sendAsync("PATCH", "subpayment-update/$id", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteSubPaymentApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "subpayment-delete/$id", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 302)) {
+      if (response.statusCode == 302) return CommonSuccessResponseModel(status: true, message: 'Deleted successfully');
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+
+
+  Future<CommonSuccessResponseModel?> deleteSubcontractorTypeApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "subcontractor-type-delete/$id", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  // --- Purchase Bill APIs ---
+  Future<PurchaseBillFormModel?> purchaseBillFormApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "purchase-bill-form/$siteId", null, true);
+    if (response != null && response.statusCode == 200) {
+      return PurchaseBillFormModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<PurchaseBillListModel?> purchaseBillsListApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "purchase-bills/$siteId", null, true);
+    if (response != null && response.statusCode == 200) {
+      return PurchaseBillListModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<PurchaseBillStoredModel?> purchaseBillAddApi(Map<String, dynamic> payload) async {
+    final response = await ApiService().sendAsync("POST", "purchase-bill-add", payload, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return PurchaseBillStoredModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<PurchaseBillDetailModel?> purchaseBillDetailApi(int id) async {
+    final response = await ApiService().sendAsync("GET", "purchase-bill/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return PurchaseBillDetailModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> purchaseBillUpdateApi(int id, Map<String, dynamic> payload) async {
+    final response = await ApiService().sendAsync("PATCH", "purchase-bill-update/$id", payload, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> purchaseBillDeleteApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "purchase-bill-delete/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  // --- Material Estimation APIs ---
+  Future<MaterialEstimationFormModel?> materialEstimationFormApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "material-estimation-form/$siteId", null, true);
+    if (response != null && response.statusCode == 200) {
+      return MaterialEstimationFormModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> materialEstimationAddApi(Map<String, dynamic> payload) async {
+    final response = await ApiService().sendAsync("POST", "material-estimation-add", payload, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<MaterialEstimationDetailModel?> materialEstimationDetailApi(int id) async {
+    final response = await ApiService().sendAsync("GET", "material-estimation/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return MaterialEstimationDetailModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> materialEstimationUpdateApi(int id, Map<String, dynamic> payload) async {
+    final response = await ApiService().sendAsync("PATCH", "material-estimation-update/$id", payload, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> materialEstimationDeleteApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "material-estimation-delete/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+
+
+  Future<dynamic> getSupervisorLocation(int id) async {
+    final response = await ApiService().sendAsync("GET", "supervisor-location/$id", null, true);
+    return response != null ? jsonDecode(response.body) : null;
+  }
+
+  Future<dynamic> getSupervisorLocations() async {
+    final response = await ApiService().sendAsync("GET", "supervisor-locations", null, true);
+    return response != null ? jsonDecode(response.body) : null;
+  }
+
+  Future<QuotationHistoryModel?> quotationHistoryApi(String mobileNo) async {
+    final response = await ApiService().sendAsync("GET", "quotation-history?mobile_no=$mobileNo", null, true);
+    if (response != null && response.statusCode == 200) {
+      return QuotationHistoryModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<MaterialRequestListModel?> getMaterialRequestsApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "material-request-list/$siteId", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return MaterialRequestListModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> approveMaterialRequestApi(int id) async {
+    final response = await ApiService().sendAsync("POST", "material-request-approve/$id", null, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> rejectMaterialRequestApi(int id, {String? adminRemark}) async {
+    final response = await ApiService().sendAsync("POST", "material-request-reject/$id", {'admin_remark': adminRemark}, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> addCustomer({
+    required String name,
+    required String phone,
+    required String email,
+    required String address,
+    required String state,
+    required String city,
+    required String zipCode,
+    required String gst,
+    required int createdBy,
+    required String status,
+  }) async {
+    final Map<String, dynamic> data = {
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'address': address,
+      'state': state,
+      'city': city,
+      'zip_code': zipCode,
+      'gst': gst,
+      'created_by': createdBy,
+      'status': status,
+    };
+    final response = await ApiService().sendAsync("POST", "customer-add", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }
     return null;
   }

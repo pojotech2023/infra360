@@ -222,71 +222,127 @@ class SalesBillScreen extends StatelessWidget {
                     ),
                   )),
 
+                  // ─── Terms & Conditions ──────────────────────────────────────────
+                  _label('Terms & Conditions'),
+                  TextFormField(
+                    controller: ctrl.termsController,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                  ),
                   VerticalSpacing.d20px(),
 
                   // ─── Action Buttons ───────────────────────────────────────
                   GetBuilder<SalesBillController>(
                     builder: (c) => c.isSubmitLoading.value
                         ? const Center(child: CircularProgressIndicator())
-                        : Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // Send WhatsApp
-                              SizedBox(
-                                width: 150,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    if (formKey.currentState!.validate()) {
-                                      c.sendWhatsApp();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(7)),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  // Send WhatsApp
+                                  SizedBox(
+                                    width: 150,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.sendWhatsApp();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Send WhatsApp',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
                                   ),
-                                  child: const Text('Send WhatsApp',
-                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                ),
+                                  // Send Mail
+                                  SizedBox(
+                                    width: 140,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.sendMail();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Send Mail',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                  // Download PDF
+                                  SizedBox(
+                                    width: 160,
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        if (formKey.currentState!.validate()) {
+                                          c.downloadPdf();
+                                        }
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        side: const BorderSide(color: Colors.blue, width: 1.5),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(7)),
+                                      ),
+                                      child: const Text('Download PDF',
+                                          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              // Send Mail
-                              SizedBox(
-                                width: 140,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    if (formKey.currentState!.validate()) {
-                                      c.sendMail();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(7)),
+                              VerticalSpacing.d15px(),
+                              // Reset Button
+                              Align(
+                                alignment: Alignment.center,
+                                child: SizedBox(
+                                  width: 200,
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text('The App Says'),
+                                            content: const Text('Reset the form? All entered data will be lost.'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  c.resetForm();
+                                                },
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      side: BorderSide(color: Colors.red.shade300, width: 1.5),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(7)),
+                                    ),
+                                    child: Text('Reset',
+                                        style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
                                   ),
-                                  child: const Text('Send Mail',
-                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                ),
-                              ),
-                              // Download PDF
-                              SizedBox(
-                                width: 160,
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    if (formKey.currentState!.validate()) {
-                                      c.downloadPdf();
-                                    }
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    side: const BorderSide(color: Colors.blue, width: 1.5),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(7)),
-                                  ),
-                                  child: const Text('Download PDF',
-                                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ],

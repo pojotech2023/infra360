@@ -6,6 +6,7 @@ import 'package:raptor_pro/model/site_payment_summary_model.dart';
 import 'package:raptor_pro/utils/file_download.dart';
 import 'package:raptor_pro/view/widgets/toast.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:raptor_pro/view/payment_status/add_payment_screen.dart' as raptor_pro_add_payment;
 
 class PaymentStatusController extends GetxController {
   var isLoading = false.obs;
@@ -72,6 +73,39 @@ class PaymentStatusController extends GetxController {
     }
   }
 
+  // Edit mode variables
+  var isEditMode = false.obs;
+  var editPaymentId = Rxn<int>();
+
+  void openEditMode(PaymentHistory item) {
+    isEditMode.value = true;
+    editPaymentId.value = item.id;
+    paymentController.text = item.payment ?? "";
+    remarksController.text = item.remarks ?? "";
+    
+    if (item.paymentMode != null && paymentModes.contains(item.paymentMode)) {
+      selectedPaymentMode.value = item.paymentMode!;
+    }
+    
+    if (item.date != null && item.date!.isNotEmpty) {
+      try {
+        final parsedDate = DateTime.parse(item.date!);
+        selectedDate.value = parsedDate;
+      } catch (_) {}
+    }
+    
+    Get.to(() => const raptor_pro_add_payment.AddPaymentScreen()); // Using alias for AddPaymentScreen to avoid conflict
+  }
+
+  void resetForm() {
+    isEditMode.value = false;
+    editPaymentId.value = null;
+    paymentController.clear();
+    remarksController.clear();
+    selectedPaymentMode.value = "Select Payment Mode";
+    selectedDate.value = DateTime.now();
+  }
+
   Future<void> addPayment() async {
     if (paymentController.text.isEmpty) {
       Get.snackbar("Error", "Please enter payment amount");
@@ -92,22 +126,41 @@ class PaymentStatusController extends GetxController {
         "remarks": remarksController.text,
       };
 
-      final response = await ApiData().sitePaymentAddApi(postData);
+      dynamic response;
+      if (isEditMode.value && editPaymentId.value != null) {
+        response = await ApiData().updateSitePaymentApi(editPaymentId.value!, postData);
+      } else {
+        response = await ApiData().sitePaymentAddApi(postData);
+      }
+
       if (response != null && response.status == true) {
         Get.back(); // Close form
-        Get.snackbar("Success", response.message ?? "Payment added successfully");
-        // Clear form
-        paymentController.clear();
-        remarksController.clear();
-        selectedPaymentMode.value = "Select Payment Mode";
+        Get.snackbar("Success", response.message ?? "Payment processed successfully");
+        resetForm();
         // Refresh summary and history
         getPaymentSummary();
         getPaymentHistory();
       } else {
-        Get.snackbar("Error", response?.message ?? "Failed to add payment");
+        Get.snackbar("Error", response?.message ?? "Failed to process payment");
       }
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> deletePayment(int id) async {
+    isHistoryLoading.value = true;
+    try {
+      final res = await ApiData().deleteSitePaymentApi(id);
+      if (res != null && (res.status == true || res.responseCode == 200)) {
+        Get.snackbar("Success", res.message ?? "Deleted successfully");
+        getPaymentSummary();
+        getPaymentHistory();
+      } else {
+        Get.snackbar("Error", "Failed to delete payment");
+      }
+    } finally {
+      isHistoryLoading.value = false;
     }
   }
 

@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:raptor_pro/model/login_response.dart';
 import 'package:raptor_pro/model/material_details_argument_model.dart';
 import 'package:raptor_pro/model/bricks_model.dart';
+import 'package:raptor_pro/service/shared_preference_service.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/const_data.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
@@ -10,7 +13,9 @@ import 'package:raptor_pro/utils/res/spacing.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
-
+import 'dart:io';
+import '../../utils/file_picker_helper.dart';
+import '../../utils/file_preview.dart';
 import 'bricks_details_controller.dart';
 import 'new_bricks/new_request_screen.dart';
 
@@ -27,9 +32,27 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
 
   final BricksDetailsController controller = Get.put(BricksDetailsController(materialDetailsArgs:Get.arguments));
 
+  String _role = '';
+  bool get _isSupervisor => _role == 'supervisor';
+
+  @override
+  void initState() {
+    // Note: BricksDetailsController.onInit() already calls fetchData()
+    // We only need to read the role here
+    try {
+      final data = jsonDecode(PreferenceUtils().getUserInfo());
+      final userDetails = LoginResponse.fromJson(data);
+      _role = userDetails.data?.role?.toLowerCase() ?? '';
+      print("👤 [BricksDetailsScreen] role=$_role");
+    } catch (e) {
+      print("❌ [BricksDetailsScreen] Could not read role: $e");
+    }
+    super.initState();
+  }
+
 
   void _pickMonth() async {
-    final result = await showCustomMonthPicker(context, controller.selectedYear.value,initialMonth:
+    final result = await showCustomMonthPicker(context, controller.selectedYear.value, initialMonth:
     controller.selectedMonth.value);
     if (result != null) {
       final parts = result.split("-");
@@ -154,7 +177,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
 
                           HorizontalSpacing.d5px(),
 
-                          // New Order Button (Blue)
+                          // Inward Order Button (Blue)
                           ElevatedButton(
                             onPressed: () async {
                               await Get.to(()=>NewRequestScreen(type: 2,),arguments: args);
@@ -168,7 +191,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                             ),
-                            child: Text('Add Order',
+                            child: Text('Inward Order',
                                 style: AppTextStyle.textMedium
                                     .copyWith(color: AppColor.white)),
                           ),
@@ -387,6 +410,8 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
     TextEditingController quantityCtrl = TextEditingController(text: item.quantity);
     TextEditingController priceCtrl = TextEditingController(text: item.price?.toString() ?? '0');
     TextEditingController gstCtrl = TextEditingController(text: item.gst?.toString() ?? '0');
+    File? attachment;
+    bool removeExistingImage = false;
 
     Future<void> selectDate(TextEditingController ctrl) async {
       DateTime? picked = await showDatePicker(
@@ -400,70 +425,154 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
       }
     }
 
+    void showAttachmentOptions(BuildContext ctx, StateSetter setState) {
+      showModalBottomSheet(
+        context: ctx,
+        builder: (_) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.image),
+                title: const Text('Pick Image'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final file = await FilePickerHelper.pickImage();
+                  if (file != null) {
+                    setState(() => attachment = file);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Capture Photo'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final file = await FilePickerHelper.pickImage(fromCamera: true);
+                  if (file != null) {
+                    setState(() => attachment = file);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text("Edit Order"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: dateCtrl,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: "Date",
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  onTap: () => selectDate(dateCtrl),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Edit Order"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: dateCtrl,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: "Date",
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      onTap: () => selectDate(dateCtrl),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: quantityCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Quantity"),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: priceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Price"),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: gstCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "GST"),
+                    ),
+                    const SizedBox(height: 16),
+                    if (attachment != null)
+                      FilePreview(
+                        file: attachment!,
+                        isImage: true,
+                        onRemove: () {
+                          setState(() {
+                            attachment = null;
+                          });
+                        },
+                      )
+                    else if (!removeExistingImage && item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            height: 100,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(item.imageUrl!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                removeExistingImage = true;
+                              });
+                            },
+                            child: Container(
+                              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                              child: const Icon(Icons.cancel, color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => showAttachmentOptions(context, setState),
+                      child: const Text("Upload Image"),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: quantityCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: "Quantity"),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: TextButton.styleFrom(backgroundColor: Colors.indigo.shade400),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white)),
                 ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: priceCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: "Price"),
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: gstCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: "GST"),
+                ElevatedButton(
+                  onPressed: () {
+                    Map<String, dynamic> data = {
+                      "material_type": args.itemKey,
+                      "date": dateCtrl.text,
+                      "quantity": quantityCtrl.text,
+                      "price": priceCtrl.text,
+                      "gst": gstCtrl.text,
+                      "site_id": controller.materialDetailsArgs?.id.toString() ?? '',
+                      "vendor_id": item.vendorId ?? '',
+                      "unit": item.unit ?? '',
+                      if (removeExistingImage) "remove_image": "1",
+                    };
+                    Navigator.pop(dialogContext);
+                    controller.updateMaterial(item.id!, data, attachment: attachment);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600),
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text("Cancel", style: TextStyle(color: Colors.white)),
-              style: TextButton.styleFrom(backgroundColor: Colors.indigo.shade400),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Map<String, dynamic> data = {
-                  "material_type": args.itemKey,
-                  "date": dateCtrl.text,
-                  "quantity": quantityCtrl.text,
-                  "price": priceCtrl.text,
-                  "gst": gstCtrl.text,
-                  "site_id": controller.materialDetailsArgs?.id.toString() ?? '',
-                  "vendor_id": item.vendorId ?? '',
-                  "unit": item.unit ?? '',
-                };
-                Navigator.pop(dialogContext);
-                controller.updateMaterial(item.id!, data);
-              },
-              child: Text("Save", style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -471,12 +580,12 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
 
   Widget _buildTableHeader() {
     return Container(
-      width: 600, // Fixed width for horizontal scrolling
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 5),
+      width: _isSupervisor ? 600 : 700, // Fixed width for horizontal scrolling
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 5),
       decoration: BoxDecoration(
           color: AppColor.tableBGColor,
           border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
           )),
@@ -487,6 +596,11 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
           _buildCell('Quantity', flex: 2, bold: true, align: TextAlign.center),
           _buildCell('Vendor', flex: 2, bold: true),
           _buildCell('Price', flex: 2, bold: true, align: TextAlign.right),
+          _buildCell('GST', flex: 2, bold: true, align: TextAlign.right),
+          _buildCell('Image', flex: 2, bold: true, align: TextAlign.center),
+          _buildCell('Image', flex: 2, bold: true, align: TextAlign.center),
+          if (_isSupervisor)
+            _buildCell('Status', flex: 2, bold: true, align: TextAlign.center),
           _buildCell('Action', flex: 2, bold: true, align: TextAlign.center),
         ],
       ),
@@ -495,12 +609,12 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
 
   Widget _buildTableRow(Map<String, String> item, {bool isEven = false, BricksList? bricksItem}) {
     return Container(
-      width: 600,
+      width: _isSupervisor ? 600 : 700,
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
         color: isEven ? AppColor.white : AppColor.tableBGColor,
       ),
-      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -509,6 +623,27 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
           _buildCell(item['unit']!, flex: 2, align: TextAlign.center, bold: true),
           _buildCell(item['vendor']!.isEmpty ? "N/A" : item['vendor']!, flex: 2),
           _buildCell(item['price']!, flex: 2, align: TextAlign.right, bold: true),
+          _buildCell(item['gst'] ?? "0", flex: 2, align: TextAlign.right, bold: true),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: bricksItem?.imageUrl != null && bricksItem!.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      bricksItem.imageUrl!,
+                      width: 30,
+                      height: 30,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 20, color: Colors.grey),
+                    )
+                  : const Text('-', style: TextStyle(color: Colors.grey)),
+            ),
+          ),
+
+          if (_isSupervisor)
+            Expanded(
+              flex: 2,
+              child: Center(child: _buildStatusBadge(bricksItem?.status)),
+            ),
           Expanded(
             flex: 2,
             child: Row(
@@ -516,26 +651,24 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
               children: [
                 InkWell(
                   onTap: () async {
-                    if (bricksItem != null) {
-                      _showEditOrderDialog(context, bricksItem);
-                    }
+                    if (bricksItem != null) _showEditOrderDialog(context, bricksItem);
                   },
                   child: Container(
-                    padding: EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4)),
-                    child: Icon(Icons.edit, size: 16, color: Colors.blue),
+                    child: const Icon(Icons.edit, size: 16, color: Colors.blue),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: () {
                     if (bricksItem?.id != null) {
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: Text("Confirm Delete"),
+                          title: const Text("Confirm Delete"),
                           content: Text("Are you sure you want to delete this ${capitalize(args.itemKey)} record?"),
                           actions: [
                             TextButton(
@@ -544,7 +677,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                                 foregroundColor: Colors.white,
                               ),
                               onPressed: () => Navigator.of(ctx).pop(),
-                              child: Text("Cancel"),
+                              child: const Text("Cancel"),
                             ),
                             TextButton(
                               style: TextButton.styleFrom(
@@ -555,7 +688,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                                 Navigator.of(ctx).pop();
                                 controller.deleteMaterial(bricksItem!.id!);
                               },
-                              child: Text("Delete"),
+                              child: const Text("Delete"),
                             ),
                           ],
                         ),
@@ -563,14 +696,14 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                     }
                   },
                   child: Container(
-                    padding: EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4)),
-                    child: Icon(Icons.delete, size: 16, color: Colors.red),
+                    child: const Icon(Icons.delete, size: 16, color: Colors.red),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: () {
                     if (bricksItem?.id != null) {
@@ -578,11 +711,11 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                     }
                   },
                   child: Container(
-                    padding: EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4)),
-                    child: Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
+                    child: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
                   ),
                 ),
               ],
@@ -590,6 +723,41 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Status badge widget for supervisor view — accepts int or String status
+  Widget _buildStatusBadge(dynamic status) {
+    Color badgeColor;
+    String label;
+
+    // Normalize: int status (0=pending, 1=approved, 2=rejected) or string
+    String statusStr = '';
+    if (status is int) {
+      statusStr = status == 1 ? 'approved' : status == 2 ? 'rejected' : 'pending';
+    } else {
+      statusStr = (status?.toString() ?? 'pending').toLowerCase().trim();
+    }
+
+    switch (statusStr) {
+      case 'approved':
+      case '1':
+        badgeColor = Colors.green;
+        label = 'Approved';
+        break;
+      case 'rejected':
+      case '2':
+        badgeColor = Colors.red;
+        label = 'Rejected';
+        break;
+      default:
+        badgeColor = Colors.orange;
+        label = 'Pending';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(10)),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -642,16 +810,13 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                   fontSize: 14,
                 ),
               ),
-              Text(
-                formattedDate,
-                style: TextStyle(
-                  color: Color(0xFF6E6B7B),
-                  fontSize: 13,
-                ),
-              ),
+              if (_isSupervisor)
+                _buildStatusBadge(item.status),
             ],
           ),
           SizedBox(height: 12),
+          _buildCardRow('Date', formattedDate),
+          SizedBox(height: 8),
           _buildCardRow('Quantity', item.quantity ?? '0'),
           SizedBox(height: 8),
           _buildCardRow('Vendor', item.vendorName?.isEmpty == true ? 'N/A' : item.vendorName ?? 'N/A'),
@@ -659,7 +824,29 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
           _buildCardRow('Price', item.price?.toString() ?? '0'),
           SizedBox(height: 8),
           _buildCardRow('GST', item.gst?.toString() ?? '0'),
-          SizedBox(height: 12),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Image',
+                style: TextStyle(
+                  color: Color(0xFF5E5873),
+                  fontSize: 13,
+                ),
+              ),
+              item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 24, color: Colors.grey),
+                    )
+                  : const Text('-', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -668,22 +855,22 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                   _showEditOrderDialog(context, item);
                 },
                 child: Container(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.edit, size: 18, color: Colors.blue),
+                  child: const Icon(Icons.edit, size: 18, color: Colors.blue),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               InkWell(
                 onTap: () {
                   if (item.id != null) {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: Text("Confirm Delete"),
+                        title: const Text("Confirm Delete"),
                         content: Text("Are you sure you want to delete this ${capitalize(args.itemKey)} record?"),
                         actions: [
                           TextButton(
@@ -692,7 +879,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                               foregroundColor: Colors.white,
                             ),
                             onPressed: () => Navigator.of(ctx).pop(),
-                            child: Text("Cancel"),
+                            child: const Text("Cancel"),
                           ),
                           TextButton(
                             style: TextButton.styleFrom(
@@ -703,7 +890,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                               Navigator.of(ctx).pop();
                               controller.deleteMaterial(item.id!);
                             },
-                            child: Text("Delete"),
+                            child: const Text("Delete"),
                           ),
                         ],
                       ),
@@ -711,15 +898,15 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                   }
                 },
                 child: Container(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.delete, size: 18, color: Colors.red),
+                  child: const Icon(Icons.delete, size: 18, color: Colors.red),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               InkWell(
                 onTap: () {
                   if (item.id != null) {
@@ -727,12 +914,12 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                   }
                 },
                 child: Container(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                  child: const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
                 ),
               ),
             ],

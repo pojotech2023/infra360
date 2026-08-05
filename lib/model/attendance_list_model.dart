@@ -27,6 +27,8 @@ class AttendanceListModel {
         this.totalWages,
       });
 
+  Map<String, dynamic>? dayPhotos;
+
   AttendanceListModel.fromJson(Map<String, dynamic> json) {
     siteName = json['site_name'];
     siteId = json['site_id'];
@@ -52,13 +54,18 @@ class AttendanceListModel {
     if (json['grouped_by_date'] != null) {
       groupedByDate = List<Map<String, dynamic>>.from(json['grouped_by_date']);
     }
+    if (json['day_photos'] != null) {
+      if (json['day_photos'] is Map) {
+        dayPhotos = Map<String, dynamic>.from(json['day_photos']);
+      } else {
+        dayPhotos = {};
+      }
+    }
     wage = json['wage'] != null ? new Wage.fromJson(json['wage']) : null;
     categoryWages = json['category_wages'] != null && json['category_wages'].isNotEmpty
         ?  CategoryWages.fromJson(json['category_wages'])
         : null;
     totalWages = json['total_wages'];
-
-
   }
 
   Map<String, dynamic> toJson() {
@@ -110,6 +117,10 @@ class Attendances {
   double? amount;
   int? count;
   String? date;
+  String? time;
+  String? imageUrl;
+  String? checkOutTime;
+  String? checkOutPhoto;
   String? createdAt;
   String? updatedAt;
 
@@ -120,6 +131,10 @@ class Attendances {
         this.count,
         this.amount,
         this.date,
+        this.time,
+        this.imageUrl,
+        this.checkOutTime,
+        this.checkOutPhoto,
         this.createdAt,
         this.updatedAt});
 
@@ -128,7 +143,6 @@ class Attendances {
     siteId = json['site_id'];
     category = json['category'];
     count = json['count'];
-    // amount may come as int, double, or String from the backend
     final raw = json['amount'];
     if (raw is double) {
       amount = raw;
@@ -140,6 +154,10 @@ class Attendances {
       amount = null;
     }
     date = json['date'];
+    time = json['check_in_time'] ?? json['time'];
+    imageUrl = json['check_in_photo'] ?? json['image_url'];
+    checkOutTime = json['check_out_time'] ?? json['out_time'];
+    checkOutPhoto = json['check_out_photo'] ?? json['out_image_url'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
   }
@@ -152,6 +170,10 @@ class Attendances {
     data['amount'] = this.amount;
     data['count'] = this.count;
     data['date'] = this.date;
+    data['time'] = this.time;
+    data['image_url'] = this.imageUrl;
+    data['check_out_time'] = this.checkOutTime;
+    data['check_out_photo'] = this.checkOutPhoto;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     return data;

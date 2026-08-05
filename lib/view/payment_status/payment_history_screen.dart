@@ -4,6 +4,7 @@ import 'package:raptor_pro/utils/res/spacing.dart';
 import 'package:raptor_pro/view/payment_status/payment_status_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
+import 'package:raptor_pro/view/widgets/log_out.dart';
 
 class PaymentHistoryScreen extends GetView<PaymentStatusController> {
   const PaymentHistoryScreen({super.key});
@@ -192,6 +193,28 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
                     }
                   },
                 ),
+                _ActionButton(
+                  icon: Icons.edit,
+                  label: "",
+                  color: Colors.blue,
+                  tooltip: "Edit Payment",
+                  onTap: () {
+                    controller.openEditMode(item);
+                  },
+                ),
+                _ActionButton(
+                  icon: Icons.delete,
+                  label: "",
+                  color: Colors.red,
+                  tooltip: "Delete Payment",
+                  onTap: () {
+                    if (item.id != null) {
+                      deleteDialog(context, () {
+                        controller.deletePayment(item.id!);
+                      });
+                    }
+                  },
+                ),
               ],
             ),
           ],
@@ -320,7 +343,7 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: label.isEmpty ? 6 : 10, vertical: 6),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(4),
@@ -331,18 +354,20 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 14,
+              size: label.isEmpty ? 16 : 14,
               color: textColor,
             ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            if (label.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+            ]
           ],
         ),
       ),
