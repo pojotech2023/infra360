@@ -28,6 +28,12 @@ class _VendorMaterialOrdersScreenState extends State<VendorMaterialOrdersScreen>
     controller = Get.put(VendorMaterialOrdersController(vendorId: vendorId));
   }
 
+  bool canViewPayment() {
+    DashboardController dashboardController = Get.find<DashboardController>();
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.viewAmount == 1;
+  }
+
   bool canViewPaymentHistory() {
     DashboardController dashboardController = Get.find<DashboardController>();
     if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
@@ -70,18 +76,19 @@ class _VendorMaterialOrdersScreenState extends State<VendorMaterialOrdersScreen>
                   // ),
                   Row(
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.to(() => VendorPaymentDetails(), arguments: vendorId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.buttonGreen,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      if (canViewPayment())
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.to(() => VendorPaymentDetails(), arguments: vendorId);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColor.buttonGreen,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          child: Text('Payment', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
                         ),
-                        child: Text('Payment', style: AppTextStyle.textMedium.copyWith(color: AppColor.white)),
-                      ),
-                      HorizontalSpacing.d10px(),
+                      if (canViewPayment()) HorizontalSpacing.d10px(),
                       if (canViewPaymentHistory())
                         ElevatedButton(
                           onPressed: () {

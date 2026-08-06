@@ -70,10 +70,9 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                                 },
                                 customColor: Colors.blue,
                                 text: "Edit")),
-                      if ((controller.profileRole.value.toLowerCase() == 'admin' ||
-                              controller.supervisorPermissions.value?.siteManagement?.editSite == 1) &&
-                          (controller.profileRole.value.toLowerCase() == 'admin' ||
-                              controller.supervisorPermissions.value?.siteManagement?.deleteSite == 1))
+                      if (controller.profileRole.value.toLowerCase() == 'admin' ||
+                          controller.supervisorPermissions.value?.siteManagement?.editSite == 1 ||
+                          controller.supervisorPermissions.value?.siteManagement?.deleteSite == 1)
                         SizedBox(width: 16),
                       if (controller.profileRole.value.toLowerCase() == 'admin' ||
                           controller.supervisorPermissions.value?.siteManagement?.deleteSite == 1)

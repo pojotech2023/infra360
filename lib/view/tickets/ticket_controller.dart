@@ -15,12 +15,18 @@ class TicketController extends GetxController{
   List<TicketData> ticketList = [];
 var isLoading = false.obs;
 late final int siteId;
+String siteName = '';
 late LoginResponse userDetails;
 
 @override
 void onInit() {
   // TODO: implement onInit
-  siteId = Get.arguments ?? 0;
+  if (Get.arguments is Map) {
+    siteId = Get.arguments['id'] ?? 0;
+    siteName = Get.arguments['name'] ?? '';
+  } else {
+    siteId = Get.arguments ?? 0;
+  }
   final data = jsonDecode(PreferenceUtils().getUserInfo());
   userDetails = LoginResponse.fromJson(data);
   init();

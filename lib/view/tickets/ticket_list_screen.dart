@@ -43,48 +43,46 @@ class _TicketListScreenState extends State<TicketListScreen> {
 
               final dateTime = DateTime.parse(data.createdAt!).toLocal();
               final formattedDate = DateFormat("dd/MM/yyyy hh:mm a").format(dateTime);
-              return Container(
-                margin: const EdgeInsets.all(8),
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 3,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    )
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child:Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(data.ticket ?? ''),
-                            SizedBox(height: 4,),
-                            Text(formattedDate,
-                                style: TextStyle(fontSize: 10,color: Colors.grey))],
-                        )),
-                        IconButton(
-                          onPressed:  () => Get.to(() => TicketDetailScreen(), arguments: data),
-
-
-                          icon: Icon(
-                              Icons.chevron_right
-
-                          ),
+              return InkWell(
+                onTap: () => Get.to(() => TicketDetailScreen(), arguments: data),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Site: ${controller.siteName}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-
-                      ],
-                    ),
-
-                  ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tickets Description: ${data.ticket ?? ''}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Submitted on: ${DateFormat("dd MMM yyyy, hh:mm a").format(dateTime)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

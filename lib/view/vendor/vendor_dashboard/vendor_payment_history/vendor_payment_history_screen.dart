@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:raptor_pro/view/vendor/vendor_dashboard/vendor_payment_history/add_vendor_payment_screen/add_vendor_payment_screen.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
+import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
 
 class VendorPaymentHistoryScreen extends StatefulWidget {
   const VendorPaymentHistoryScreen({Key? key}) : super(key: key);
@@ -20,6 +21,12 @@ class VendorPaymentHistoryScreen extends StatefulWidget {
 class _VendorPaymentHistoryScreenState extends State<VendorPaymentHistoryScreen> {
 
   VendorPaymentHistoryController controller = Get.put(VendorPaymentHistoryController());
+  DashboardController dashboardController = Get.find<DashboardController>();
+
+  bool canViewPaymentHistory() {
+    if (dashboardController.profileRole.value.toLowerCase() == 'admin') return true;
+    return dashboardController.supervisorPermissions.value?.vendorManagement?.paymentHistory == 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +41,7 @@ class _VendorPaymentHistoryScreenState extends State<VendorPaymentHistoryScreen>
           if (controller.isLoading.value) {
             return const Center(child: CommonLoader());
           }
+
 
           final historyList = controller.paymentHistoryData.value.paymentHistoryList ?? [];
 

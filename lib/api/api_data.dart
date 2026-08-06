@@ -1825,8 +1825,8 @@ print("REQUEST HEADER ${request.headers}");
     final uri = Uri.parse("${baseUrl}tickets/messages-store");
     print("📡 Uploading to: $uri");
 
-    //final token = PreferenceUtils().getSessionToken();
-   // print("🔑 Token: $token");
+    final token = PreferenceUtils().getSessionToken();
+    print("🔑 Token: $token");
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['ticket_id'] = ticketId
@@ -1834,45 +1834,75 @@ print("REQUEST HEADER ${request.headers}");
       ..fields['sender_type'] = senderType;
 
     if (message?.isNotEmpty ?? false) request.fields['message'] = message!;
-   // request.headers['Authorization'] = 'Bearer $token';
-  //  request.followRedirects = false; // Prevent hidden redirects
+    request.headers['Authorization'] = 'Bearer $token';
+    // request.followRedirects = false; // Prevent hidden redirects
 
     if (file != null) {
-      final ext = file.path.split('.').last.toLowerCase();
-      final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+      final String originalPath = file.path;
+      print("🔍 Original File Path: $originalPath");
+      final String fileName = originalPath.split('/').last;
+      
+      String ext = '';
+      if (fileName.contains('.')) {
+        ext = fileName.split('.').last.toLowerCase();
+      }
+      print("🔍 Extracted Extension: $ext");
+
+      final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(ext);
       final isVideo = ['mp4', 'mov', 'mkv'].contains(ext);
 
       final fieldKey = 'attachment'; // ✅ depends on backend
-      final type = isImage
-          ? MediaType('image', ext)
-          : isVideo
-          ? MediaType('video', ext)
-          : null;
-
-      if (type != null) {
-        request.files.add(await http.MultipartFile.fromPath(fieldKey, file.path, contentType: type));
+      MediaType type;
+      if (isImage) {
+        type = MediaType('image', ext == 'jpg' ? 'jpeg' : ext);
+      } else if (isVideo) {
+        type = MediaType('video', ext);
+      } else if (ext == 'pdf') {
+        type = MediaType('application', 'pdf');
+      } else if (ext == 'doc') {
+        type = MediaType('application', 'msword');
+      } else if (ext == 'docx') {
+        type = MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
+      } else if (ext == 'xls') {
+        type = MediaType('application', 'vnd.ms-excel');
+      } else if (ext == 'xlsx') {
+        type = MediaType('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      } else if (ext == 'txt') {
+        type = MediaType('text', 'plain');
       } else {
-        print("⚠️ Unsupported file type: $ext");
-        return null;
+        // Default to a safe type for validation if we couldn't parse it
+        type = MediaType('application', 'pdf');
+        ext = 'pdf'; // Force pdf extension for Laravel validator if unknown
+        print("⚠️ Forcing extension to PDF because it was unknown");
       }
+
+      final uploadName = fileName.contains('.') ? fileName : '$fileName.$ext';
+      print("🔍 Uploading with filename: $uploadName");
+
+      request.files.add(await http.MultipartFile.fromPath(
+        fieldKey, 
+        file.path, 
+        contentType: type,
+        filename: uploadName
+      ));
     }
 
     final response = await request.send();
+    final res = await http.Response.fromStream(response);
 
-    print("📤 Status: ${response.statusCode}");
-    print("📤 Redirect: ${response.isRedirect}");
-    print("📤 Headers: ${response.headers}");
+    print("📤 Status: ${res.statusCode}");
+    print("📤 Redirect: ${res.isRedirect}");
+    print("📤 Headers: ${res.headers}");
 
-    if (response.statusCode == 200) {
-      final res = await http.Response.fromStream(response);
+    if (res.statusCode == 200) {
       final Map<String, dynamic> body = json.decode(res.body);
       print("✅ Response: $body");
       return CommonSuccessResponseModel.fromJson(body);
     } else {
-      print("❌ Upload failed. Redirected to: ${response.headers['location']}");
+      print("❌ Upload failed. Status: ${res.statusCode}");
+      print("❌ Error Body: ${res.body}");
+      return null;
     }
-
-    return null;
   }
 
 
@@ -2141,22 +2171,15 @@ print("REQUEST HEADER ${request.headers}");
 
 
 
-  Future<UserProfileModel?> viewProfile() async {
-
-
-    final response =
-    await ApiService().sendAsync("GET", "profile", null, true);
-
-
+  Future<UserProfileModel?> viewProfile(String role) async {
+    final response = await ApiService().sendAsync("GET", "profile", null, true);
     if (response != null) {
+      print("VIEW PROFILE RESPONSE: ${response.body}");
       final Map<String, dynamic> body = json.decode(response.body);
-
-
       if (response.statusCode == 200) {
         return UserProfileModel.fromJson(body);
       }
     }
-
     return null;
   }
 
@@ -2166,56 +2189,60 @@ print("REQUEST HEADER ${request.headers}");
 
 
   Future<ProfileUpdateSuccessfullyModel?> updateProfile({
+    required String role,
     required String userID,
     required String name,
     required String email,
+    String? newPassword,
+    String? confirmPassword,
     File? files,
   }) async {
     final uri = Uri.parse("${baseUrl}profile-update");
-    print("📡 Uploading to: $uri");
+    print("📡 Updating profile: $uri");
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['user_id'] = userID
-      ..fields['name'] = name
+      ..fields['id']    = userID
+      ..fields['name']  = name
       ..fields['email'] = email;
+
+    // Only include password fields when the user wants to change the password
+    if (newPassword != null && newPassword.isNotEmpty) {
+      request.fields['new_password']     = newPassword;
+      request.fields['confirm_password'] = confirmPassword ?? '';
+    }
 
     request.headers.addAll({
       'Accept': 'application/json',
       'Authorization': 'Bearer ${PreferenceUtils().getSessionToken()}',
     });
 
-    print("REQUEST HEADER ${request.headers}");
-
-    // ✅ SAFE check — no crash if null
     if (files != null) {
       print("📸 Attaching image: ${files.path}");
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        files.path,
-      ));
-    } else {
-      print("ℹ️ No image selected → Do NOT upload file");
+      request.files.add(await http.MultipartFile.fromPath('image', files.path));
     }
 
     try {
       final response = await request.send();
-      print("📤 Status Code: ${response.statusCode}");
+      print("📤 Profile update status: ${response.statusCode}");
+      final res  = await http.Response.fromStream(response);
+      print("📥 Profile update response body preview: ${res.body.length > 100 ? res.body.substring(0, 100) : res.body}");
+      
+      if (res.body.trim().startsWith('<')) {
+        print("❌ Received HTML instead of JSON. The endpoint might be redirecting (e.g. 302).");
+        return null;
+      }
 
-      final res = await http.Response.fromStream(response);
-      print("📥 Response: ${res.body}");
-
+      final body = json.decode(res.body);
+      print("📥 Profile update body: $body");
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> body = json.decode(res.body);
         return ProfileUpdateSuccessfullyModel.fromJson(body);
       } else {
-        print("❌ Upload failed. Status: ${response.statusCode}");
+        print("❌ Profile update failed: ${res.body}");
       }
     } catch (e) {
-      print("iiiiiiiii");
-      print("🚨 Exception: $e");
+      print("🚨 Exception updating profile: $e");
     }
-
     return null;
   }
 
@@ -2815,8 +2842,7 @@ print("REQUEST HEADER ${request.headers}");
 
   Future<CommonSuccessResponseModel?> deleteStageApi(int id) async {
     final response = await ApiService().sendAsync("DELETE", "checklist-stage/$id", null, true);
-    if (response != null && (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 302)) {
-      if (response.statusCode == 302) return CommonSuccessResponseModel(status: true, message: 'Stage deleted successfully');
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
       return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }
     return null;
@@ -2840,8 +2866,7 @@ print("REQUEST HEADER ${request.headers}");
 
   Future<CommonSuccessResponseModel?> deleteTaskApi(int id) async {
     final response = await ApiService().sendAsync("DELETE", "checklist-task/$id", null, true);
-    if (response != null && (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 302)) {
-      if (response.statusCode == 302) return CommonSuccessResponseModel(status: true, message: 'Task deleted successfully');
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
       return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }
     return null;

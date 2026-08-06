@@ -40,6 +40,7 @@ class TicketDetailData {
   String? createdAt;
   String? updatedAt;
   String? attachment;
+  String? senderName;
 
   TicketDetailData(
       {this.id,
@@ -49,7 +50,8 @@ class TicketDetailData {
         this.message,
         this.createdAt,
         this.updatedAt,
-        this.attachment});
+        this.attachment,
+        this.senderName});
 
   TicketDetailData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -60,6 +62,13 @@ class TicketDetailData {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     attachment = json['attachment'];
+    senderName = json['sender_name'] ?? 
+                 json['name'] ?? 
+                 json['user_name'] ?? 
+                 json['created_by_name'] ??
+                 (json['sender'] != null ? json['sender']['name'] : null) ??
+                 (json['user'] != null ? json['user']['name'] : null) ??
+                 (json['supervisor'] != null ? json['supervisor']['name'] : null);
   }
 
   Map<String, dynamic> toJson() {
@@ -72,6 +81,7 @@ class TicketDetailData {
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     data['attachment'] = this.attachment;
+    data['sender_name'] = this.senderName;
     return data;
   }
 }

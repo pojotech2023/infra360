@@ -75,24 +75,24 @@ class TicketDetailController extends GetxController{
     );
 
     if (model != null) {
-      DateTime now = DateTime.now().toUtc(); // convert to UTC
-      String formatted = now.toIso8601String();
-      print(formatted);
-      ticketDetailList.add(
-          TicketDetailData(
-              id :0,
-              ticketId:ticketId,
-             siteId:siteId,
-              senderType: userDetails.data!.role!.toLowerCase(),
-              message :message,
-             createdAt: formatted,
-              updatedAt:formatted,
-           attachment:""
-          )
-
-      );
-
-      // handle response if needed
+      // Re-fetch the message list to get the real attachment URLs and server timestamps immediately
+      TicketDetailModel? freshModel = await ApiData().ticketDetailListApi(ticketId);
+      
+      if (freshModel != null) {
+        ticketDetailList.clear();
+        // Add the initial message description as a client message
+        ticketDetailList.add(TicketDetailData(
+          id: args.id,
+          siteId: args.siteId,
+          senderType: "client",
+          message: args.ticket,
+          createdAt: args.createdAt.toString(),
+          updatedAt: args.updatedAt.toString(),
+          attachment: args.filePath,
+        ));
+        // Add the new fresh messages from the server
+        ticketDetailList.addAll(freshModel.data ?? []);
+      }
     }
 
     isMsgLoading.value = false;

@@ -19,6 +19,7 @@ class ApiService{
     var requestMessage = Request(method, url);
     Map<String, String> headerParams = {};
     headerParams["Content-Type"] = "application/json";
+    headerParams["Accept"] = "application/json";
 
 
     try {

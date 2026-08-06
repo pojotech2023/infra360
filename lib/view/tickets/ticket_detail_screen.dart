@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../base_url.dart';
+import '../../utils/file_download.dart';
 import '../../utils/file_picker_helper.dart';
 import '../../utils/text_form_style.dart';
 import '../widgets/common_app_bar.dart';
@@ -70,42 +71,88 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (data.message != null) Text(data.message!),
-                    if (data.attachment != null)
-                      GestureDetector(
-                        onTap: () {
-                          final imageFullUrl = '$imageUrl/${data.attachment!}';
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => _FullScreenImagePage(
-                                imageUrl: imageFullUrl,
-                                tag: 'ticket_img_${data.attachment!}',
+                    if (data.message != null && data.message!.isNotEmpty) 
+                      Text(data.message!),
+                    if (data.attachment != null && data.attachment!.isNotEmpty)
+                      Builder(builder: (context) {
+                        final String attachment = data.attachment!;
+                        final isImage = attachment.toLowerCase().endsWith('.jpg') ||
+                            attachment.toLowerCase().endsWith('.jpeg') ||
+                            attachment.toLowerCase().endsWith('.png');
+                        final fullUrl = '$imageUrl/$attachment';
+
+                        if (isImage) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => _FullScreenImagePage(
+                                    imageUrl: fullUrl,
+                                    tag: 'ticket_img_${attachment}_${data.id ?? UniqueKey()}',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Hero(
+                              tag: 'ticket_img_${attachment}_${data.id ?? UniqueKey()}',
+                              child: Container(
+                                width: 150,
+                                height: 150,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(fullUrl),
+                                    fit: BoxFit.cover,
+                                    onError: (exception, stackTrace) {
+                                      debugPrint('Image load failed: $exception');
+                                    },
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade100, width: 1),
+                                ),
                               ),
                             ),
                           );
-                        },
-                        child: Hero(
-                          tag: 'ticket_img_${data.attachment!}',
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            margin: EdgeInsets.only(top: 4),
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: NetworkImage('$imageUrl/${data.attachment!}'),
-                                fit: BoxFit.cover,
-                                onError: (exception, stackTrace) {
-                                  debugPrint('Image load failed: $exception');
-                                },
+                        } else {
+                          return GestureDetector(
+                            onTap: () {
+                              CommonFileDownloader.downloadAndOpen(
+                                urls: fullUrl,
+                                context: context,
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade100, width: 1),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.insert_drive_file, color: Colors.blue, size: 30),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      attachment.split('/').last,
+                                      style: const TextStyle(fontSize: 12, color: Colors.blue),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
-                    Text(    "${isAdmin ? "You" : data.senderType} | $formattedDate", style: const TextStyle(fontSize: 10)),
+                          );
+                        }
+                      }),
+                    Text(
+                      "${isAdmin ? "You" : (data.senderName != null ? '${data.senderName} (${data.senderType})' : data.senderType)} | $formattedDate",
+                      style: const TextStyle(fontSize: 10),
+                    ),
                   ],
                 ),
               ),
@@ -174,8 +221,23 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 ? Image.file(attachment!, fit: BoxFit.cover, width: 90, height: 90)
                 : Container(
               width: 90,
+              height: 90,
               color: Colors.grey[200],
-              child: const Center(child: Icon(Icons.videocam)),
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.insert_drive_file, size: 30),
+                  const SizedBox(height: 4),
+                  Text(
+                    attachment!.path.split('/').last,
+                    style: const TextStyle(fontSize: 10),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
           Positioned(
@@ -206,6 +268,15 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         return SafeArea(
           child: Wrap(
             children: [
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file),
+                title: const Text('Pick Document'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final file = await FilePickerHelper.pickDocument();
+                  if (file != null) setState(() => attachment = file);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.image),
                 title: const Text('Pick Image'),

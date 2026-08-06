@@ -598,7 +598,7 @@ class DashboardScreen extends StatelessWidget {
                               canViewDetails = true;
                             } else {
                               final p = controller.supervisorPermissions.value?.siteManagement;
-                              canViewDetails = (p?.editSite == 1 || p?.deleteSite == 1);
+                              canViewDetails = (p?.viewSite == 1);
                             }
 
                             if (!canViewDetails) return SizedBox();

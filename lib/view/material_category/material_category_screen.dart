@@ -105,8 +105,11 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
         {
           "title": "Tickets",
           "image": Images.tickets,
-          "onTap": () =>
-              Get.to(() => TicketListScreen(), arguments: siteManagementList.id),
+          "onTap": () => Get.to(() => TicketListScreen(),
+              arguments: {
+                'id': siteManagementList.id,
+                'name': siteManagementList.siteName ?? ''
+              }),
         },
       if (canShow((p) => p.siteManagement?.canViewDrawing ?? false))
         {

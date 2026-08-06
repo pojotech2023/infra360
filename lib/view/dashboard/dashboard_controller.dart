@@ -43,6 +43,7 @@ class DashboardController extends GetxController {
     profileRole.value  = userDetails.data!.role         ?? '';
 
     init();
+    startPermissionPolling();
     
     super.onInit();
   }
@@ -178,11 +179,22 @@ class DashboardController extends GetxController {
     print("✅ [PERMISSIONS] Refresh complete");
   }
 
-  /// Stops the automatic permission polling.
-  /// Called on controller close (logout) to clean up any running timer.
   void stopPermissionPolling() {
     _permissionPollTimer?.cancel();
     _permissionPollTimer = null;
+  }
+
+  void startPermissionPolling() {
+    // Only poll for supervisors
+    if (profileRole.value.toLowerCase() != 'supervisor') return;
+
+    // Prevent duplicate timers
+    stopPermissionPolling();
+
+    _permissionPollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      // Fetch permissions silently without showing loading UI
+      _loadSupervisorPermissions();
+    });
   }
 
   // Keep _permissionPollTimer as a nullable field for logout cleanup
