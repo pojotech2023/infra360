@@ -72,7 +72,7 @@ class SiteManagementList {
     print('Raw site JSON: $json');
     id = json['id'];
     siteName = json['site_name']?.toString();
-    siteImg = json['site_img']?.toString();
+    siteImg = json['site_image_url']?.toString() ?? json['site_img']?.toString();
     location = json['location']?.toString();
     value = json['budget_amount']?.toString() ?? json['value']?.toString();
     flatArea = json['flat_area']?.toString();

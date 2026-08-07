@@ -109,8 +109,7 @@ class DashboardScreen extends StatelessWidget {
                                         topRight: Radius.circular(14),
                                       ),
                                       child: Image.network(
-                                        Uri.encodeFull(
-                                            "${imageUrl}/${siteManagementList.siteImg}"),
+                                        UrlHelper.getFullImageUrl(siteManagementList.siteImg),
                                         width: double.infinity,
                                         height: 120,
                                         fit: BoxFit.fitWidth,
@@ -348,6 +347,56 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
 
+              // ---------------- DASHBOARD HEADER ----------------
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 20, top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Active Projects",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "Manage and track your sites",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.15)),
+                      ),
+                      child: Text(
+                        "${controller.filteredSiteList.length} Sites",
+                        style: TextStyle(
+                          color: Colors.blueAccent.shade700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // --------------- SITE LIST ----------------
               Builder(builder: (context) {
                 bool canViewSiteList = true;
@@ -376,278 +425,18 @@ class DashboardScreen extends StatelessWidget {
                 return ListView.builder(
                   shrinkWrap: true,
                   primary: false,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: controller.filteredSiteList.length,
-
-          itemBuilder: (_, index) {
-            SiteManagementList site = controller.filteredSiteList[index];
-
-            return Container(
-              margin: EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(26),
-                color: Colors.white.withOpacity(0.7),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12.withOpacity(0.08),
-                    blurRadius: 22,
-                    offset: Offset(0, 8),
-                  )
-                ],
-                border: Border.all(
-                  color: Colors.grey.shade300.withOpacity(0.4),
-                  width: 1.2,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    // ---------------- Banner ----------------
-                    InkWell(
-
-                      onTap: () => Get.to(() => MaterialCategoryScreen(), arguments: site),
-                      child:     Stack(
-                        children: [
-                          Image.network(
-                            UrlHelper.getFullImageUrl(site.siteImg),
-                            height: 300,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 300,
-                              color: Colors.grey.shade200,
-                              child: Icon(Icons.image_not_supported, size: 40),
-                            ),
-                          ),
-
-                          // Fade Overlay
-                          Container(
-                            height: 300,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.black.withOpacity(0.0),
-                                  Colors.black.withOpacity(0.45),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                            ),
-                          ),
-
-                          // Status Tag
-                          Positioned(
-                            right: 16,
-                            top: 16,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: _getStatusColor(site.status).withOpacity(0.9),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26.withOpacity(0.25),
-                                    blurRadius: 8,
-                                  )
-                                ],
-                              ),
-                              child: Text(
-                                site.status ?? "",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5,
-                                  letterSpacing: .4,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Title Bottom
-                          Positioned(
-                            left: 16,
-                            bottom: 16,
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width - 32,
-                              child: Text(
-                                "${site.siteName ?? ''}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  shadows: [
-                                    Shadow(blurRadius: 8, color: Colors.black45),
-                                  ],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.visible,
-                                softWrap: true,
-                              ),
-                            ),
-                          )
-
-                        ],
-                      ),
-                    ),
-
-                    // ---------------- Content ----------------
-                    Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ---------- Customer Details ----------
-                          if (site.customer != null && site.customer!.isNotEmpty)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _premiumInfo(
-                                  Icons.person,
-                                  site.customer!.first.name ?? "Customer N/A",
-                                  Colors.deepPurpleAccent,
-                                ),
-                                SizedBox(height: 8),
-                                InkWell(
-                                  onTap: () => _callNumber(site.customer!.first.mobileNo ?? ""),
-                                  child: _premiumInfo(
-                                    Icons.call,
-                                    site.customer!.first.mobileNo ?? "Phone N/A",
-                                    Colors.green,
-                                    isLink: false,
-                                  ),
-                                ),
-                                SizedBox(height: 12),
-                              ],
-                            ),
-
-                          // ---------- Financial Details Card ----------
-                          Builder(
-                            builder: (context) {
-                              double budget = double.tryParse(site.value?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
-                              double expense = double.tryParse(site.expense?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
-                              double balance = budget - expense;
-                              
-                              String formatIndianCurrency(double value) {
-                                final formatter = NumberFormat.currency(
-                                  symbol: '₹',
-                                  decimalDigits: 2,
-                                  locale: 'en_IN',
-                                );
-                                return formatter.format(value);
-                              }
-                              
-                              return Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.blue.shade50,
-                                      Colors.purple.shade50,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  border: Border.all(color: Colors.grey.shade200, width: 1),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.account_balance_wallet, color: Colors.blue.shade700, size: 20),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          "Financial Summary",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.blue.shade900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _financialItem("Budget", formatIndianCurrency(budget), Colors.teal),
-                                        ),
-                                        SizedBox(width: 12),
-                                        Expanded(
-                                          child: _financialItem("Expenses", formatIndianCurrency(expense), Colors.orange),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 8),
-                                    _financialItem("Balance", formatIndianCurrency(balance), Colors.purple),
-                                  ],
-                                ),
-                              );
-                            }
-                          ),
-
-                          SizedBox(height: 12),
-
-                          // ---------- Details Button ----------
-                          Builder(builder: (context) {
-                            bool canViewDetails = false;
-                            if (controller.profileRole.value.toLowerCase() == 'admin') {
-                              canViewDetails = true;
-                            } else {
-                              final p = controller.supervisorPermissions.value?.siteManagement;
-                              canViewDetails = (p?.viewSite == 1);
-                            }
-
-                            if (!canViewDetails) return SizedBox();
-
-                            return InkWell(
-                              onTap: () {
-                                showCustomerDetailsBottomSheet(
-                                    context, site, controller);
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.blueAccent.withOpacity(.2),
-                                      Colors.blueAccent.withOpacity(.1),
-                                    ],
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.info_outline,
-                                        size: 18, color: Colors.blueAccent),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      "View Details",
-                                      style: TextStyle(
-                                        color: Colors.blueAccent,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          })
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      }),
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.filteredSiteList.length,
+                  itemBuilder: (_, index) {
+                    SiteManagementList site = controller.filteredSiteList[index];
+                    return PremiumSiteCard(
+                      site: site,
+                      index: index,
+                      controller: controller,
+                    );
+                  },
+                );
+              }),
               ],
             ),
           ),
@@ -849,4 +638,412 @@ class DashboardScreen extends StatelessWidget {
     }
   }
 
+}
+
+class StaggeredEntrance extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const StaggeredEntrance({Key? key, required this.child, required this.delayMs}) : super(key: key);
+
+  @override
+  _StaggeredEntranceState createState() => _StaggeredEntranceState();
+}
+
+class _StaggeredEntranceState extends State<StaggeredEntrance> {
+  bool _isVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) {
+        setState(() => _isVisible = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 600),
+      opacity: _isVisible ? 1.0 : 0.0,
+      curve: Curves.easeOut,
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 600),
+        offset: _isVisible ? Offset.zero : const Offset(0, 0.05),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+class PremiumSiteCard extends StatefulWidget {
+  final SiteManagementList site;
+  final int index;
+  final DashboardController controller;
+
+  const PremiumSiteCard({
+    Key? key,
+    required this.site,
+    required this.index,
+    required this.controller,
+  }) : super(key: key);
+
+  @override
+  State<PremiumSiteCard> createState() => _PremiumSiteCardState();
+}
+
+class _PremiumSiteCardState extends State<PremiumSiteCard> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      lowerBound: 0.96,
+      upperBound: 1.0,
+      value: 1.0,
+      duration: const Duration(milliseconds: 150),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _scaleController.reverse();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _scaleController.forward();
+    _navigate();
+  }
+
+  void _onTapCancel() {
+    _scaleController.forward();
+  }
+
+  void _navigate() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      Get.to(() => MaterialCategoryScreen(), arguments: widget.site);
+    });
+  }
+
+  Color _getStatusColor(String? status) {
+    if (status == null) return Colors.grey;
+    switch (status.toLowerCase()) {
+      case 'ongoing':
+        return Colors.blueAccent;
+      case 'completed':
+        return Colors.green;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String _formatCurrency(double value) {
+    final formatter = NumberFormat.currency(
+      symbol: '₹',
+      decimalDigits: 0,
+      locale: 'en_IN',
+    );
+    return formatter.format(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double budget = double.tryParse(widget.site.value?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
+    double expense = double.tryParse(widget.site.expense?.replaceAll(RegExp(r'[^\d.]'), '') ?? "0") ?? 0;
+    double balance = budget - expense;
+
+    return StaggeredEntrance(
+      delayMs: (widget.index * 100).clamp(0, 800), // Max 800ms delay
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: ScaleTransition(
+          scale: _scaleController,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                )
+              ],
+              border: Border.all(
+                color: Colors.grey.shade100,
+                width: 1.5,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- IMAGE BANNER ---
+                  Stack(
+                    children: [
+                      Image.network(
+                        UrlHelper.getFullImageUrl(widget.site.siteImg),
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 220,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.grey.shade200, Colors.grey.shade300],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(Icons.apartment_rounded, size: 48, color: Colors.grey.shade400),
+                          ),
+                        ),
+                      ),
+                      // Smooth Gradient Overlay
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.0),
+                                Colors.black.withOpacity(0.85),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: const [0.0, 0.4, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Status Badge
+                      Positioned(
+                        right: 16,
+                        top: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: _getStatusColor(widget.site.status).withOpacity(0.9),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getStatusColor(widget.site.status).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.circle, color: Colors.white, size: 8),
+                              const SizedBox(width: 6),
+                              Text(
+                                widget.site.status ?? "Unknown",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Site Title
+                      Positioned(
+                        left: 20,
+                        bottom: 20,
+                        right: 20,
+                        child: Text(
+                          widget.site.siteName ?? 'Unknown Site',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // --- CONTENT SECTION ---
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Customer info
+                        if (widget.site.customer != null && widget.site.customer!.isNotEmpty)
+                          Row(
+                            children: [
+                              _buildMiniInfo(Icons.person_rounded, widget.site.customer!.first.name ?? "N/A", Colors.blueGrey),
+                              const SizedBox(width: 16),
+                              _buildMiniInfo(Icons.phone_rounded, widget.site.customer!.first.mobileNo ?? "N/A", Colors.blueGrey),
+                            ],
+                          ),
+                        if (widget.site.customer != null && widget.site.customer!.isNotEmpty)
+                          const SizedBox(height: 20),
+
+                        // Financial Summary grid
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.pie_chart_rounded, size: 18, color: Colors.blueGrey.shade700),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Financial Overview",
+                                    style: TextStyle(
+                                      color: Colors.blueGrey.shade800,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(child: _buildFinStat(Icons.account_balance_wallet_rounded, "Budget", budget, Colors.teal)),
+                                  Container(width: 1, height: 40, color: Colors.grey.shade300),
+                                  Expanded(child: _buildFinStat(Icons.trending_down_rounded, "Expenses", expense, Colors.deepOrange)),
+                                  Container(width: 1, height: 40, color: Colors.grey.shade300),
+                                  Expanded(child: _buildFinStat(Icons.account_balance_rounded, "Balance", balance, Colors.deepPurple)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Action buttons (View Details)
+                        Builder(builder: (context) {
+                          bool canViewDetails = false;
+                          if (widget.controller.profileRole.value.toLowerCase() == 'admin') {
+                            canViewDetails = true;
+                          } else {
+                            final p = widget.controller.supervisorPermissions.value?.siteManagement;
+                            canViewDetails = (p?.viewSite == 1);
+                          }
+
+                          if (!canViewDetails) return const SizedBox();
+
+                          return GestureDetector(
+                            onTap: () {
+                              showCustomerDetailsBottomSheet(context, widget.site, widget.controller);
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.info_outline_rounded, size: 18, color: Colors.blueAccent.shade700),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "View Details",
+                                    style: TextStyle(
+                                      color: Colors.blueAccent.shade700,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniInfo(IconData icon, String text, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color.withOpacity(0.7)),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: color.withOpacity(0.9),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFinStat(IconData icon, String label, double amount, Color color) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: color.withOpacity(0.8)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _formatCurrency(amount),
+          style: TextStyle(
+            fontSize: 13, // Slightly smaller to fit 3 columns nicely
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
 }

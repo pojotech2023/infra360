@@ -344,7 +344,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                            controller.calculateTotal();
                            controller.update();
                          },
-                         text: 'Add Particulars',
+                         text: 'Add Row',
                        ),
                      ),
                      if (!canAdd()) SizedBox(),
@@ -385,7 +385,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                               onTap: () {
                                 if (_formKey.currentState!.validate()) {
                                   if (controller.quotationList.isEmpty) {
-                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    Get.snackbar("Add Row", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
                                     return;
                                   }
                                   _formKey.currentState!.save();
@@ -404,7 +404,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                               onTap: () {
                                 if (_formKey.currentState!.validate()) {
                                   if (controller.quotationList.isEmpty) {
-                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    Get.snackbar("Add Row", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
                                     return;
                                   }
                                   _formKey.currentState!.save();
@@ -422,7 +422,7 @@ class GenerateQuotationScreen extends StatelessWidget {
                               onTap: () {
                                 if (_formKey.currentState!.validate()) {
                                   if (controller.quotationList.isEmpty) {
-                                    Get.snackbar("Add Particulars", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+                                    Get.snackbar("Add Row", "Please add at least one quotation item.", backgroundColor: Colors.orangeAccent, colorText: Colors.white);
                                     return;
                                   }
                                   _formKey.currentState!.save();

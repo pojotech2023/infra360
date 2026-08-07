@@ -10,7 +10,7 @@ class UrlHelper {
 
     // If it's already a full URL, return it as is
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
+      return Uri.encodeFull(path);
     }
 
     // Clean up base URL and path to avoid double slashes or missing slashes
@@ -33,6 +33,6 @@ class UrlHelper {
         cleanPath = cleanPath.replaceFirst('storage/', '');
     }
 
-    return '$base/$cleanPath';
+    return Uri.encodeFull('$base/$cleanPath');
   }
 }
