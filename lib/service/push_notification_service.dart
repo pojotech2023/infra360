@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:raptor_pro/api/api_data.dart';
+import 'package:raptor_pro/service/shared_preference_service.dart';
 
 /// Top-level background handler — MUST be a top-level function (not inside a class).
 @pragma('vm:entry-point')
@@ -77,12 +79,18 @@ class PushNotificationService {
       debugPrint('📱 FCM INITIAL TOKEN: $token');
       debugPrint('======================================');
 
+      if (token != null && PreferenceUtils().getSessionToken().isNotEmpty) {
+        ApiData().saveDeviceToken(token);
+      }
+
       // Listen for automatic token refreshes
       _fcm.onTokenRefresh.listen((String newToken) {
         debugPrint('======================================');
         debugPrint('🔄 FCM TOKEN REFRESHED: $newToken');
         debugPrint('======================================');
-        // TODO: send newToken to your backend server here if required
+        if (PreferenceUtils().getSessionToken().isNotEmpty) {
+          ApiData().saveDeviceToken(newToken);
+        }
       });
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');

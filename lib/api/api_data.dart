@@ -87,6 +87,19 @@ class ApiData {
     return null;
   }
 
+  Future<void> saveDeviceToken(String token) async {
+    try {
+      final response = await ApiService().sendAsync("POST", "save-device-token", {"token": token}, true);
+      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+        print("✅ FCM Token saved successfully");
+      } else {
+        print("❌ Failed to save FCM token. Status: ${response?.statusCode}");
+      }
+    } catch (e) {
+      print("❌ Error saving FCM token: $e");
+    }
+  }
+
   Future<SiteManagementModel?> siteListApi() async {
     final response =
         await ApiService().sendAsync("GET", "all_sites", null, true);

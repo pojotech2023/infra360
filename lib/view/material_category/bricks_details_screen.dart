@@ -16,6 +16,7 @@ import 'package:raptor_pro/view/widgets/custom_date_picker.dart';
 import 'dart:io';
 import '../../utils/file_picker_helper.dart';
 import '../../utils/file_preview.dart';
+import '../../utils/res/date_picker.dart';
 import 'bricks_details_controller.dart';
 import 'new_bricks/new_request_screen.dart';
 
@@ -406,7 +407,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
   }
 
   void _showEditOrderDialog(BuildContext context, BricksList item) {
-    TextEditingController dateCtrl = TextEditingController(text: item.date);
+    TextEditingController dateCtrl = TextEditingController(text: formatDate(item.date ?? ''));
     TextEditingController quantityCtrl = TextEditingController(text: item.quantity);
     TextEditingController priceCtrl = TextEditingController(text: item.price?.toString() ?? '0');
     TextEditingController gstCtrl = TextEditingController(text: item.gst?.toString() ?? '0');
@@ -421,7 +422,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
         lastDate: DateTime(2100),
       );
       if (picked != null) {
-        ctrl.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        ctrl.text = DateFormat('dd-MM-yyyy').format(picked);
       }
     }
 
@@ -558,7 +559,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                       "date": dateCtrl.text,
                       "quantity": quantityCtrl.text,
                       "price": priceCtrl.text,
-                      "gst": gstCtrl.text,
+                      "gst": gstCtrl.text.isNotEmpty ? gstCtrl.text : "0",
                       "site_id": controller.materialDetailsArgs?.id.toString() ?? '',
                       "vendor_id": item.vendorId ?? '',
                       "unit": item.unit ?? '',

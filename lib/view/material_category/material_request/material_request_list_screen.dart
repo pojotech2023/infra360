@@ -71,8 +71,16 @@ Supervisor: $supervisorName ($supervisorMob)
 Remarks: ${item.remarks ?? 'N/A'}
 """;
 
-      String phone = "7540060694";
-      String whatsappUrl = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+      String rawPhone = (item.vendorMobile != null && item.vendorMobile!.isNotEmpty) 
+          ? item.vendorMobile! 
+          : "7540060694"; // Fallback only if vendor has no mobile number
+          
+      rawPhone = rawPhone.trim().replaceAll(RegExp(r'[ \-\(\)]'), '');
+      if (rawPhone.length == 10 && !rawPhone.startsWith('+')) {
+        rawPhone = '+91$rawPhone';
+      }
+      
+      String whatsappUrl = "https://wa.me/$rawPhone?text=${Uri.encodeComponent(message)}";
       extractAndOpenWhatsApp(whatsappUrl);
     } catch (e) {
       print("❌ Error generating WhatsApp message: $e");
@@ -323,7 +331,7 @@ Remarks: ${item.remarks ?? 'N/A'}
     if (dateStr == null || dateStr.isEmpty) return '';
     try {
       final dt = DateTime.parse(dateStr);
-      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+      return "${dt.day.toString().padLeft(2, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.year}";
     } catch (_) {
       return dateStr;
     }

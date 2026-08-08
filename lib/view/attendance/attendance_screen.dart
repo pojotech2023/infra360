@@ -283,7 +283,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                ),
                                SizedBox(width: 6),
                                Text(
-                                 "Wages",
+                                 "Attendance",
                                  style: TextStyle(
                                    color: Colors.white,
                                    fontWeight: FontWeight.w600,
@@ -394,7 +394,7 @@ mainAxisAlignment: MainAxisAlignment.center,
                              ),
                              SizedBox(width: 6),
                              Text(
-                               "Wages",
+                               "Attendance",
                                style: TextStyle(
                                  color: Colors.white,
                                  fontWeight: FontWeight.w600,
@@ -540,25 +540,42 @@ mainAxisAlignment: MainAxisAlignment.center,
                                                 child: Text("Delete"),
                                                 onPressed: () async {
                                                   print("Delete confirmed for date: $displayDate");
-                                                  Navigator.of(context).pop();
-                                                  // Delete all records for this date by calling delete for each ID
-                                                  print("Starting to delete ${items.length} records for date $displayDate");
-                                                  for (var item in items) {
-                                                    print("Checking item: category=${item.category}, count=${item.count}, id=${item.id}");
-                                                    if (item.id != null) {
-                                                      print("➡️ Deleting record with ID: ${item.id}");
-                                                      await controller.deleteAttendance(item.id!);
-                                                    } else {
-                                                      print("⚠️ Skipping delete for ${item.category} because ID is NULL");
+                                                  Navigator.of(context).pop(); // Close confirmation dialog
+
+                                                  // Show loading dialog safely using GetX
+                                                  Get.dialog(
+                                                    WillPopScope(
+                                                      onWillPop: () async => false,
+                                                      child: const Center(child: CommonLoader()),
+                                                    ),
+                                                    barrierDismissible: false,
+                                                  );
+
+                                                  try {
+                                                    // Delete all records for this date by calling delete for each ID
+                                                    print("Starting to delete ${items.length} records for date $displayDate");
+                                                    for (var item in items) {
+                                                      print("Checking item: category=${item.category}, count=${item.count}, id=${item.id}");
+                                                      if (item.id != null) {
+                                                        print("➡️ Deleting record with ID: ${item.id}");
+                                                        await controller.deleteAttendance(item.id!);
+                                                      } else {
+                                                        print("⚠️ Skipping delete for ${item.category} because ID is NULL");
+                                                      }
                                                     }
+                                                    print("Delete operation completed. Now deleting wages for $displayDate");
+                                                    await ApiData().deleteWagesRowApi({
+                                                      "site_id": controller.siteId.value,
+                                                      "date": rawDate,
+                                                    });
+                                                    print("Wages deletion requested. Fetching latest data...");
+                                                    await controller.init(controller.siteId.value);
+                                                  } catch (e) {
+                                                    print("Error during deletion: $e");
+                                                  } finally {
+                                                    // Close loading dialog safely using GetX
+                                                    Get.back();
                                                   }
-                                                  print("Delete operation completed. Now deleting wages for $displayDate");
-                                                  await ApiData().deleteWagesRowApi({
-                                                    "site_id": controller.siteId.value,
-                                                    "date": rawDate,
-                                                  });
-                                                  print("Wages deletion requested. Fetching latest data...");
-                                                  await controller.init(controller.siteId.value);
                                                 },
                                               ),
                                             ],

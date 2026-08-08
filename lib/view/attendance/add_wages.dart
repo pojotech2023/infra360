@@ -16,7 +16,7 @@ import '../../api/api_data.dart';
 // Data model for a row in the Add Wages table
 // ─────────────────────────────────────────────────────────────────────────────
 class _WageRow {
-  final int? id;
+  int? id;
   final TextEditingController categoryController;
   final TextEditingController amountController;
   final TextEditingController countController;
@@ -180,6 +180,13 @@ class _AddWagesState extends State<AddWages> {
               categoryFocus: FocusNode(),
               isCategoryEditable: true,
             ));
+          } else {
+             for (var row in _allRows) {
+               if (row.isFixed && row.categoryController.text.toLowerCase() == item.category!.trim().toLowerCase()) {
+                 row.id = item.id;
+                 break;
+               }
+             }
           }
         }
       }
@@ -252,7 +259,12 @@ class _AddWagesState extends State<AddWages> {
       }
     }
     setState(() {
-      _allRows.remove(row);
+      if (row.isFixed) {
+        row.clear();
+        row.id = null;
+      } else {
+        _allRows.remove(row);
+      }
     });
   }
 
@@ -262,6 +274,29 @@ class _AddWagesState extends State<AddWages> {
       row.isCategoryEditable = true;
     });
     Future.microtask(() => FocusScope.of(context).requestFocus(row.categoryFocus));
+  }
+
+  bool _validateForm() {
+    bool hasData = false;
+    for (var row in _allRows) {
+      if (row.amountController.text.trim().isNotEmpty || row.countController.text.trim().isNotEmpty) {
+        hasData = true;
+        break;
+      }
+    }
+
+    if (!hasData) {
+      Get.snackbar(
+        "Validation Error",
+        "Please enter Amount or Count for at least one row.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    }
+    return true;
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -292,7 +327,7 @@ class _AddWagesState extends State<AddWages> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Add Wages", style: AppTextStyle.textBold.copyWith(fontSize: 20, color: const Color(0xFF1E293B))),
+              Text("Add Attendance", style: AppTextStyle.textBold.copyWith(fontSize: 20, color: const Color(0xFF1E293B))),
               Row(
                 children: [
                   Text("Date", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w500, fontSize: 14)),
@@ -361,7 +396,11 @@ class _AddWagesState extends State<AddWages> {
                       width: 120,
                       height: 42,
                       child: ElevatedButton(
-                        onPressed: () => controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson()),
+                        onPressed: () {
+                          if (_validateForm()) {
+                            controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson());
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
@@ -512,6 +551,9 @@ class _AddWagesState extends State<AddWages> {
   // ── EDIT MODE (type == "3") ───────────────────────────────────────────────
   Widget _buildEditMode(BuildContext context) {
     final String dateStr = dateRanger.text;
+    _WageRow? getFixed(String cat) {
+      try { return _allRows.firstWhere((r) => r.isFixed && r.categoryController.text.toLowerCase() == cat.toLowerCase()); } catch (_) { return null; }
+    }
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: EdgeInsets.only(
@@ -551,10 +593,10 @@ class _AddWagesState extends State<AddWages> {
             ],
           ),
           const SizedBox(height: 12),
-          if (controller.masonCountController.text.isNotEmpty) _editRow("Mason", controller.masonCountController),
-          if (controller.helperCountController.text.isNotEmpty) _editRow("Helper", controller.helperCountController),
-          if (controller.fitterCountController.text.isNotEmpty) _editRow("Fitter", controller.fitterCountController),
-          if (controller.centringHelperCountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperCountController),
+          if (controller.masonCountController.text.isNotEmpty) _editRow("Mason", controller.masonCountController, row: getFixed("Mason")),
+          if (controller.helperCountController.text.isNotEmpty) _editRow("Helper", controller.helperCountController, row: getFixed("Helper")),
+          if (controller.fitterCountController.text.isNotEmpty) _editRow("Fitter", controller.fitterCountController, row: getFixed("Fitter")),
+          if (controller.centringHelperCountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperCountController, row: getFixed("Centring Helper")),
           ..._dynamicRows.map((row) => _editRow(row.categoryController.text, row.countController, isCustom: true, row: row)),
 
           const SizedBox(height: 2),
@@ -563,10 +605,10 @@ class _AddWagesState extends State<AddWages> {
           // ── Update Wages section ───────────────────────────────
           const Text("Update Wages", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 12),
-          if (controller.masonAmountController.text.isNotEmpty) _editRow("Mason", controller.masonAmountController),
-          if (controller.helperAmountController.text.isNotEmpty) _editRow("Helper", controller.helperAmountController),
-          if (controller.fitterAmountController.text.isNotEmpty) _editRow("Fitter", controller.fitterAmountController),
-          if (controller.centringHelperAmountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperAmountController),
+          if (controller.masonAmountController.text.isNotEmpty) _editRow("Mason", controller.masonAmountController, row: getFixed("Mason")),
+          if (controller.helperAmountController.text.isNotEmpty) _editRow("Helper", controller.helperAmountController, row: getFixed("Helper")),
+          if (controller.fitterAmountController.text.isNotEmpty) _editRow("Fitter", controller.fitterAmountController, row: getFixed("Fitter")),
+          if (controller.centringHelperAmountController.text.isNotEmpty) _editRow("Centring Helper", controller.centringHelperAmountController, row: getFixed("Centring Helper")),
           ..._dynamicRows.map((row) => _editRow(row.categoryController.text, row.amountController, isCustom: true, row: row)),
           const SizedBox(height: 20),
 
@@ -583,7 +625,11 @@ class _AddWagesState extends State<AddWages> {
                 : SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson()),
+                      onPressed: () {
+                        if (_validateForm()) {
+                          controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson());
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade600,
                         foregroundColor: Colors.white,
@@ -606,9 +652,10 @@ class _AddWagesState extends State<AddWages> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 130,
+          Expanded(
+            flex: 6,
             child: isCustom && row != null
                 ? SizedBox(
                     height: 42,
@@ -627,6 +674,7 @@ class _AddWagesState extends State<AddWages> {
           ),
           const SizedBox(width: 12),
           Expanded(
+            flex: 3,
             child: SizedBox(
               height: 42,
               child: TextFormField(
@@ -643,20 +691,23 @@ class _AddWagesState extends State<AddWages> {
               ),
             ),
           ),
-          if (isCustom && row != null && row.id == null) ...[
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: () => _deleteRow(row),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.red.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Icon(Icons.close, color: Colors.red, size: 16),
-              ),
-            ),
-          ]
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 32, // Fixed width for the action button to maintain alignment
+            child: (row != null)
+                ? InkWell(
+                    onTap: () => _deleteRow(row),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.red.shade300),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(Icons.close, color: Colors.red, size: 16),
+                    ),
+                  )
+                : const SizedBox(), // Empty placeholder so fields don't shift
+          ),
         ],
       ),
     );

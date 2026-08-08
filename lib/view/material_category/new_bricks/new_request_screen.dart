@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:raptor_pro/model/bricks_model.dart';
@@ -34,6 +35,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
   final NewRequestController controller = Get.put(NewRequestController());
   final TextEditingController searchEditingController = TextEditingController();
   File? attachment;
+  bool _isSubmitting = false;
 
   late String role ;
   late int type;
@@ -119,7 +121,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
 
               _buildDate(),
                _buildAmountField(),
-               if (widget.type != 2) _buildGstField(),
+               _buildGstField(),
               _buildSupervisorNameField(),
               _buildSupervisorMobField(),
               _buildAttachment(),
@@ -163,11 +165,11 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                 controller.mobileNoController.text = value.mobileNo ?? '';
                 controller.addressController.text = value.address ?? '';
                 if (widget.type == 2) {
-                  controller.gstController.text = value.gst ?? '';
+                  controller.vendorGstController.text = value.gst ?? '';
                 }
                 controller.update();
               }
-print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
+print("CONTROLLER VENDOR ${controller.selectedVendorData?.id}");
             },
             dropdownSearchData: DropdownSearchData(
               searchController: searchEditingController,
@@ -211,7 +213,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
 
   Widget _buildVendorGstField() => _textField(
     label: "Vendor GST",
-    controller: controller.gstController,
+    controller: controller.vendorGstController,
     hint: "Auto-filled on selecting vendor",
     readOnly: true,
   );
@@ -302,6 +304,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
     bool readOnly = false,
     int? minLines,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -313,6 +316,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
           readOnly: readOnly,
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           minLines: minLines,
           maxLines: minLines != null ? null : 1,
           decoration: textBoxDecoration(hint: hint),
@@ -464,26 +468,43 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData.id}");
     label: "Supervisor Name",
     controller: controller.supervisorNameController,
     hint: "Supervisor Name",
-    readOnly: true,
   );
 
   Widget _buildSupervisorMobField() => _textField(
     label: "Supervisor Mobile Num",
     controller: controller.supervisorMobController,
     hint: "Supervisor Mobile Num",
-    readOnly: true,
+    keyboardType: TextInputType.phone,
+    inputFormatters: [
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(10),
+    ],
   );
 
 
   Widget _buildSubmitButton() {
-    return CommonButton(
-      onTap: () {
-        if (_formKey.currentState!.validate()) {
-          controller.addMaterialApi(attachment,widget.type);
-        }
-      },
-      text: widget.type == 2 ? "Inward Order" : "Send Request to Vendor WhatsApp",
-    );
+    return _isSubmitting
+        ? const Center(child: CircularProgressIndicator())
+        : CommonButton(
+            onTap: () async {
+              if (_formKey.currentState!.validate()) {
+                setState(() {
+                  _isSubmitting = true;
+                });
+                
+                try {
+                  await controller.addMaterialApi(attachment, widget.type);
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isSubmitting = false;
+                    });
+                  }
+                }
+              }
+            },
+            text: widget.type == 2 ? "Inward Order" : "Send Request to Vendor WhatsApp",
+          );
   }
 
   /// ✅ File Picker Bottom Sheet

@@ -21,10 +21,10 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
   
+  await PreferenceUtils().init(); // initialize before app starts
+  
   // Initialize Push Notifications
   await PushNotificationService().initialize();
-
-  await PreferenceUtils().init(); // initialize before app starts
   
   // Initialize Location Service
   try {
@@ -51,12 +51,20 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.appTheme,
       navigatorKey: navigatorKey,
       initialRoute: "/",
-        getPages: [
+      builder: (context, child) {
+        return SafeArea(
+          top: false,
+          left: false,
+          right: false,
+          bottom: true,
+          child: child ?? const SizedBox(),
+        );
+      },
+      getPages: [
         GetPage(name: '/', page: () => SplashScreen()),
         GetPage(name: '/login', page: () => LoginScreen()),
-          GetPage(name: '/properties', page: () => PropertiesListScreen()),
+        GetPage(name: '/properties', page: () => PropertiesListScreen()),
       ],
-
     );
   }
 }

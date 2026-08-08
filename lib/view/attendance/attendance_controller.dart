@@ -703,6 +703,9 @@ class AttendanceController extends GetxController {
     if (commonSuccessResponseModel != null) {
       showToastMessage(commonSuccessResponseModel.message ?? "Updated successfully");
       
+      // ✅ Close bottom sheet immediately after data is saved
+      Get.back();
+
       // ✅ Clear old state completely
       attendanceList.clear();
       totalWages.value = 0;
@@ -710,13 +713,10 @@ class AttendanceController extends GetxController {
       
       // ✅ Reset to full-month view and fetch fresh data
       selectedDate.value = null;
-      await init(siteId.value);
+      init(siteId.value); // Fetch in background without blocking
       
       // ✅ Force complete UI rebuild
       update();
-      
-      // ✅ Close bottom sheet after data is refreshed
-      Get.back();
     } else {
       showToastMessage("Something Went Wrong");
     }

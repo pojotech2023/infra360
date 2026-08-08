@@ -28,7 +28,7 @@ class NewRequestController extends GetxController{
 
 
   late LoginResponse userDetails;
-  late VendorData selectedVendorData ;
+  VendorData? selectedVendorData;
 var selectedUnit = ''.obs;
   var selectedDeliveryNeeded =''.obs;
 
@@ -42,6 +42,7 @@ var selectedUnit = ''.obs;
   TextEditingController supervisorNameController = TextEditingController();
   TextEditingController supervisorMobController = TextEditingController();
   TextEditingController gstController = TextEditingController();
+  TextEditingController vendorGstController = TextEditingController();
 
   List<String> units = List<String>.empty(growable: true);
   List<String> categories = List<String>.empty(growable: true);
@@ -135,8 +136,11 @@ var selectedUnit = ''.obs;
                    (Get.arguments as MaterialDetailsArgs).editItem != null;
     final editItem = isEdit ? (Get.arguments as MaterialDetailsArgs).editItem : null;
 
-   var requestMaterialDateForamte =  DateFormat('yyyy-MM-dd')
-        .format(DateFormat('dd-MM-yyyy').parse( dateController.text));
+    String requestMaterialDateForamte = dateController.text;
+    try {
+      requestMaterialDateForamte = DateFormat('yyyy-MM-dd')
+          .format(DateFormat('dd-MM-yyyy').parse(dateController.text));
+    } catch (_) {}
 
 
     // ------------------ COMMON MAP ------------------
@@ -147,9 +151,11 @@ var selectedUnit = ''.obs;
       "price": amountController.text,
       "quantity": quantityController.text,
       "unit": selectedUnit.value,
-      "date_of_delivery": requestMaterialDateForamte,
+      "date_of_delivery": dateController.text, // Backend requires d-m-Y format
       "amount": amountController.text,
-      "gst": gstController.text,
+      "gst": gstController.text.isNotEmpty ? gstController.text : "0",
+      "supervisor_name": supervisorNameController.text,
+      "supervisor_mobile": supervisorMobController.text,
       //"remarks": reMarksController.text,
     };
 
@@ -159,22 +165,26 @@ var selectedUnit = ''.obs;
     }
     
     // Add vendor_id for all roles (if selected)
-    requestData["vendor_id"] = selectedVendorData.id.toString();
+    if (selectedVendorData != null) {
+      requestData["vendor_id"] = selectedVendorData!.id.toString();
+    }
 
     // ------------------ ORDER MAP ------------------
     Map<String, String> orderData = {
       "site_id": siteId.toString(),
       "material_type": itemKey,
       "quantity": quantityController.text,
-      "date": dateController.text,
+      "date": dateController.text, // Backend requires d-m-Y format
       "unit": selectedUnit.value,
       "price": amountController.text,
-      "gst": gstController.text,
+      "gst": gstController.text.isNotEmpty ? gstController.text : "0",
+      "supervisor_name": supervisorNameController.text,
+      "supervisor_mobile": supervisorMobController.text,
     };
 
 
 
-    if (type == 2) {
+    if (type == 2 && selectedVendorData != null) {
       orderData["vendor_id"] = selectedVendorData!.id.toString();
     }
 
@@ -226,9 +236,9 @@ var selectedUnit = ''.obs;
 *SS Builders*
 Site Name: ${args.siteName} - $title
 Location: ${args.siteLocation}
-${showVendorDetails ? "Vendor Name: ${selectedVendorData.name}\n" : ""}
-${showVendorDetails ? "Vendor Address: ${selectedVendorData.address}\n" : ""}
-${showVendorDetails ? "Vendor Mobile: ${selectedVendorData.mobileNo}\n" : ""}
+${showVendorDetails ? "Vendor Name: ${selectedVendorData?.name ?? 'N/A'}\n" : ""}
+${showVendorDetails ? "Vendor Address: ${selectedVendorData?.address ?? 'N/A'}\n" : ""}
+${showVendorDetails ? "Vendor Mobile: ${selectedVendorData?.mobileNo ?? 'N/A'}\n" : ""}
 Material Type: ${args.itemKey}\n
 Unit : ${args.itemKey.toLowerCase() == 'bricks'
           ? "${selectedCategory.value} (${selectedUnit.value})"
@@ -270,7 +280,16 @@ ${hasAttachment ? "Attachment: $attachmentUrl" : ""}
       showToastMessage(res.message ?? "Request submitted to Admin for approval.");
       Get.back();
     } else {
-      String phone = type == 1 ? "7540060694" : selectedVendorData.mobileNo.toString();
+      // Use the selected vendor's phone number for all cases where WhatsApp is opened
+      String phone = selectedVendorData?.mobileNo?.toString().trim() ?? "7540060694";
+      
+      // Clean up phone number (remove spaces, dashes, etc.)
+      phone = phone.replaceAll(RegExp(r'[ \-\(\)]'), '');
+      
+      // WhatsApp requires country code. If it's a 10-digit Indian number, add +91
+      if (phone.length == 10 && !phone.startsWith('+')) {
+        phone = '+91$phone';
+      }
 
       String whatsappUrl =
           "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";

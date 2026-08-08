@@ -27,6 +27,7 @@ class MaterialRequestItem {
   String? unit;
   String? neededBy;
   String? vendorName;
+  String? vendorMobile;
   String? remarks;
   String? status; // pending, approved, rejected
   String? actionRemarks;
@@ -44,6 +45,7 @@ class MaterialRequestItem {
     this.unit,
     this.neededBy,
     this.vendorName,
+    this.vendorMobile,
     this.remarks,
     this.status,
     this.actionRemarks,
@@ -64,6 +66,7 @@ class MaterialRequestItem {
       neededBy: (json['needed_by'] ?? json['date_of_delivery'] ?? json['date'])?.toString() ?? '',
       vendorName: json['vendor_name']?.toString() ?? 
                   (json['vendor'] is Map ? json['vendor']['name']?.toString() ?? '' : json['vendor']?.toString() ?? ''),
+      vendorMobile: json['vendor'] is Map ? (json['vendor']['mobile_no']?.toString() ?? json['vendor']['mobile']?.toString() ?? '') : '',
       remarks: json['remarks']?.toString() ?? '',
       status: _parseStatus(json['status']),
       actionRemarks: json['action_remarks']?.toString() ?? '',

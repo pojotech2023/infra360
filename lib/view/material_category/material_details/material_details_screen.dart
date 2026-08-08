@@ -371,27 +371,32 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
     final materialItem = controller.data[materialKey];
     final int? dynamicId = materialItem?.id;
 
-    CommonSuccessResponseModel? res;
-
     if (dynamicId != null) {
       // Dynamic material -> DELETE /api/material-type-delete/{id}
-      res = await ApiData().deleteDynamicMaterialTypeApi(dynamicId);
+      CommonSuccessResponseModel? res = await ApiData().deleteDynamicMaterialTypeApi(dynamicId);
+
+      print("📥 [MaterialDetailsScreen] hideMaterialCard response: status=${res?.status}  message=${res?.message}");
+
+      if (res != null && res.status == true) {
+        showToastMessage(res.message ?? "Card removed from grid");
+        controller.init(siteManagementList.id ?? 0);
+      } else {
+        showToastMessage(res?.message ?? "Failed to remove card. Check logs.");
+        print("⚠️ [MaterialDetailsScreen] hideMaterialCard failed — raw response logged above");
+      }
     } else {
-      // Built-in material -> DELETE /api/material-type-hide/{slug}
-      // Prefer the slug from the model if available, otherwise fallback to lowercase key
-      final String slug = materialItem?.slug?.isNotEmpty == true ? materialItem!.slug! : materialKey.toLowerCase();
-      res = await ApiData().hideBuiltInMaterialTypeApi(slug);
-    }
-
-    print("📥 [MaterialDetailsScreen] hideMaterialCard response: status=${res?.status}  message=${res?.message}");
-
-    if (res != null && res.status == true) {
-      showToastMessage(res.message ?? "Card removed from grid");
+      // Built-in material -> Hide it locally since backend support may vary
+      controller.hideDefaultMaterial(materialKey);
+      showToastMessage("Card removed from grid");
       controller.init(siteManagementList.id ?? 0);
-    } else {
-      // Show message but still refresh so user sees current state
-      showToastMessage(res?.message ?? "Failed to remove card. Check logs.");
-      print("⚠️ [MaterialDetailsScreen] hideMaterialCard failed — raw response logged above");
+
+      // Attempt backend hide silently
+      final String slug = materialItem?.slug?.isNotEmpty == true ? materialItem!.slug! : materialKey.toLowerCase();
+      ApiData().hideBuiltInMaterialTypeApi(slug).then((apiRes) {
+        print("📥 [MaterialDetailsScreen] background hideBuiltIn response: status=${apiRes?.status}");
+      }).catchError((e) {
+        print("⚠️ [MaterialDetailsScreen] background hideBuiltIn error: $e");
+      });
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -28,6 +29,16 @@ class LoginController extends GetxController{
 
         PreferenceUtils().setUserInfo(user);
         
+        // Save FCM Token to backend
+        try {
+          String? fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await ApiData().saveDeviceToken(fcmToken);
+          }
+        } catch (e) {
+          debugPrint('❌ Error saving FCM token on login: $e');
+        }
+
         // Start location tracking for all authenticated users to ensure it continues running reliably
         LocationService.startService();
 

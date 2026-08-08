@@ -2,8 +2,19 @@ import 'package:get/get.dart';
 import 'package:raptor_pro/api/api_data.dart';
 import 'package:raptor_pro/model/material_list_model.dart';
 import 'package:raptor_pro/utils/const_data.dart';
+import 'package:raptor_pro/service/shared_preference_service.dart';
 
 class MaterialDetailsController extends GetxController{
+
+  void hideDefaultMaterial(String key) {
+    if (currentSiteId == null) return;
+    final prefsKey = 'hidden_materials_$currentSiteId';
+    final hidden = PreferenceUtils.pref.getStringList(prefsKey) ?? [];
+    if (!hidden.contains(key.toLowerCase())) {
+      hidden.add(key.toLowerCase());
+      PreferenceUtils.pref.setStringList(prefsKey, hidden);
+    }
+  }
 
   var data = <String, MaterialItem>{}.obs;
 
@@ -102,9 +113,19 @@ class MaterialDetailsController extends GetxController{
       }
     }
 
+    // Read hidden defaults for this site
+    final prefsKey = 'hidden_materials_$siteId';
+    final hiddenDefaults = PreferenceUtils.pref.getStringList(prefsKey) ?? [];
+
     // Next, populate standard/built-in materials
     for (var key in ConstantData.allMaterialKeys) {
       final String safeKey = key.toLowerCase();
+      
+      // Skip if this built-in material was hidden by the user
+      if (hiddenDefaults.contains(safeKey)) {
+        continue;
+      }
+
       // Only add if not already added by material_types
       if (!finalMaterials.keys.any((k) => k.toLowerCase() == safeKey)) {
         final existingItem = materialModel?.data?[key] ?? materialModel?.data?[safeKey];
