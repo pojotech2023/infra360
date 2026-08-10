@@ -133,7 +133,7 @@ class PaymentStatusController extends GetxController {
         response = await ApiData().sitePaymentAddApi(postData);
       }
 
-      if (response != null && response.status == true) {
+      if (response != null && (response.status == true || response.status == 'success' || response.responseCode == 200 || response.success == true)) {
         Get.back(); // Close form
         Get.snackbar("Success", response.message ?? "Payment processed successfully");
         resetForm();
@@ -143,6 +143,8 @@ class PaymentStatusController extends GetxController {
       } else {
         Get.snackbar("Error", response?.message ?? "Failed to process payment");
       }
+    } catch (e) {
+      Get.snackbar("Error", "An error occurred");
     } finally {
       isLoading.value = false;
     }
@@ -224,14 +226,21 @@ class PaymentStatusController extends GetxController {
   }
 
   Future<void> sendPaymentReceiptEmail(int paymentId) async {
+    showDialog(
+      context: Get.overlayContext!,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
     try {
       final res = await ApiData().sendPaymentReceiptEmail(paymentId, customerEmail.value);
-      if (res != null && res.status == true) {
+      Navigator.of(Get.overlayContext!).pop(); // close dialog
+      if (res != null && (res.status == true || res.status == 'success' || res.responseCode == 200 || res.success == true)) {
         showToastMessage(res.message ?? "Receipt sent via Email");
       } else {
         showToastMessage(res?.message ?? "Failed to send receipt via Email");
       }
     } catch (e) {
+      Navigator.of(Get.overlayContext!).pop(); // close dialog
       showToastMessage("Error sending via Email: $e");
     }
   }

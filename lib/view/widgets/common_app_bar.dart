@@ -9,17 +9,27 @@ class CommonAppBar {
       toolbarHeight: 80,
       centerTitle: true,
       title: Text(title,style: AppTextStyle.appBarTextStyle),
-      leading: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: SvgPicture.asset(
-            Images.arrow,
-            width: 24,
-            height: 24,
-          ),
-        ),
-      ),actions: actions ??[]
+      leading: Builder(
+        builder: (context) {
+          return IconButton(
+            onPressed: () {
+              // Use standard Flutter navigation to avoid GetX route blocking/transition bugs
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                // Fallback to the provided onTap if standard pop is unavailable
+                onTap();
+              }
+            },
+            icon: SvgPicture.asset(
+              Images.arrow,
+              width: 30,
+              height: 30,
+            ),
+          );
+        }
+      ),
+      actions: actions ?? []
     );
   }
 }

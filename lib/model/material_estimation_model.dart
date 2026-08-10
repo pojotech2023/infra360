@@ -67,15 +67,17 @@ class UnitInfo {
 class RequestedMaterial {
   int? id;
   String? particular;
+  String? quantity;
   String? unit;
   int? unitId;
   String? date;
 
-  RequestedMaterial({this.id, this.particular, this.unit, this.unitId, this.date});
+  RequestedMaterial({this.id, this.particular, this.quantity, this.unit, this.unitId, this.date});
 
   RequestedMaterial.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     particular = json['particular'];
+    quantity = json['quantity']?.toString();
     unit = json['unit'];
     unitId = json['unit_id'];
     date = json['date'];

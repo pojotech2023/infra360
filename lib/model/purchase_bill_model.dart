@@ -124,10 +124,11 @@ class PurchaseBillItemModel {
   String? vendorName;
   String? date;
   String? subject;
-  int? totalAmount;
+  dynamic totalAmount;
   String? pdfUrl;
+  String? whatsappUrl;
 
-  PurchaseBillItemModel({this.id, this.vendorName, this.date, this.subject, this.totalAmount, this.pdfUrl});
+  PurchaseBillItemModel({this.id, this.vendorName, this.date, this.subject, this.totalAmount, this.pdfUrl, this.whatsappUrl});
 
   PurchaseBillItemModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -136,6 +137,7 @@ class PurchaseBillItemModel {
     subject = json['subject'];
     totalAmount = json['total_amount'];
     pdfUrl = json['pdf_url'];
+    whatsappUrl = json['whatsapp_url'];
   }
 }
 

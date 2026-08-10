@@ -67,8 +67,9 @@ class Subcontractors {
     subcontractorId = json['subcontractor_id'];
     subcontractorType = json['subcontractor_type'];
     date = json['date'];
-    amount = json['amount'];
-    remarks = json['remarks']?.toString();
+    amount = json['amount']?.toString();
+    remarks = (json['remarks'] ?? json['remark'])?.toString();
+    if (remarks == "null") remarks = null;
     status = json['status'];
     noCounts = json['no_counts']?.toString();
     createdBy = json['created_by'];

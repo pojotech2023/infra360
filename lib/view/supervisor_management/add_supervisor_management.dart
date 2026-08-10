@@ -37,9 +37,7 @@ class _AddSuperVisorManagementScreenState extends State<AddSuperVisorManagementS
       SuperVisorData ?superVisorData = Get.arguments;
       nameEditingController.text = superVisorData!.name??"";
       mobileNumberEditingController.text = superVisorData!.mobileNo??"";
-        emailEditingController.text = superVisorData!.email??"";
-      passwordEditingController.text = superVisorData!.password??"";
-      confirmPasswordEditingController.text = superVisorData!.password??"";
+      emailEditingController.text = superVisorData!.email??"";
     }
     super.initState();
   }
@@ -123,7 +121,7 @@ class _AddSuperVisorManagementScreenState extends State<AddSuperVisorManagementS
                controller: passwordEditingController,
                decoration:textBoxDecoration(hint:"Enter Password"),
                validator: (text){
-                 if (text == null || text.isEmpty) {
+                 if (Get.arguments == null && (text == null || text.isEmpty)) {
                    return 'Required';
                  }
 
@@ -139,17 +137,15 @@ class _AddSuperVisorManagementScreenState extends State<AddSuperVisorManagementS
          TextFormField(
            controller: confirmPasswordEditingController,
            decoration:textBoxDecoration(hint:"Enter  confirm Password"),
-           validator: (text){
-             if (text == null || text.isEmpty) {
-               return 'Required';
-             }
-             if (text != passwordEditingController.text) {
-               return 'Passwords do not match';
-             }
-             return null;
-
-             return null;
-           },
+            validator: (text){
+              if (Get.arguments == null && (text == null || text.isEmpty)) {
+                return 'Required';
+              }
+              if (text != passwordEditingController.text) {
+                return 'Passwords do not match';
+              }
+              return null;
+            },
          ),
 
 

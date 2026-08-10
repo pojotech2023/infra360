@@ -85,6 +85,8 @@ class NewServicesRequestController extends GetxController {
       'date': apiDate,
       'amount': amountController.text,
       'no_counts': countController.text,
+      'remarks': remarksController.text,
+      'remark': remarksController.text,
     };
 
     CommonSuccessResponseModel? res = await ApiData().addSubcontractorServicesApi(postedData);
@@ -144,6 +146,7 @@ class NewServicesRequestController extends GetxController {
       'amount': amountController.text,
       'no_counts': countController.text.isNotEmpty ? countController.text : (editItem!.noCounts ?? '0'),
       'remarks': remarksController.text,
+      'remark': remarksController.text,
     };
 
     // Ensure no_counts is never empty

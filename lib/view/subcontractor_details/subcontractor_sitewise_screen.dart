@@ -38,43 +38,46 @@ class _SubcontractorScreenState
   late final SiteManagementList siteManagementList;
   final controller = Get.put(SubcontractorController());
 
-  /// True when the current user may add a new subcontractor type.
-  bool _canAdd = false;
+  String _role = '';
 
-  /// True when the current user may remove/hide a subcontractor type.
-  bool _canRemove = false;
+  bool get _canAdd {
+    final dashCtrl = Get.find<DashboardController>();
+    // Always read the observable to satisfy GetX Obx requirements
+    final perms = dashCtrl.supervisorPermissions.value?.subcontractorManagement;
+    
+    if (_role == 'admin') return true;
+    if (_role == 'supervisor') {
+      return (perms?.addSubcontractor ?? 0) == 1;
+    }
+    return false;
+  }
+
+  bool get _canRemove {
+    final dashCtrl = Get.find<DashboardController>();
+    // Always read the observable to satisfy GetX Obx requirements
+    final perms = dashCtrl.supervisorPermissions.value?.subcontractorManagement;
+    
+    if (_role == 'admin') return true;
+    if (_role == 'supervisor') {
+      return (perms?.deleteSubcontractor ?? 0) == 1;
+    }
+    return false;
+  }
 
   @override
   void initState() {
     super.initState();
     siteManagementList = Get.arguments ?? 0;
-    _fetchRole();
-    controller.init(siteManagementList.id ?? 0);
-  }
-
-  Future<void> _fetchRole() async {
+    
     try {
       final data = jsonDecode(PreferenceUtils().getUserInfo());
       final userDetails = LoginResponse.fromJson(data);
-      final role = userDetails.data?.role?.toLowerCase() ?? '';
-
-      if (role == 'admin') {
-        _canAdd    = true;
-        _canRemove = true;
-      } else if (role == 'supervisor') {
-        // Use DashboardController's already-loaded supervisor permissions
-        final dashCtrl = Get.find<DashboardController>();
-        final perms = dashCtrl.supervisorPermissions.value;
-        final subPerms = perms?.subcontractorManagement;
-        _canAdd    = (subPerms?.addSubcontractor    ?? 0) == 1;
-        _canRemove = (subPerms?.deleteSubcontractor ?? 0) == 1;
-        print("🔐 [SubcontractorScreen] supervisor perms — canAdd=$_canAdd, canRemove=$_canRemove");
-      }
-
-      if (mounted) setState(() {});
+      _role = userDetails.data?.role?.toLowerCase() ?? '';
     } catch (e) {
       print("Error fetching role: $e");
     }
+    
+    controller.init(siteManagementList.id ?? 0);
   }
 
   void _showRemoveDialog(BuildContext context, SubcontractorItem item) {
@@ -113,9 +116,9 @@ class _SubcontractorScreenState
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Subcontractor Details",
-          actions: _canAdd
-              ? [
-                  Padding(
+          actions: [
+            Obx(() => _canAdd
+                ? Padding(
                     padding: const EdgeInsets.only(right: 12.0),
                     child: Center(
                       child: ElevatedButton.icon(
@@ -140,8 +143,8 @@ class _SubcontractorScreenState
                       ),
                     ),
                   )
-                ]
-              : null,
+                : const SizedBox.shrink()),
+          ],
           onTap: () {
             Get.back();
           }),

@@ -6,6 +6,7 @@ import 'package:raptor_pro/model/other_utilities_model.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
 import 'package:raptor_pro/utils/res/spacing.dart';
+import 'package:raptor_pro/utils/url_helper.dart';
 import 'package:raptor_pro/view/material_category/other_material/others_material_controller.dart';
 import 'package:raptor_pro/view/subcontractor_details/other_subcontractor_screen/others_subcontractor_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
@@ -64,9 +65,20 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                 itemCount: controller.otherUtilitiesData.length,
                 itemBuilder: (context, index) {
                   final data = controller.otherUtilitiesData[index];
+                  String displayDate = '';
+                  if (data.createdAt != null) {
+                    final raw = data.createdAt!.split('T').first;
+                    final parts = raw.split('-');
+                    if (parts.length == 3) {
+                      displayDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                    } else {
+                      displayDate = raw;
+                    }
+                  }
+
                   return _buildCard(
                     id: (index + 1).toString(),
-                    date: data.createdAt != null ? data.createdAt!.split('T').first : '',
+                    date: displayDate,
                     amount: data.amount ?? '0',
                     remarks: data.remarks ?? '',
                     imageUrl: data.image,
@@ -140,7 +152,7 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: Image.network(
-                          Uri.encodeFull( "${baseUrl}images/${imageUrl}"),
+                          UrlHelper.getFullImageUrl(imageUrl),
                           width: 40,
                           height: 40,
                           fit: BoxFit.cover,
@@ -161,7 +173,14 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                     if (dataItem != null) {
                       final amountCtrl = TextEditingController(text: dataItem.amount);
                       final remarksCtrl = TextEditingController(text: dataItem.remarks);
-                      final dateCtrl = TextEditingController(text: dataItem.createdAt?.split('T').first ?? '');
+                      String editDate = dataItem.createdAt?.split('T').first ?? '';
+                      if (editDate.contains('-')) {
+                        final parts = editDate.split('-');
+                        if (parts.length == 3) {
+                          editDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                        }
+                      }
+                      final dateCtrl = TextEditingController(text: editDate);
                       
                       showDialog(
                         context: context,
@@ -171,7 +190,7 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (YYYY-MM-DD)")),
+                                TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (DD-MM-YYYY)")),
                                 TextField(controller: amountCtrl, decoration: InputDecoration(labelText: "Amount"), keyboardType: TextInputType.number),
                                 TextField(controller: remarksCtrl, decoration: InputDecoration(labelText: "Remarks"), maxLines: 3),
                               ],
@@ -330,7 +349,7 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  Uri.encodeFull("${baseUrl}images/${imageUrl}"),
+                  UrlHelper.getFullImageUrl(imageUrl),
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Center(
                     child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
@@ -347,7 +366,14 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                   if (dataItem != null) {
                     final amountCtrl = TextEditingController(text: dataItem.amount);
                     final remarksCtrl = TextEditingController(text: dataItem.remarks);
-                    final dateCtrl = TextEditingController(text: dataItem.createdAt?.split('T').first ?? '');
+                    String editDate = dataItem.createdAt?.split('T').first ?? '';
+                    if (editDate.contains('-')) {
+                      final parts = editDate.split('-');
+                      if (parts.length == 3) {
+                        editDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                      }
+                    }
+                    final dateCtrl = TextEditingController(text: editDate);
                     
                     showDialog(
                       context: context,
@@ -357,7 +383,7 @@ class _OtherSubcontractorViewState extends State<OtherSubcontractorView> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (YYYY-MM-DD)")),
+                              TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (DD-MM-YYYY)")),
                               TextField(controller: amountCtrl, decoration: InputDecoration(labelText: "Amount"), keyboardType: TextInputType.number),
                               TextField(controller: remarksCtrl, decoration: InputDecoration(labelText: "Remarks"), maxLines: 3),
                             ],

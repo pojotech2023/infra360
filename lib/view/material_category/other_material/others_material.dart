@@ -43,7 +43,7 @@ class _OtherMaterialScreenState extends State<OtherMaterialScreen> {
     );
     if (pickedDate != null) {
       setState(() {
-        controller.text = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+        controller.text = "${pickedDate.day.toString().padLeft(2, '0')}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.year}";
       });
     }
   }

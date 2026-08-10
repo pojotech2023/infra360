@@ -5,13 +5,16 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_data.dart';
+import '../../model/unit_master_model.dart';
 import '../../model/purchase_bill_model.dart';
 import '../../utils/res/sendWhatsAppMessage.dart';
 
 class PurchaseBillItem {
   TextEditingController particular = TextEditingController();
   TextEditingController count = TextEditingController();
-  TextEditingController amount = TextEditingController();
+  String? selectedUnit;
+  TextEditingController amount = TextEditingController(); // this is Rate
+  TextEditingController total = TextEditingController();
 }
 
 class PurchaseBillController extends GetxController {
@@ -35,6 +38,9 @@ class PurchaseBillController extends GetxController {
   VendorInfo? selectedVendor;
   bool isVendorListVisible = false;
 
+  // Unit Master List
+  List<UnitMasterData> unitMasterList = [];
+
   // Particulars list
   var itemList = <PurchaseBillItem>[].obs;
 
@@ -45,13 +51,16 @@ class PurchaseBillController extends GetxController {
   var isFormLoading = false.obs;
   var isSubmitLoading = false.obs;
 
+  // Date Parsing helper
+  DateTime parsedDate = DateTime.now();
+
   @override
   void onInit() {
     siteId = Get.arguments as int;
     // Add one blank row by default
     itemList.add(PurchaseBillItem());
     // Set today's date
-    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     // Load form details (pre-fill vendor info)
     _loadFormDetails();
 
@@ -81,7 +90,8 @@ class PurchaseBillController extends GetxController {
     nameController.clear();
     mobileController.clear();
     emailController.clear();
-    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    parsedDate = DateTime.now();
+    dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     subjectController.clear();
     locationController.clear();
     termsController.clear();
@@ -124,6 +134,12 @@ class PurchaseBillController extends GetxController {
       } else {
         print("DEBUG: Vendor API returned empty or null data");
       }
+
+      // Fetch Unit Master List
+      final unitRes = await ApiData().unitMasterListApi();
+      if (unitRes != null && unitRes.status == true && unitRes.data != null) {
+        unitMasterList = unitRes.data!;
+      }
     } catch (e) {
       print("DEBUG: Exception in _loadFormDetails: $e");
     } finally {
@@ -150,17 +166,12 @@ class PurchaseBillController extends GetxController {
     if (query.isEmpty) {
       filteredVendors = List.from(vendors);
     } else {
-      filteredVendors = vendors.where((vendor) {
-        return (vendor.name ?? '').toLowerCase().contains(query.toLowerCase());
+      filteredVendors = vendors.where((v) {
+        final nameMatches = v.name?.toLowerCase().contains(query.toLowerCase()) ?? false;
+        final mobileMatches = v.mobileNo?.contains(query) ?? false;
+        return nameMatches || mobileMatches;
       }).toList();
     }
-    print("DEBUG: filterVendors - filtered length: ${filteredVendors.length}, original length: ${vendors.length}");
-    
-    try {
-      final debugFile = dart_io.File('debug_vendor_filter.txt');
-      debugFile.writeAsStringSync('Query: $query\nFiltered: ${filteredVendors.length}\nOriginal: ${vendors.length}');
-    } catch (e) {}
-    
     update();
   }
 
@@ -179,7 +190,18 @@ class PurchaseBillController extends GetxController {
   void recalcTotal() {
     double sum = 0;
     for (var item in itemList) {
-      sum += double.tryParse(item.amount.text) ?? 0;
+      double countVal = double.tryParse(item.count.text) ?? 0.0;
+      double rateVal = double.tryParse(item.amount.text) ?? 0.0;
+      double itemTotal = countVal * rateVal;
+      
+      // Update the read-only total controller for this item
+      if (item.count.text.isNotEmpty && item.amount.text.isNotEmpty) {
+        item.total.text = itemTotal.toStringAsFixed(2);
+      } else {
+        item.total.clear();
+      }
+      
+      sum += itemTotal;
     }
     totalAmount.value = sum;
     update();
@@ -188,19 +210,22 @@ class PurchaseBillController extends GetxController {
   Map<String, dynamic> _buildPayload({String? email}) {
     final particulars = itemList.map((i) => i.particular.text.trim()).toList();
     final counts = itemList.map((i) => i.count.text.trim()).toList();
+    final units = itemList.map((i) => i.selectedUnit ?? '').toList();
     final amounts = itemList.map((i) => i.amount.text.trim()).toList();
 
     return {
       'site_id': siteId,
       'name': nameController.text.trim(),
       'subject': subjectController.text.trim(),
-      'date': dateController.text.trim(),
+      'date': DateFormat('yyyy-MM-dd').format(parsedDate),
       'mobile_no': mobileController.text.trim(),
       'location': locationController.text.trim(),
       if (termsController.text.isNotEmpty) 'terms_conditions': termsController.text.trim(),
       if (email != null && email.isNotEmpty) 'email': email,
+      if (selectedVendor != null) 'vendor_id': selectedVendor!.id,
       'particular': particulars,
       'count': counts,
+      'unit': units,
       'amount': amounts,
     };
   }

@@ -7,12 +7,14 @@ import '../../model/common_success_model.dart';
 
 class MaterialEstimationItem {
   TextEditingController particular = TextEditingController();
+  TextEditingController quantity = TextEditingController();
   int? unitId;
   String? unitName;
   TextEditingController date = TextEditingController();
+  DateTime selectedDate = DateTime.now();
   
   MaterialEstimationItem() {
-    date.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    date.text = DateFormat('dd-MM-yyyy').format(DateTime.now());
   }
 }
 
@@ -60,6 +62,17 @@ class MaterialEstimationController extends GetxController {
   }
 
   void addItem() {
+    if (itemList.isNotEmpty) {
+      final lastItem = itemList.last;
+      if (lastItem.particular.text.trim().isEmpty || 
+          lastItem.quantity.text.trim().isEmpty || 
+          lastItem.unitId == null || 
+          lastItem.date.text.trim().isEmpty) {
+        Get.snackbar('Validation', 'Please fill all fields of the current item before adding a new row', 
+            backgroundColor: Colors.redAccent, colorText: Colors.white);
+        return;
+      }
+    }
     itemList.add(MaterialEstimationItem());
     update();
   }
@@ -80,12 +93,13 @@ class MaterialEstimationController extends GetxController {
   Future<void> selectDate(BuildContext context, int index) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: itemList[index].selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
     if (picked != null) {
-      itemList[index].date.text = DateFormat('yyyy-MM-dd').format(picked);
+      itemList[index].selectedDate = picked;
+      itemList[index].date.text = DateFormat('dd-MM-yyyy').format(picked);
       update();
     }
   }
@@ -96,13 +110,15 @@ class MaterialEstimationController extends GetxController {
     
     try {
       final particulars = itemList.map((i) => i.particular.text.trim()).toList();
+      final quantities = itemList.map((i) => i.quantity.text.trim()).toList();
       final unitIds = itemList.map((i) => i.unitId.toString()).toList();
       final unitNames = itemList.map((i) => i.unitName ?? '').toList();
-      final dates = itemList.map((i) => i.date.text.trim()).toList();
+      final dates = itemList.map((i) => DateFormat('yyyy-MM-dd').format(i.selectedDate)).toList();
 
       final payload = {
         'site_id': siteId,
         'particular': particulars,
+        'quantity': quantities,
         'unit_id': unitIds,
         'unit': unitNames,
         'date': dates,
@@ -149,10 +165,11 @@ class MaterialEstimationController extends GetxController {
     }
   }
 
-  Future<void> updateMaterial(int id, String particular, int? unitId, String? unitName, String date) async {
+  Future<void> updateMaterial(int id, String particular, String quantity, int? unitId, String? unitName, String date) async {
     try {
       final payload = {
         'particular': particular,
+        'quantity': quantity,
         'unit_id': unitId?.toString() ?? '',
         'unit': unitName ?? '',
         'date': date,

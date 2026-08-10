@@ -113,9 +113,17 @@ class MaterialDetailsController extends GetxController{
       }
     }
 
-    // Read hidden defaults for this site
+    // Read hidden defaults for this site from Backend
     final prefsKey = 'hidden_materials_$siteId';
-    final hiddenDefaults = PreferenceUtils.pref.getStringList(prefsKey) ?? [];
+    List<String> hiddenDefaults;
+    // If backend returns a valid list of hidden materials (even empty), use it and sync local cache
+    if (materialModel?.hiddenMaterials != null) {
+      hiddenDefaults = materialModel!.hiddenMaterials!;
+      PreferenceUtils.pref.setStringList(prefsKey, hiddenDefaults);
+    } else {
+      // Fallback to local cache ONLY if backend doesn't provide the hiddenMaterials key yet
+      hiddenDefaults = PreferenceUtils.pref.getStringList(prefsKey) ?? [];
+    }
 
     // Next, populate standard/built-in materials
     for (var key in ConstantData.allMaterialKeys) {

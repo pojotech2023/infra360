@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'purchase_bill_history_screen.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/res/date_picker.dart';
 import 'package:raptor_pro/utils/res/spacing.dart';
@@ -21,6 +22,24 @@ class PurchaseBillScreen extends StatelessWidget {
       appBar: CommonAppBar.appBar(
         title: 'Generate Purchase Bill',
         onTap: () => Get.back(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 20.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // Navigate to Purchase Bill History
+                Get.to(() => PurchaseBillHistoryScreen(), arguments: controller.siteId);
+              },
+              icon: const Icon(Icons.history, size: 16, color: Colors.blue),
+              label: const Text('Bill History', style: TextStyle(color: Colors.blue)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: const BorderSide(color: Colors.blue)),
+              ),
+            ),
+          )
+        ],
       ),
       body: SafeArea(
         child: GetBuilder<PurchaseBillController>(
@@ -105,7 +124,7 @@ class PurchaseBillScreen extends StatelessWidget {
                     controller: ctrl.dateController,
                     readOnly: true,
                     decoration: textBoxDecoration(
-                      hint: 'yyyy-MM-dd',
+                      hint: 'dd-MM-yyyy',
                       suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey),
                     ),
                     onTap: () async {
@@ -148,53 +167,95 @@ class PurchaseBillScreen extends StatelessWidget {
                       final item = entry.value;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        child: Column(
                           children: [
-                            // Particular
-                            Expanded(
-                              flex: 3,
-                              child: TextFormField(
-                                controller: item.particular,
-                                decoration: textBoxDecoration(hint: 'Particular (e.g. Bricks)'),
-                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            // Count
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: item.count,
-                                keyboardType: TextInputType.number,
-                                decoration: textBoxDecoration(hint: 'Count'),
-                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            // Amount
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: item.amount,
-                                keyboardType: TextInputType.number,
-                                decoration: textBoxDecoration(hint: 'Amount'),
-                                onChanged: (_) => ctrl.recalcTotal(),
-                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            // Delete button
-                            InkWell(
-                              onTap: () => ctrl.removeItem(idx),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(6),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Particular
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: item.particular,
+                                    decoration: textBoxDecoration(hint: 'Particular (e.g. Bricks)'),
+                                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                                  ),
                                 ),
-                                child: const Icon(Icons.close, color: Colors.white, size: 16),
-                              ),
+                                const SizedBox(width: 6),
+                                // Delete button
+                                InkWell(
+                                  onTap: () => ctrl.removeItem(idx),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Count
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: item.count,
+                                    keyboardType: TextInputType.number,
+                                    decoration: textBoxDecoration(hint: 'Count'),
+                                    onChanged: (_) => ctrl.recalcTotal(),
+                                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // Unit
+                                Expanded(
+                                  flex: 2,
+                                  child: DropdownButtonFormField<String>(
+                                    value: item.selectedUnit,
+                                    isExpanded: true,
+                                    items: ctrl.unitMasterList.map((unit) {
+                                      return DropdownMenuItem<String>(
+                                        value: unit.unitName,
+                                        child: Text(unit.unitName ?? ''),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      item.selectedUnit = val;
+                                    },
+                                    decoration: textBoxDecoration(hint: 'Unit'),
+                                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // Rate (previously Amount)
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: item.amount,
+                                    keyboardType: TextInputType.number,
+                                    decoration: textBoxDecoration(hint: 'Rate'),
+                                    onChanged: (_) => ctrl.recalcTotal(),
+                                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // Total (auto-calculated)
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: item.total,
+                                    readOnly: true,
+                                    decoration: textBoxDecoration(hint: 'Total').copyWith(
+                                      fillColor: Colors.grey.shade200,
+                                      filled: true,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

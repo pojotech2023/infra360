@@ -181,18 +181,16 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
                                                     width: 1,
                                                   ),
                                                 ),
-                                                child: Flexible(
-                                                  child: Text(
-                                                    vendorManagementData.siteUtilities ?? '',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF1565C0),
-                                                      letterSpacing: 0.3,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                child: Text(
+                                                  vendorManagementData.siteUtilities ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFF1565C0),
+                                                    letterSpacing: 0.3,
                                                   ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                           ],

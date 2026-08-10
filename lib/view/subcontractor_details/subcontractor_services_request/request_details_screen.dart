@@ -413,7 +413,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   void _showEditServiceDialog(BuildContext context, Subcontractors item) {
-    TextEditingController dateCtrl = TextEditingController(text: item.date);
+    String editDate = item.date ?? '';
+    if (editDate.contains('-')) {
+      final parts = editDate.split('-');
+      if (parts.length == 3 && parts[0].length == 4) {
+        editDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+      }
+    }
+    TextEditingController dateCtrl = TextEditingController(text: editDate);
     TextEditingController amountCtrl = TextEditingController(text: item.amount ?? '');
     TextEditingController remarksCtrl = TextEditingController(text: item.remarks ?? '');
     TextEditingController noCountsCtrl = TextEditingController(text: item.noCounts ?? '');
@@ -426,7 +433,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         lastDate: DateTime(2100),
       );
       if (picked != null) {
-        ctrl.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        ctrl.text = "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
       }
     }
 
@@ -443,7 +450,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   controller: dateCtrl,
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: "Date",
+                    labelText: "Date (DD-MM-YYYY)",
                     suffixIcon: Icon(Icons.calendar_today),
                   ),
                   onTap: () => selectDate(dateCtrl),
@@ -477,8 +484,16 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             ),
             ElevatedButton(
               onPressed: () {
+                String apiDate = dateCtrl.text;
+                if (apiDate.contains('-')) {
+                  final parts = apiDate.split('-');
+                  if (parts.length == 3 && parts[0].length == 2) {
+                    apiDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                  }
+                }
+                
                 Map<String, dynamic> data = {
-                  "date": dateCtrl.text,
+                  "date": apiDate,
                   "amount": amountCtrl.text,
                   "remarks": remarksCtrl.text,
                   "no_counts": noCountsCtrl.text,

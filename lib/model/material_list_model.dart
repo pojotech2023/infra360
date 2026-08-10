@@ -4,6 +4,7 @@ class MaterialResponse {
   final String ?message;
   final Map<String, MaterialItem> ?data;
   final List<MaterialType>? materialTypes;
+  final List<String>? hiddenMaterials;
 
   MaterialResponse({
      this.responseCode,
@@ -11,9 +12,11 @@ class MaterialResponse {
      this.message,
      this.data,
      this.materialTypes,
+     this.hiddenMaterials,
   });
 
   factory MaterialResponse.fromJson(Map<String, dynamic> json) {
+    print("Keys in MaterialResponse: ${json.keys}");
     final materials = <String, MaterialItem>{};
 
     if (json['data'] is Map<String, dynamic>) {
@@ -35,12 +38,20 @@ class MaterialResponse {
       });
     }
 
+    List<String>? hiddenMaterials;
+    if (json['hidden_materials'] != null && json['hidden_materials'] is List) {
+      hiddenMaterials = (json['hidden_materials'] as List).map((e) => e.toString().toLowerCase()).toList();
+    } else if (json['hidden_material_types'] != null && json['hidden_material_types'] is List) {
+      hiddenMaterials = (json['hidden_material_types'] as List).map((e) => e.toString().toLowerCase()).toList();
+    }
+
     return MaterialResponse(
       responseCode: json['response code'],
       status: json['status'],
       message: json['message'],
       data: materials,
       materialTypes: types,
+      hiddenMaterials: hiddenMaterials,
     );
   }
 

@@ -495,7 +495,7 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: gstCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.text,
                       decoration: const InputDecoration(labelText: "GST"),
                     ),
                     const SizedBox(height: 16),
@@ -555,13 +555,17 @@ class _BricksDetailsScreenState extends State<BricksDetailsScreen> {
                 ElevatedButton(
                   onPressed: () {
                     Map<String, dynamic> data = {
-                      "material_type": args.itemKey,
+                      "material_type": args.itemKey.toString().toLowerCase(),
                       "date": dateCtrl.text,
                       "quantity": quantityCtrl.text,
                       "price": priceCtrl.text,
+                      "amount": priceCtrl.text, // Added to match some backend flows
                       "gst": gstCtrl.text.isNotEmpty ? gstCtrl.text : "0",
+                      "gst_amount": gstCtrl.text.isNotEmpty ? gstCtrl.text : "0",
+                      "vendor_gst": gstCtrl.text.isNotEmpty ? gstCtrl.text : "0",
+                      "tax": gstCtrl.text.isNotEmpty ? gstCtrl.text : "0",
                       "site_id": controller.materialDetailsArgs?.id.toString() ?? '',
-                      "vendor_id": item.vendorId ?? '',
+                      "vendor_id": item.vendorId?.toString() ?? '',
                       "unit": item.unit ?? '',
                       if (removeExistingImage) "remove_image": "1",
                     };

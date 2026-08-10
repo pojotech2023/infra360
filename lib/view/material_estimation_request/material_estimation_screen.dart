@@ -170,6 +170,13 @@ class MaterialEstimationScreen extends StatelessWidget {
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           VerticalSpacing.d15px(),
+          TextFormField(
+            controller: item.quantity,
+            keyboardType: TextInputType.number,
+            decoration: textBoxDecoration(hint: 'Quantity'),
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
+          VerticalSpacing.d15px(),
           Container(
             height: 48,
             decoration: BoxDecoration(
@@ -268,6 +275,13 @@ class MaterialEstimationScreen extends StatelessWidget {
                 VerticalSpacing.d5px(),
                 Row(
                   children: [
+                    Text('Quantity: ', style: AppTextStyle.textMedium.copyWith(color: Colors.grey[700])),
+                    Text(item.quantity ?? '-', style: AppTextStyle.textMedium),
+                  ],
+                ),
+                VerticalSpacing.d5px(),
+                Row(
+                  children: [
                     Text('Unit: ', style: AppTextStyle.textMedium.copyWith(color: Colors.grey[700])),
                     Text(item.unit ?? '', style: AppTextStyle.textMedium),
                   ],
@@ -296,7 +310,16 @@ class MaterialEstimationScreen extends StatelessWidget {
 
   void _showEditDialog(BuildContext context, MaterialEstimationController ctrl, RequestedMaterial item) {
     final TextEditingController particularCtrl = TextEditingController(text: item.particular);
-    final TextEditingController dateCtrl = TextEditingController(text: item.date);
+    final TextEditingController quantityCtrl = TextEditingController(text: item.quantity);
+    
+    DateTime parsedDate = DateTime.now();
+    try {
+      if (item.date != null && item.date!.isNotEmpty) {
+        parsedDate = DateTime.parse(item.date!);
+      }
+    } catch (_) {}
+    
+    final TextEditingController dateCtrl = TextEditingController(text: DateFormat('dd-MM-yyyy').format(parsedDate));
     int? selectedUnitId = item.unitId;
     String? selectedUnitName = item.unit;
 
@@ -310,20 +333,21 @@ class MaterialEstimationScreen extends StatelessWidget {
               child: Container(
                 width: 400,
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text('Edit Material Estimation Request', style: AppTextStyle.textBold.copyWith(color: Colors.blue[900])),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        )
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text('Edit Material Estimation Request', style: AppTextStyle.textBold.copyWith(color: Colors.blue[900])),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          )
                       ],
                     ),
                     const Divider(),
@@ -333,6 +357,14 @@ class MaterialEstimationScreen extends StatelessWidget {
                     TextFormField(
                       controller: particularCtrl,
                       decoration: textBoxDecoration(hint: 'Particular'),
+                    ),
+                    VerticalSpacing.d15px(),
+                    Text('Quantity', style: AppTextStyle.textMedium),
+                    VerticalSpacing.d5px(),
+                    TextFormField(
+                      controller: quantityCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: textBoxDecoration(hint: 'Quantity'),
                     ),
                     VerticalSpacing.d15px(),
                     Text('Unit', style: AppTextStyle.textMedium),
@@ -381,17 +413,18 @@ class MaterialEstimationScreen extends StatelessWidget {
                       onTap: () async {
                         final DateTime? picked = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now(),
+                          initialDate: parsedDate,
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2101),
                         );
                         if (picked != null) {
                           setState(() {
-                            dateCtrl.text = DateFormat('yyyy-MM-dd').format(picked);
+                            parsedDate = picked;
+                            dateCtrl.text = DateFormat('dd-MM-yyyy').format(picked);
                           });
                         }
                       },
-                      decoration: textBoxDecoration(hint: 'yyyy-mm-dd').copyWith(
+                      decoration: textBoxDecoration(hint: 'dd-mm-yyyy').copyWith(
                         suffixIcon: const Icon(Icons.calendar_today, color: Colors.black54, size: 20),
                       ),
                     ),
@@ -412,7 +445,8 @@ class MaterialEstimationScreen extends StatelessWidget {
                                 (selectedUnitId != null || (selectedUnitName != null && selectedUnitName!.isNotEmpty)) && 
                                 dateCtrl.text.trim().isNotEmpty) {
                               Navigator.of(ctx).pop();
-                              ctrl.updateMaterial(item.id!, particularCtrl.text.trim(), selectedUnitId, selectedUnitName, dateCtrl.text.trim());
+                              String backendDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+                              ctrl.updateMaterial(item.id!, particularCtrl.text.trim(), quantityCtrl.text.trim(), selectedUnitId, selectedUnitName, backendDate);
                             } else {
                               Get.snackbar('Error', 'Please fill all fields');
                             }
@@ -424,7 +458,8 @@ class MaterialEstimationScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            );
+            ),
+          );
           }
         );
       }

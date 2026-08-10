@@ -363,7 +363,7 @@ class _DrawingListScreenState extends State<DrawingListScreen> {
               children: [
                 SizedBox(width: 40, child: Text("S.NO", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
                 Expanded(child: Text("DRAWING", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 110, child: Text("ACTION", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
+                SizedBox(width: 85, child: Text("ACTION", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
               ],
             ),
           ),
@@ -408,53 +408,59 @@ class _DrawingListScreenState extends State<DrawingListScreen> {
           
           // DRAWING
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (isImage) {
-                  Get.to(() => DrawingDetailScreen(data: item));
-                } else {
-                  controller.downloadDrawing(item, context);
-                }
-              },
-              child: isImage
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.network(
-                        imageUrl,
-                        width: 80,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: () {
+                  if (isImage) {
+                    Get.to(() => DrawingDetailScreen(data: item));
+                  } else {
+                    controller.downloadDrawing(item, context);
+                  }
+                },
+                child: isImage
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.network(
+                          imageUrl,
                           width: 80,
                           height: 60,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 80,
+                            height: 60,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
                         ),
+                      )
+                    : Row(
+                        children: [
+                          Icon(
+                            isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                            color: isPdf ? Colors.red : Colors.blueGrey,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "View ${ext.toUpperCase()}",
+                              style: TextStyle(
+                                  color: Colors.blue.shade600,
+                                  decoration: TextDecoration.underline,
+                                  fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    )
-                  : Row(
-                      children: [
-                        Icon(
-                          isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file,
-                          color: isPdf ? Colors.red : Colors.blueGrey,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "View ${ext.toUpperCase()}",
-                          style: TextStyle(
-                              color: Colors.blue.shade600,
-                              decoration: TextDecoration.underline,
-                              fontSize: 12),
-                        ),
-                      ],
-                    ),
+              ),
             ),
           ),
           
           // ACTION — vertical column so full text always fits
           SizedBox(
-            width: 110,
+            width: 85,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

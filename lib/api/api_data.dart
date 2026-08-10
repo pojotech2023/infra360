@@ -2526,6 +2526,24 @@ print("REQUEST HEADER ${request.headers}");
     return null;
   }
 
+  /// GET /sales-bills/:siteId
+  Future<dynamic> salesBillHistoryApi(int siteId) async {
+    final response = await ApiService().sendAsync("GET", "sales-bills/$siteId", null, true);
+    if (response != null && response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    return null;
+  }
+
+  /// DELETE /sales-bill-delete/:id
+  Future<CommonSuccessResponseModel?> deleteSalesBillApi(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "sales-bill-delete/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return CommonSuccessResponseModel.fromJson(json.decode(response.body));
+    }
+    return null;
+  }
+
 
   /// GET /subcontractor-petty-cash/{siteId} or /subcontractor-rental-management/{siteId}
   Future<SubContractorPaymentHistoryModel?> siteSubcontractorPaymentHistoryApi(int siteId, String type) async {
@@ -2776,39 +2794,36 @@ print("REQUEST HEADER ${request.headers}");
   // ΓöÇΓöÇΓöÇ RECREATED MISSING METHODS ΓöÇΓöÇΓöÇ
 
   Future<CommonSuccessResponseModel?> updateMaterialApi(int materialId, Map<String, dynamic> data, {dynamic attachment}) async {
-    if (attachment != null && attachment is File && attachment.path.isNotEmpty) {
-      final token = PreferenceUtils().getSessionToken();
-      final uri = Uri.parse("${baseUrl}material-update/$materialId");
-      var request = http.MultipartRequest('POST', uri);
-      
-      data.forEach((key, value) {
+    final token = PreferenceUtils().getSessionToken();
+    final uri = Uri.parse("${baseUrl}material-update/$materialId");
+    var request = http.MultipartRequest('POST', uri);
+    
+    data.forEach((key, value) {
+      if (value != null) {
         request.fields[key] = value.toString();
-      });
-      
-      request.headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      });
-      
+        print("updateMaterialApi field: $key = ${value.toString()}");
+      }
+    });
+    
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    
+    if (attachment != null && attachment is File && attachment.path.isNotEmpty) {
       request.files.add(await http.MultipartFile.fromPath('attachment', attachment.path));
-      
-      try {
-        final response = await request.send();
-        final res = await http.Response.fromStream(response);
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          return CommonSuccessResponseModel.fromJson(jsonDecode(res.body));
-        }
-      } catch (e) {
-        print("Exception in updateMaterialApi: $e");
-      }
-      return null;
-    } else {
-      final response = await ApiService().sendAsync("POST", "material-update/$materialId", data, true);
-      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
-      }
-      return null;
     }
+    
+    try {
+      final response = await request.send();
+      final res = await http.Response.fromStream(response);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return CommonSuccessResponseModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (e) {
+      print("Exception in updateMaterialApi: $e");
+    }
+    return null;
   }
 
   Future<bool> saveLocation(double lat, double lng) async {

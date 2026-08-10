@@ -116,6 +116,14 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
   }
 
   Widget _buildTableRow(BuildContext context, int index, dynamic item) {
+    String formattedDate = item.date ?? "-";
+    if (formattedDate != "-" && formattedDate.contains("-")) {
+      final parts = formattedDate.split("-");
+      if (parts.length == 3 && parts[0].length == 4) {
+        formattedDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+      }
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12, left: 8, right: 8, top: 4),
       elevation: 2,
@@ -129,7 +137,7 @@ class PaymentHistoryScreen extends GetView<PaymentStatusController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('S.NO: $index', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                Text(item.date ?? "-", style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             const Divider(),

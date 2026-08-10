@@ -64,9 +64,20 @@ class _OtherMaterialViewState extends State<OtherMaterialView> {
                 itemCount: othersMaterialController.otherUtilitiesData.length,
                 itemBuilder: (context, index) {
                   final data = othersMaterialController.otherUtilitiesData[index];
+                  String displayDate = '';
+                  if (data.createdAt != null) {
+                    final raw = data.createdAt!.split('T').first;
+                    final parts = raw.split('-');
+                    if (parts.length == 3) {
+                      displayDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                    } else {
+                      displayDate = raw;
+                    }
+                  }
+                  
                   return _buildCard(
                     id: (index + 1).toString(),
-                    date: data.createdAt != null ? data.createdAt!.split('T').first : '',
+                    date: displayDate,
                     amount: data.amount ?? '0',
                     remarks: data.remarks ?? '',
                     imageUrl: data.image,
@@ -160,7 +171,14 @@ class _OtherMaterialViewState extends State<OtherMaterialView> {
                   if (dataItem != null) {
                     final amountCtrl = TextEditingController(text: dataItem.amount);
                     final remarksCtrl = TextEditingController(text: dataItem.remarks);
-                    final dateCtrl = TextEditingController(text: dataItem.createdAt?.split('T').first ?? '');
+                    String editDate = dataItem.createdAt?.split('T').first ?? '';
+                    if (editDate.contains('-')) {
+                      final parts = editDate.split('-');
+                      if (parts.length == 3) {
+                        editDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+                      }
+                    }
+                    final dateCtrl = TextEditingController(text: editDate);
                     
                     showDialog(
                       context: context,
@@ -170,7 +188,7 @@ class _OtherMaterialViewState extends State<OtherMaterialView> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (YYYY-MM-DD)")),
+                              TextField(controller: dateCtrl, decoration: InputDecoration(labelText: "Date (DD-MM-YYYY)")),
                               TextField(controller: amountCtrl, decoration: InputDecoration(labelText: "Amount"), keyboardType: TextInputType.number),
                               TextField(controller: remarksCtrl, decoration: InputDecoration(labelText: "Remarks"), maxLines: 3),
                             ],

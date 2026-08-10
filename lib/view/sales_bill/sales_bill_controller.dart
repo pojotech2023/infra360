@@ -4,13 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_data.dart';
+import '../../model/unit_master_model.dart';
 import '../../model/sales_bill_model.dart';
 import '../../utils/res/sendWhatsAppMessage.dart';
 
 class SalesBillItem {
   TextEditingController particular = TextEditingController();
   TextEditingController count = TextEditingController();
-  TextEditingController amount = TextEditingController();
+  String? selectedUnit;
+  TextEditingController amount = TextEditingController(); // this is Rate
+  TextEditingController total = TextEditingController();
 }
 
 class SalesBillController extends GetxController {
@@ -29,6 +32,9 @@ class SalesBillController extends GetxController {
   // Customer List
   List<CustomerInfo> customers = [];
 
+  // Unit Master List
+  List<UnitMasterData> unitMasterList = [];
+
   // Particulars list
   var itemList = <SalesBillItem>[].obs;
 
@@ -39,13 +45,16 @@ class SalesBillController extends GetxController {
   var isFormLoading = false.obs;
   var isSubmitLoading = false.obs;
 
+  // Date Parsing helper
+  DateTime parsedDate = DateTime.now();
+
   @override
   void onInit() {
     siteId = Get.arguments as int;
     // Add one blank row by default
     itemList.add(SalesBillItem());
     // Set today's date
-    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     // Load form details (pre-fill customer info)
     _loadFormDetails();
     super.onInit();
@@ -55,7 +64,8 @@ class SalesBillController extends GetxController {
     nameController.clear();
     mobileController.clear();
     emailController.clear();
-    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    parsedDate = DateTime.now();
+    dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     subjectController.clear();
     locationController.clear();
     termsController.clear();
@@ -81,6 +91,12 @@ class SalesBillController extends GetxController {
         if (locationController.text.isEmpty) {
           locationController.text = res.data?.site?.location ?? '';
         }
+      }
+      
+      // Fetch Unit Master List
+      final unitRes = await ApiData().unitMasterListApi();
+      if (unitRes != null && unitRes.status == true && unitRes.data != null) {
+        unitMasterList = unitRes.data!;
       }
     } catch (e) {
       print('Error loading sales bill form: $e');
@@ -115,7 +131,18 @@ class SalesBillController extends GetxController {
   void recalcTotal() {
     double sum = 0;
     for (var item in itemList) {
-      sum += double.tryParse(item.amount.text) ?? 0;
+      double countVal = double.tryParse(item.count.text) ?? 0.0;
+      double rateVal = double.tryParse(item.amount.text) ?? 0.0;
+      double itemTotal = countVal * rateVal;
+      
+      // Update the read-only total controller for this item
+      if (item.count.text.isNotEmpty && item.amount.text.isNotEmpty) {
+        item.total.text = itemTotal.toStringAsFixed(2);
+      } else {
+        item.total.clear();
+      }
+      
+      sum += itemTotal;
     }
     totalAmount.value = sum;
     update();
@@ -124,19 +151,21 @@ class SalesBillController extends GetxController {
   Map<String, dynamic> _buildPayload({String? email}) {
     final particulars = itemList.map((i) => i.particular.text.trim()).toList();
     final counts = itemList.map((i) => i.count.text.trim()).toList();
+    final units = itemList.map((i) => i.selectedUnit ?? '').toList();
     final amounts = itemList.map((i) => i.amount.text.trim()).toList();
 
     return {
       'site_id': siteId,
       'name': nameController.text.trim(),
       'subject': subjectController.text.trim(),
-      'date': dateController.text.trim(),
+      'date': DateFormat('yyyy-MM-dd').format(parsedDate),
       'mobile_no': mobileController.text.trim(),
       'location': locationController.text.trim(),
       if (termsController.text.isNotEmpty) 'terms_conditions': termsController.text.trim(),
       if (email != null && email.isNotEmpty) 'email': email,
       'particular': particulars,
       'count': counts,
+      'unit': units,
       'amount': amounts,
     };
   }

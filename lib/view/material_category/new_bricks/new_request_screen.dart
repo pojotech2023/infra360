@@ -247,7 +247,7 @@ print("CONTROLLER VENDOR ${controller.selectedVendorData?.id}");
     label: "GST",
     controller: controller.gstController,
     hint: "Enter GST %",
-    keyboardType: TextInputType.number,
+    keyboardType: TextInputType.text,
     validator: (text) => null, // GST might be optional
   );
 
