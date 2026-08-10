@@ -109,6 +109,7 @@ class SiteManagementPerms {
   int? viewSalesBill;
   int? viewPurchaseBill;
   int? viewMaterialEstimation;
+  int? downloadFullReport;
 
   SiteManagementPerms({
     this.addSite,
@@ -125,6 +126,7 @@ class SiteManagementPerms {
     this.viewSalesBill,
     this.viewPurchaseBill,
     this.viewMaterialEstimation,
+    this.downloadFullReport,
   });
 
   SiteManagementPerms.fromJson(Map<String, dynamic> json) {
@@ -142,6 +144,7 @@ class SiteManagementPerms {
     viewSalesBill        = json['view_sales_bill'];
     viewPurchaseBill     = json['view_purchase_bill'];
     viewMaterialEstimation = json['view_material_estimation'];
+    downloadFullReport   = json['download_full_report'];
   }
 
   // ── Convenience bool getters (1 = visible, 0 = hidden) ───────────────────
@@ -155,6 +158,7 @@ class SiteManagementPerms {
   bool get canViewSalesBill     => viewSalesBill       == 1;
   bool get canViewPurchaseBill  => viewPurchaseBill    == 1;
   bool get canViewMaterialEstimation => viewMaterialEstimation == 1;
+  bool get canDownloadFullReport => downloadFullReport == 1;
 
   Map<String, dynamic> toJson() => {
         'add_site':               addSite,
@@ -171,6 +175,7 @@ class SiteManagementPerms {
         'view_sales_bill':        viewSalesBill,
         'view_purchase_bill':     viewPurchaseBill,
         'view_material_estimation': viewMaterialEstimation,
+        'download_full_report':   downloadFullReport,
       };
 }
 

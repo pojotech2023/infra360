@@ -169,32 +169,44 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final DashboardController dashboardController = Get.find();
+    final bool isSupervisor =
+        dashboardController.profileRole.value.toLowerCase() == 'supervisor';
+    final PermissionsData? perms = dashboardController.supervisorPermissions.value;
+
+    bool canShowDownload() {
+      if (!isSupervisor) return true;
+      if (perms == null) return true;
+      return perms.siteManagement?.canDownloadFullReport ?? false;
+    }
+
     return Scaffold(
       appBar: CommonAppBar.appBar(
         title: "Site Details",
         onTap: () => Get.back(),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColor.buttonBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          if (canShowDownload())
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.buttonBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
+                onPressed: () {
+                  final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteManagementList.id}/full-report";
+                  CommonFileDownloader.downloadAndOpen(
+                    urls: reportUrl,
+                    context: context,
+                    fileName: "site_report_${siteManagementList.id}.xlsx",
+                  );
+                },
+                icon: Icon(Icons.download, color: Colors.white, size: 18),
+                label: Text("Download Full Report", style: TextStyle(color: Colors.white, fontSize: 12)),
               ),
-              onPressed: () {
-                final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteManagementList.id}/full-report";
-                CommonFileDownloader.downloadAndOpen(
-                  urls: reportUrl,
-                  context: context,
-                  fileName: "site_report_${siteManagementList.id}.xlsx",
-                );
-              },
-              icon: Icon(Icons.download, color: Colors.white, size: 18),
-              label: Text("Download Full Report", style: TextStyle(color: Colors.white, fontSize: 12)),
-            ),
-          )
+            )
         ],
       ),
       body: SafeArea(

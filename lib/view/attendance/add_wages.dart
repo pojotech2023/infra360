@@ -24,6 +24,9 @@ class _WageRow {
   final FocusNode categoryFocus;
   bool isCategoryEditable;
   final bool isFixed;
+  /// The category name as originally loaded from the server (for fixed rows).
+  /// Used to detect renames so the old record can be removed on submit.
+  final String? originalCategory;
 
   _WageRow({
     this.id,
@@ -34,7 +37,15 @@ class _WageRow {
     required this.categoryFocus,
     this.isCategoryEditable = false,
     this.isFixed = false,
+    this.originalCategory,
   });
+
+  /// Returns true when the user has changed this fixed row's category label.
+  bool get wasRenamed =>
+      isFixed &&
+      originalCategory != null &&
+      categoryController.text.trim().toLowerCase() !=
+          originalCategory!.toLowerCase();
 
   void clear() {
     amountController.clear();
@@ -61,6 +72,7 @@ class AddWages extends StatefulWidget {
     required this.types,
     this.attendanceDatas,
     this.scrollController,
+    this.initialDate,
   });
 
   final ScrollController? scrollController;
@@ -70,6 +82,10 @@ class AddWages extends StatefulWidget {
   /// type = "3" → Edit existing (Wages + Attendance) for a given date
   final String types;
   final List<Attendances>? attendanceDatas;
+
+  /// Optional pre-selected date in YYYY-MM-DD format (e.g. from the calendar).
+  /// When provided, the date field is pre-filled with this date instead of today.
+  final String? initialDate;
 
   @override
   State<AddWages> createState() => _AddWagesState();
@@ -94,13 +110,20 @@ class _AddWagesState extends State<AddWages> {
 
   String _getAttendanceRowsJson() {
     List<Map<String, dynamic>> rows = [];
-    for (var row in _dynamicRows) {
+    // Include ALL rows (fixed + dynamic) so that any edited category name is captured.
+    // Fixed rows use the shared controller fields but their categoryController holds
+    // the (possibly-edited) display name that must be sent to the backend.
+    for (var row in _allRows) {
       String cat = row.categoryController.text.trim();
-      if (cat.isNotEmpty) {
+      String count = row.countController.text.trim();
+      String amount = row.amountController.text.trim();
+      // Only include the row if at least one of count or amount has a value,
+      // or if it's a dynamic (custom) row with a category entered.
+      if (cat.isNotEmpty && (count.isNotEmpty || amount.isNotEmpty)) {
         rows.add({
           "category": cat,
-          "count": row.countController.text,
-          "amount": row.amountController.text,
+          "count": count,
+          "amount": amount,
         });
       }
     }
@@ -111,18 +134,27 @@ class _AddWagesState extends State<AddWages> {
   void initState() {
     super.initState();
 
+    // Default to today; may be overridden below by initialDate or attendanceData.
     dateRanger.text = DateFormat("dd-MM-yyyy").format(DateTime.now());
     type = widget.types;
     attendanceData = widget.attendanceDatas ?? [];
 
-    // Pre-fill date from attendance data if available
+    // If a specific date was selected in the calendar, use it (for Add mode).
+    if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
+      try {
+        dateRanger.text = DateFormat("dd-MM-yyyy").format(DateTime.parse(widget.initialDate!));
+      } catch (_) {}
+    }
+
+    // Pre-fill date from attendance data if available (overrides initialDate in Edit mode).
     if (attendanceData.isNotEmpty && attendanceData[0].date != null) {
       try {
         dateRanger.text = DateFormat("dd-MM-yyyy").format(DateTime.parse(attendanceData[0].date!));
       } catch (_) {}
     }
 
-    // Build the initial rows linked to the controller
+    // Build the initial rows linked to the controller.
+    // originalCategory is set so wasRenamed can detect when the user renames a fixed row.
     _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Mason"),
       amountController: controller.masonAmountController,
@@ -130,6 +162,7 @@ class _AddWagesState extends State<AddWages> {
       amountFocus: FocusNode(),
       categoryFocus: FocusNode(),
       isFixed: true,
+      originalCategory: "Mason",
     ));
     _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Helper"),
@@ -138,6 +171,7 @@ class _AddWagesState extends State<AddWages> {
       amountFocus: FocusNode(),
       categoryFocus: FocusNode(),
       isFixed: true,
+      originalCategory: "Helper",
     ));
     _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Fitter"),
@@ -146,6 +180,7 @@ class _AddWagesState extends State<AddWages> {
       amountFocus: FocusNode(),
       categoryFocus: FocusNode(),
       isFixed: true,
+      originalCategory: "Fitter",
     ));
     _allRows.add(_WageRow(
       categoryController: TextEditingController(text: "Centring Helper"),
@@ -154,6 +189,7 @@ class _AddWagesState extends State<AddWages> {
       amountFocus: FocusNode(),
       categoryFocus: FocusNode(),
       isFixed: true,
+      originalCategory: "Centring Helper",
     ));
 
     // Pre-fill values from existing attendance data (for Edit mode)
@@ -299,6 +335,44 @@ class _AddWagesState extends State<AddWages> {
     return true;
   }
 
+  /// Handles submit with correct rename semantics:
+  ///
+  /// When a fixed row (Mason / Helper / Fitter / Centring Helper) is renamed
+  /// (e.g. Mason → Fitter) we must:
+  ///   1. Build the attendance_rows JSON **before** touching any controller
+  ///      (so the new name + existing count/amount are captured correctly).
+  ///   2. Delete the old server-side record (by ID) so it doesn't linger.
+  ///   3. Zero-out the shared controller for the old fixed category so the
+  ///      hardcoded `count_Mason` / `amount_Mason` fields sent by
+  ///      `attendanceAddWages()` carry an empty value — the backend then
+  ///      treats that as "no Mason entry" and won't recreate it.
+  ///   4. Call `attendanceAddWages()` with the already-captured JSON.
+  Future<void> _submitWithRenameHandling() async {
+    if (!_validateForm()) return;
+
+    // Step 1: capture JSON while all controllers still hold their values.
+    final String rowsJson = _getAttendanceRowsJson();
+
+    // Step 2 & 3: for every renamed fixed row, delete the old DB record and
+    // zero the shared controller so the old hardcoded field is empty.
+    for (final row in _allRows) {
+      if (row.wasRenamed) {
+        // Delete old DB record so it doesn't persist.
+        if (row.id != null) {
+          await controller.deleteAttendance(row.id!);
+        }
+        // Zero the shared controllers — attendanceAddWages() will now send
+        // count_<OldCat>="" and amount_<OldCat>="", telling the backend
+        // the old category has no workers.
+        row.amountController.clear();
+        row.countController.clear();
+      }
+    }
+
+    // Step 4: submit (controllers for renamed rows are now empty).
+    controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: rowsJson);
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -396,11 +470,7 @@ class _AddWagesState extends State<AddWages> {
                       width: 120,
                       height: 42,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_validateForm()) {
-                            controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson());
-                          }
-                        },
+                        onPressed: _submitWithRenameHandling,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
@@ -625,11 +695,7 @@ class _AddWagesState extends State<AddWages> {
                 : SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_validateForm()) {
-                          controller.attendanceAddWages(dateRanger.text, "3", attendanceRowsJson: _getAttendanceRowsJson());
-                        }
-                      },
+                      onPressed: _submitWithRenameHandling,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade600,
                         foregroundColor: Colors.white,

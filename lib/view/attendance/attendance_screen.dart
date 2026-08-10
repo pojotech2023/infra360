@@ -758,12 +758,16 @@ mainAxisAlignment: MainAxisAlignment.center,
               types: type,
               attendanceDatas: data,
               scrollController: scrollController,
+              // Pass the currently-selected calendar date (YYYY-MM-DD) so the
+              // Add Attendance date field shows the right date, not always today.
+              initialDate: controller.selectedDate.value,
             );
           },
         );
       },
     );
   }
+
 
   String _formatTime(String? timeStr) {
     if (timeStr == null || timeStr.isEmpty) return '';
