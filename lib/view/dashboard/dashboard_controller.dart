@@ -9,6 +9,7 @@ import 'package:raptor_pro/model/supervisor_permissions_model.dart';
 
 import '../../model/login_response.dart';
 import '../../service/shared_preference_service.dart';
+import '../../service/location_service.dart';
 import '../site/site_add_screen.dart';
 import '../widgets/toast.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,12 @@ class DashboardController extends GetxController {
       // ── 2. Load permissions if supervisor ────────────────────────────────────
       if (profileRole.value.toLowerCase() == 'supervisor') {
         await _loadSupervisorPermissions();
+        // Initialize location service for supervisor background tracking
+        try {
+          await LocationService().initializeService();
+        } catch (e) {
+          print("LocationService init error: $e");
+        }
       } else {
         // Admin: clear any stale cached permissions
         supervisorPermissions.value = null;

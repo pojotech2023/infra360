@@ -26,13 +26,6 @@ void main() async {
   // Initialize Push Notifications
   await PushNotificationService().initialize();
   
-  // Initialize Location Service
-  try {
-    await LocationService().initializeService();
-  } catch (e) {
-    debugPrint("LocationService init error: $e");
-  }
-
   runApp(const MyApp());
 }
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -47,7 +40,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Pojo Infra360',
+      title: 'Msm Infratech',
       theme: AppTheme.appTheme,
       navigatorKey: navigatorKey,
       initialRoute: "/",

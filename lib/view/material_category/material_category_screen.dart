@@ -196,7 +196,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
                   ),
                 ),
                 onPressed: () {
-                  final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteManagementList.id}/full-report";
+                  final String reportUrl = "http://msminfratech.pojotech.in/api/sites/${siteManagementList.id}/full-report";
                   CommonFileDownloader.downloadAndOpen(
                     urls: reportUrl,
                     context: context,
@@ -283,3 +283,4 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
     );
   }
 }
+

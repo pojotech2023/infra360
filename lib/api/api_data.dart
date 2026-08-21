@@ -48,6 +48,7 @@ import '../model/profile_update_success_model.dart';
 import '../model/quotation_model.dart';
 import '../model/quotation_stored_model.dart';
 import '../model/quotation_history_model.dart';
+import '../model/terms_condition_model.dart';
 import '../model/subcontractor_amount_model.dart';
 import '../model/subcontractor_list_model.dart';
 import '../model/ticket_detail_model.dart';
@@ -3106,6 +3107,91 @@ print("REQUEST HEADER ${request.headers}");
       return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }
     return null;
+  }
+
+  // --- Terms and Conditions APIs ---
+  Future<TermsConditionModel?> getTermsConditions() async {
+    final response = await ApiService().sendAsync("GET", "terms-condition", null, true);
+    if (response != null && response.statusCode == 200) {
+      return TermsConditionModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> addTermsCondition(String title, String description) async {
+    final data = {
+      'title': title,
+      'description': description,
+    };
+    final response = await ApiService().sendAsync("POST", "terms-condition-add", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> updateTermsCondition(int id, String title, String description) async {
+    final data = {
+      'title': title,
+      'description': description,
+    };
+    final response = await ApiService().sendAsync("POST", "terms-condition-update/$id", data, true);
+    if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteTermsCondition(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "terms-condition-delete/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+    }
+    return null;
+  }
+
+  Future<List<String>> termsConditionSearchApi(String term) async {
+    final query = Uri.encodeComponent(term);
+    print('--- DEBUG: termsConditionSearchApi ---');
+    print('URL: terms-condition-search?term=$query');
+    final response = await ApiService().sendAsync("GET", "terms-condition-search?term=$query", null, true);
+    print('Status: ${response?.statusCode}');
+    if (response != null && response.statusCode == 200) {
+      print('Body: ${response.body}');
+      final body = jsonDecode(response.body);
+      if (body['data'] is List) {
+        final parsed = (body['data'] as List).map((e) {
+          if (e is String) return e;
+          if (e is Map && e['title'] != null) return e['title'].toString();
+          return e.toString();
+        }).toList();
+        print('Parsed list: $parsed');
+        return parsed;
+      }
+    }
+    return [];
+  }
+
+  Future<String> termsConditionDescriptionApi(String title) async {
+    final query = Uri.encodeComponent(title);
+    print('--- DEBUG: termsConditionDescriptionApi ---');
+    print('URL: terms-condition-description?title=$query');
+    final response = await ApiService().sendAsync("GET", "terms-condition-description?title=$query", null, true);
+    print('Status: ${response?.statusCode}');
+    if (response != null && response.statusCode == 200) {
+      print('Body: ${response.body}');
+      final body = jsonDecode(response.body);
+      String parsedDesc = '';
+      if (body['description'] != null) {
+        parsedDesc = body['description'].toString();
+      } else if (body['data'] != null) {
+        if (body['data'] is String) parsedDesc = body['data'];
+        if (body['data'] is Map && body['data']['description'] != null) parsedDesc = body['data']['description'].toString();
+      }
+      print('Parsed description: $parsedDesc');
+      return parsedDesc;
+    }
+    return '';
   }
 
 }

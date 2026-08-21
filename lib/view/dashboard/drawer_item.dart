@@ -19,6 +19,7 @@ import '../quotation/generate_quotation_screen.dart';
 import '../quotation/quotation_history_screen.dart';
 import '../subcontractor/subcontractor_main_screen.dart';
 import '../unit_master/unit_master_screen.dart';
+import '../terms_condition/terms_condition_screen.dart';
 
 class DrawerWidget extends StatelessWidget {
   const DrawerWidget({super.key});
@@ -170,6 +171,11 @@ class DrawerWidget extends StatelessWidget {
                         drawerItem(Images.properties, 'Unit Master', onTap: () {
                           Get.to(() => const UnitMasterScreen());
                         }),
+
+                      // Terms & Conditions — both Admin and Supervisor
+                      drawerItem(Images.quotation, 'Terms & Conditions', onTap: () {
+                        Get.to(() => TermsConditionScreen());
+                      }),
 
                       // Profile — always visible
                       drawerItem(Images.user, 'Profile', onTap: () {

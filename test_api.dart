@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() async {
-  String baseUrl = 'http://pojoinfra360.pojotech.in/api/';
+  String baseUrl = 'http://msminfratech.pojotech.in/api/';
   String token = 'YOUR_TOKEN_HERE'; // Need to login first
 
   // Let's perform a login to get the token
@@ -15,3 +15,4 @@ void main() async {
   );
   print(loginResponse.body);
 }
+

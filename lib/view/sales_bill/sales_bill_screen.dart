@@ -285,11 +285,38 @@ class SalesBillScreen extends StatelessWidget {
 
                   // ─── Terms & Conditions ──────────────────────────────────────────
                   _label('Terms & Conditions'),
-                  TextFormField(
-                    controller: ctrl.termsController,
-                    minLines: 3,
-                    maxLines: 5,
-                    decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                  Autocomplete<String>(
+                    key: ctrl.autocompleteKey,
+                    initialValue: TextEditingValue(text: ctrl.termsTitleController.text),
+                    optionsBuilder: (TextEditingValue textEditingValue) async {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      return await ctrl.getTermsSuggestions(textEditingValue.text);
+                    },
+                    onSelected: (String selection) {
+                      ctrl.termsTitleController.text = selection;
+                      ctrl.onTermsSelected(selection);
+                    },
+                    fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                      return TextFormField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        onChanged: (val) {
+                          ctrl.termsTitleController.text = val;
+                        },
+                        decoration: textBoxDecoration(hint: 'Type a saved title to auto-fill (optional)'),
+                      );
+                    },
+                  ),
+                  VerticalSpacing.d10px(),
+                  GetBuilder<SalesBillController>(
+                    builder: (c) => TextFormField(
+                      controller: c.termsController,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                    ),
                   ),
                   VerticalSpacing.d20px(),
 

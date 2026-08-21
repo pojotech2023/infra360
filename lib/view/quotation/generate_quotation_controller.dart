@@ -21,6 +21,30 @@ class GenerateQuotationController extends GetxController{
   TextEditingController emailEditingController = TextEditingController();
 
   TextEditingController datePickerController = TextEditingController();
+  
+  final TextEditingController termsTitleController = TextEditingController();
+  final TextEditingController termsDescController = TextEditingController();
+  final GlobalKey autocompleteKey = GlobalKey();
+
+  Future<List<String>> getTermsSuggestions(String query) async {
+    if (query.isEmpty) return [];
+    return await ApiData().termsConditionSearchApi(query);
+  }
+
+  Future<void> onTermsSelected(String title) async {
+    print('--- DEBUG: onTermsSelected (Quotation) ---');
+    print('Selected Title: $title');
+    final desc = await ApiData().termsConditionDescriptionApi(title);
+    print('Returned Description: $desc');
+    if (desc.isNotEmpty) {
+      termsDescController.text = desc;
+      print('Assigned to termsDescController: ${termsDescController.text}');
+      update();
+    } else {
+      print('Description was empty! Not updating.');
+    }
+  }
+
   var totalAmt = 0.0.obs;
 
   var quotationList = <QuotationData>[].obs;
@@ -91,6 +115,7 @@ class GenerateQuotationController extends GetxController{
         "location": locationEditingController.text,
         "contractor": contractorEditingController.text,
         "data": quotationData,
+        if (termsDescController.text.isNotEmpty) "terms_conditions": termsDescController.text,
         if (email != null && email.isNotEmpty) "email": email,
       };
 

@@ -27,7 +27,7 @@ class PaymentStatusController extends GetxController {
   final remarksController = TextEditingController();
   var selectedDate = DateTime.now().obs;
   var selectedPaymentMode = "Select Payment Mode".obs;
-  final List<String> paymentModes = ["Online", "Cheque", "Net Banking", "Cash", "Cash-B"];
+  final List<String> paymentModes = ["Online", "Cheque", "Net Banking", "Cash"];
 
   @override
   void onInit() {

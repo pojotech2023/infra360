@@ -27,7 +27,22 @@ class SalesBillController extends GetxController {
   TextEditingController dateController = TextEditingController();
   TextEditingController subjectController = TextEditingController();
   TextEditingController locationController = TextEditingController();
-  TextEditingController termsController = TextEditingController();
+  final TextEditingController termsTitleController = TextEditingController();
+  final TextEditingController termsController = TextEditingController();
+  final GlobalKey autocompleteKey = GlobalKey();
+
+  Future<List<String>> getTermsSuggestions(String query) async {
+    if (query.isEmpty) return [];
+    return await ApiData().termsConditionSearchApi(query);
+  }
+
+  Future<void> onTermsSelected(String title) async {
+    final desc = await ApiData().termsConditionDescriptionApi(title);
+    if (desc.isNotEmpty) {
+      termsController.text = desc;
+      update();
+    }
+  }
 
   // Customer List
   List<CustomerInfo> customers = [];
@@ -68,6 +83,7 @@ class SalesBillController extends GetxController {
     dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     subjectController.clear();
     locationController.clear();
+    termsTitleController.clear();
     termsController.clear();
     itemList.clear();
     itemList.add(SalesBillItem());

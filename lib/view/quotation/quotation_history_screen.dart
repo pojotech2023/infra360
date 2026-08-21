@@ -6,6 +6,7 @@ import '../../utils/res/spacing.dart';
 import '../../utils/app_text_style.dart';
 import '../widgets/common_app_bar.dart';
 import 'quotation_history_controller.dart';
+import '../../model/customer_model.dart';
 
 class QuotationHistoryScreen extends StatelessWidget {
   QuotationHistoryScreen({super.key});
@@ -49,7 +50,7 @@ class QuotationHistoryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Search by Customer Mobile Number', 
+            Text('Search by Customer Name or Mobile Number', 
                 style: AppTextStyle.textBold.copyWith(color: AppColor.black, fontSize: 16)),
             VerticalSpacing.d20px(),
             Form(
@@ -58,35 +59,92 @@ class QuotationHistoryScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: TextFormField(
-                      controller: controller.mobileNoController,
-                      keyboardType: TextInputType.phone,
-                      maxLength: 10,
-                      decoration: InputDecoration(
-                        hintText: 'Enter 10 digit mobile number',
-                        counterText: '',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue[300]!),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
+                    child: Autocomplete<Customers>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        return controller.getSuggestions(textEditingValue.text);
+                      },
+                      displayStringForOption: (Customers option) => option.mobileNo ?? '',
+                      onSelected: (Customers selection) {
+                        controller.mobileNoController.text = selection.mobileNo ?? '';
+                        controller.searchHistory();
+                      },
+                      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                        // Keep our controller in sync, or just replace it
+                        if (controller.mobileNoController.text != textEditingController.text) {
+                          // only link them if we haven't
+                          textEditingController.text = controller.mobileNoController.text;
+                          textEditingController.addListener(() {
+                            controller.mobileNoController.text = textEditingController.text;
+                          });
                         }
-                        if (value.length != 10) {
-                          return 'Enter valid 10 digits';
-                        }
-                        return null;
+                        return TextFormField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          keyboardType: TextInputType.text,
+                          decoration: InputDecoration(
+                            hintText: 'Name or 10 digit mobile no.',
+                            counterText: '',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.blue[300]!),
+                            ),
+                          ),
+                          onFieldSubmitted: (String value) {
+                            onFieldSubmitted();
+                            controller.searchHistory();
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            if (value.length != 10 && !value.contains(RegExp(r'[a-zA-Z]'))) {
+                              return 'Enter valid 10 digits';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: 200,
+                                maxWidth: MediaQuery.of(context).size.width * 0.6,
+                              ),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final Customers option = options.elementAt(index);
+                                  return InkWell(
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Text('${option.name} (${option.mobileNo})',
+                                          style: const TextStyle(fontSize: 14)),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),

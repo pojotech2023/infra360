@@ -3,12 +3,10 @@ import 'package:get/get.dart';
 import 'dart:io' as dart_io;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../api/api_data.dart';
 import '../../model/unit_master_model.dart';
 import '../../model/purchase_bill_model.dart';
 import '../../utils/res/sendWhatsAppMessage.dart';
-
 class PurchaseBillItem {
   TextEditingController particular = TextEditingController();
   TextEditingController count = TextEditingController();
@@ -16,7 +14,6 @@ class PurchaseBillItem {
   TextEditingController amount = TextEditingController(); // this is Rate
   TextEditingController total = TextEditingController();
 }
-
 class PurchaseBillController extends GetxController {
   // Site ID passed via arguments
   late int siteId;
@@ -28,7 +25,40 @@ class PurchaseBillController extends GetxController {
   TextEditingController dateController = TextEditingController();
   TextEditingController subjectController = TextEditingController();
   TextEditingController locationController = TextEditingController();
-  TextEditingController termsController = TextEditingController();
+  final TextEditingController termsTitleController = TextEditingController();
+  final TextEditingController termsController = TextEditingController();
+  final GlobalKey autocompleteKey = GlobalKey();
+
+  // New PO Fields
+  TextEditingController vendorGstNoController = TextEditingController();
+  TextEditingController projectRefNumberController = TextEditingController();
+  TextEditingController poNumberController = TextEditingController();
+  TextEditingController descriptionOfWorkController = TextEditingController();
+  TextEditingController descriptionOfMaterialsController = TextEditingController();
+  TextEditingController recommendedFirmController = TextEditingController();
+  TextEditingController paymentTermsController = TextEditingController();
+  TextEditingController scheduledDateFromController = TextEditingController();
+  TextEditingController scheduledDateToController = TextEditingController();
+  TextEditingController deliveryAddressController = TextEditingController();
+  TextEditingController siteContactPersonController = TextEditingController();
+  TextEditingController siteContactMobileController = TextEditingController();
+  TextEditingController gstPercentageController = TextEditingController(text: '18');
+
+  var subTotalAmount = 0.0.obs;
+  var gstAmount = 0.0.obs;
+
+  Future<List<String>> getTermsSuggestions(String query) async {
+    if (query.isEmpty) return [];
+    return await ApiData().termsConditionSearchApi(query);
+  }
+
+  Future<void> onTermsSelected(String title) async {
+    final desc = await ApiData().termsConditionDescriptionApi(title);
+    if (desc.isNotEmpty) {
+      termsController.text = desc;
+      update();
+    }
+  }
   
   FocusNode vendorFocusNode = FocusNode();
 
@@ -76,10 +106,8 @@ class PurchaseBillController extends GetxController {
       }
       update();
     });
-
     super.onInit();
   }
-
   @override
   void onClose() {
     vendorFocusNode.dispose();
@@ -94,6 +122,7 @@ class PurchaseBillController extends GetxController {
     dateController.text = DateFormat('dd-MM-yyyy').format(parsedDate);
     subjectController.clear();
     locationController.clear();
+    termsTitleController.clear();
     termsController.clear();
     itemList.clear();
     itemList.add(PurchaseBillItem());
@@ -103,7 +132,6 @@ class PurchaseBillController extends GetxController {
     recalcTotal();
     update();
   }
-
   Future<void> _loadFormDetails() async {
     isFormLoading.value = true;
     update();
@@ -203,7 +231,11 @@ class PurchaseBillController extends GetxController {
       
       sum += itemTotal;
     }
-    totalAmount.value = sum;
+    
+    subTotalAmount.value = sum;
+    double gstPercent = double.tryParse(gstPercentageController.text) ?? 0.0;
+    gstAmount.value = sum * (gstPercent / 100);
+    totalAmount.value = sum + gstAmount.value;
     update();
   }
 
@@ -223,6 +255,22 @@ class PurchaseBillController extends GetxController {
       if (termsController.text.isNotEmpty) 'terms_conditions': termsController.text.trim(),
       if (email != null && email.isNotEmpty) 'email': email,
       if (selectedVendor != null) 'vendor_id': selectedVendor!.id,
+      
+      // New PO Fields mapping
+      if (vendorGstNoController.text.isNotEmpty) 'vendor_gst_no': vendorGstNoController.text.trim(),
+      if (projectRefNumberController.text.isNotEmpty) 'project_ref_number': projectRefNumberController.text.trim(),
+      if (poNumberController.text.isNotEmpty) 'po_number': poNumberController.text.trim(),
+      if (descriptionOfWorkController.text.isNotEmpty) 'description_of_work': descriptionOfWorkController.text.trim(),
+      if (descriptionOfMaterialsController.text.isNotEmpty) 'description_of_materials': descriptionOfMaterialsController.text.trim(),
+      if (recommendedFirmController.text.isNotEmpty) 'recommended_firm': recommendedFirmController.text.trim(),
+      if (paymentTermsController.text.isNotEmpty) 'payment_terms': paymentTermsController.text.trim(),
+      if (scheduledDateFromController.text.isNotEmpty) 'scheduled_date_from': DateFormat('yyyy-MM-dd').format(DateFormat('dd-MM-yyyy').parse(scheduledDateFromController.text.trim())),
+      if (scheduledDateToController.text.isNotEmpty) 'scheduled_date_to': DateFormat('yyyy-MM-dd').format(DateFormat('dd-MM-yyyy').parse(scheduledDateToController.text.trim())),
+      if (deliveryAddressController.text.isNotEmpty) 'delivery_address': deliveryAddressController.text.trim(),
+      if (siteContactPersonController.text.isNotEmpty) 'site_contact_person': siteContactPersonController.text.trim(),
+      if (siteContactMobileController.text.isNotEmpty) 'site_contact_mobile': siteContactMobileController.text.trim(),
+      if (gstPercentageController.text.isNotEmpty) 'gst_percentage': gstPercentageController.text.trim(),
+
       'particular': particulars,
       'count': counts,
       'unit': units,

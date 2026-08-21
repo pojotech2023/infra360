@@ -6,7 +6,7 @@ import 'package:raptor_pro/utils/res/images.dart';
 class ConstantData {
 
   static final List<String> paymentMode = [
-    "Online","Check","Net Banking","Cash","Cash-B"
+    "Online","Check","Net Banking","Cash"
   ];
 
 

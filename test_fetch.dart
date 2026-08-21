@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 void main() async {
-  String baseUrl = 'https://pojoinfra360.pojotech.in/api/';
+  String baseUrl = 'https://msminfratech.pojotech.in/api/';
   // login
   var loginRes = await http.post(
     Uri.parse(baseUrl + 'login'),
@@ -28,3 +28,4 @@ void main() async {
   );
   print('Res: ${res.body}');
 }
+

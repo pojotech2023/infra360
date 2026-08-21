@@ -157,6 +157,158 @@ class PurchaseBillScreen extends StatelessWidget {
                   ),
                   VerticalSpacing.d20px(),
 
+                  // ─── PO Fields ───────────────────────────────────────────
+                  _label('Vendor GST No'),
+                  TextFormField(
+                    controller: ctrl.vendorGstNoController,
+                    decoration: textBoxDecoration(hint: 'Vendor GST Number'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('Project Ref Number'),
+                            TextFormField(
+                              controller: ctrl.projectRefNumberController,
+                              decoration: textBoxDecoration(hint: 'e.g. 23-125'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('PO Number'),
+                            TextFormField(
+                              controller: ctrl.poNumberController,
+                              decoration: textBoxDecoration(hint: 'e.g. 83/125'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Description of Work'),
+                  TextFormField(
+                    controller: ctrl.descriptionOfWorkController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: textBoxDecoration(hint: 'Optional - leave blank to print "As per Annexure"'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Description of Materials'),
+                  TextFormField(
+                    controller: ctrl.descriptionOfMaterialsController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: textBoxDecoration(hint: 'Optional - leave blank to print "As per Annexure"'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Recommended Firm'),
+                  TextFormField(
+                    controller: ctrl.recommendedFirmController,
+                    decoration: textBoxDecoration(hint: 'Defaults to Vendor Name'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Payment Terms'),
+                  TextFormField(
+                    controller: ctrl.paymentTermsController,
+                    decoration: textBoxDecoration(hint: 'e.g. 50% advance, 50% after delivery'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Scheduled Date'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: ctrl.scheduledDateFromController,
+                          readOnly: true,
+                          decoration: textBoxDecoration(
+                            hint: 'dd-mm-yyyy',
+                            suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey),
+                          ),
+                          onTap: () async {
+                            final picked = await selectDate(context);
+                            if (picked.isNotEmpty) ctrl.scheduledDateFromController.text = picked;
+                          },
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text('to'),
+                      ),
+                      Expanded(
+                        child: TextFormField(
+                          controller: ctrl.scheduledDateToController,
+                          readOnly: true,
+                          decoration: textBoxDecoration(
+                            hint: 'dd-mm-yyyy',
+                            suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey),
+                          ),
+                          onTap: () async {
+                            final picked = await selectDate(context);
+                            if (picked.isNotEmpty) ctrl.scheduledDateToController.text = picked;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  _label('Delivery Address'),
+                  TextFormField(
+                    controller: ctrl.deliveryAddressController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: textBoxDecoration(hint: 'Delivery address (optional)'),
+                  ),
+                  VerticalSpacing.d15px(),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('Site Contact Person'),
+                            TextFormField(
+                              controller: ctrl.siteContactPersonController,
+                              decoration: textBoxDecoration(hint: 'Name'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('Contact Mobile'),
+                            TextFormField(
+                              controller: ctrl.siteContactMobileController,
+                              keyboardType: TextInputType.phone,
+                              decoration: textBoxDecoration(hint: 'Mobile Number'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  VerticalSpacing.d20px(),
+
+
                   // ─── Particulars section ──────────────────────────────────
                   Text('Particulars', style: AppTextStyle.textFieldHeadingStyle.copyWith(fontSize: 16)),
                   VerticalSpacing.d10px(),
@@ -278,24 +430,86 @@ class PurchaseBillScreen extends StatelessWidget {
                   VerticalSpacing.d15px(),
 
                   // ─── Total ────────────────────────────────────────────────
-                  Obx(() => Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Total: ₹ ${ctrl.totalAmount.value.toStringAsFixed(2)}',
-                      style: AppTextStyle.textFieldHeadingStyle.copyWith(
-                        fontSize: 15,
-                        color: Colors.black87,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('GST %', style: AppTextStyle.textFieldHeadingStyle.copyWith(fontSize: 12)),
+                            const SizedBox(height: 5),
+                            SizedBox(
+                              width: 100,
+                              child: TextFormField(
+                                controller: ctrl.gstPercentageController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                decoration: textBoxDecoration(hint: '18'),
+                                onChanged: (_) => ctrl.recalcTotal(),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )),
+                      const SizedBox(width: 20),
+                      Obx(() => Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Sub Total: ₹ ${ctrl.subTotalAmount.value.toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'GST Amount: ₹ ${ctrl.gstAmount.value.toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Total (with GST): ₹ ${ctrl.totalAmount.value.toStringAsFixed(2)}',
+                                style: AppTextStyle.textFieldHeadingStyle.copyWith(
+                                    fontSize: 18, color: const Color(0xFF5C4DB1)),
+                              ),
+                            ],
+                          )),
+                    ],
+                  ),
 
                   // ─── Terms & Conditions ──────────────────────────────────────────
                   _label('Terms & Conditions'),
-                  TextFormField(
-                    controller: ctrl.termsController,
-                    minLines: 3,
-                    maxLines: 5,
-                    decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                  Autocomplete<String>(
+                    key: ctrl.autocompleteKey,
+                    initialValue: TextEditingValue(text: ctrl.termsTitleController.text),
+                    optionsBuilder: (TextEditingValue textEditingValue) async {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      return await ctrl.getTermsSuggestions(textEditingValue.text);
+                    },
+                    onSelected: (String selection) {
+                      ctrl.termsTitleController.text = selection;
+                      ctrl.onTermsSelected(selection);
+                    },
+                    fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                      return TextFormField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        onChanged: (val) {
+                          ctrl.termsTitleController.text = val;
+                        },
+                        decoration: textBoxDecoration(hint: 'Type a saved title to auto-fill (optional)'),
+                      );
+                    },
+                  ),
+                  VerticalSpacing.d10px(),
+                  GetBuilder<PurchaseBillController>(
+                    builder: (c) => TextFormField(
+                      controller: c.termsController,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: textBoxDecoration(hint: 'Enter terms & conditions to include in the PDF (optional)'),
+                    ),
                   ),
                   VerticalSpacing.d20px(),
 

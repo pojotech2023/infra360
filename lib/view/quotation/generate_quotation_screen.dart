@@ -369,7 +369,46 @@ class GenerateQuotationScreen extends StatelessWidget {
                ),
 
 
-                    SizedBox(height: 8,),
+                    SizedBox(height: 20,),
+
+                    // Terms & Conditions Section
+                    Text("Terms & Conditions", style: AppTextStyle.textFieldHeadingStyle),
+                    VerticalSpacing.d10px(),
+                    Autocomplete<String>(
+                      key: controller.autocompleteKey,
+                      initialValue: TextEditingValue(text: controller.termsTitleController.text),
+                      optionsBuilder: (TextEditingValue textEditingValue) async {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return await controller.getTermsSuggestions(textEditingValue.text);
+                      },
+                      onSelected: (String selection) {
+                        controller.termsTitleController.text = selection;
+                        controller.onTermsSelected(selection);
+                      },
+                      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                        return TextFormField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          onChanged: (val) {
+                            controller.termsTitleController.text = val;
+                          },
+                          decoration: textBoxDecoration(hint: "Type a saved title to auto-fill (optional)"),
+                        );
+                      },
+                    ),
+                    VerticalSpacing.d10px(),
+                    GetBuilder<GenerateQuotationController>(
+                      builder: (controller) => TextFormField(
+                        controller: controller.termsDescController,
+                        minLines: 3,
+                        maxLines: 5,
+                        decoration: textBoxDecoration(hint: "Enter terms & conditions to include in the PDF (optional)"),
+                      ),
+                    ),
+
+                    SizedBox(height: 20,),
 
                      if (canAdd()) GetBuilder<GenerateQuotationController>(builder: (controller){
                       return  controller.issubmitLoading.value ? CircularProgressIndicator()  :

@@ -73,7 +73,7 @@ class PurchaseBillStoredModel {
   int? purchaseBillId;
   String? pdfUrl;
   String? whatsappUrl;
-  int? totalAmount;
+  num? totalAmount;
   bool? mailSent;
 
   PurchaseBillStoredModel({
