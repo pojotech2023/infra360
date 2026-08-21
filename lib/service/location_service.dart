@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+<<<<<<< HEAD
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/base_url.dart';
+=======
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+>>>>>>> b40d7fe (Updated changes)
 import 'package:raptor_pro/service/shared_preference_service.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -41,11 +46,19 @@ class LocationService {
     debugPrint('$_tag Current permission status: $permission');
 
     if (permission == LocationPermission.denied) {
+<<<<<<< HEAD
+=======
+      // Show prominent disclosure required by Google Play Policies
+>>>>>>> b40d7fe (Updated changes)
       bool? agreed = await Get.dialog<bool>(
         AlertDialog(
           title: const Text("Location Permission Required"),
           content: const Text(
+<<<<<<< HEAD
               "Msminfra Tech collects location data to enable tracking your location for supervisor duty, even when the app is closed or not in use. This ensures accurate monitoring of field activities and site management.\n\nPlease tap 'Agree' to proceed and grant location access."),
+=======
+              "Pojo Infra360 collects location data to enable tracking your location for supervisor duty, even when the app is closed or not in use. This ensures accurate monitoring of field activities and site management.\n\nPlease tap 'Agree' to proceed and grant location access."),
+>>>>>>> b40d7fe (Updated changes)
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
@@ -61,7 +74,10 @@ class LocationService {
       );
 
       if (agreed != true) {
+<<<<<<< HEAD
         debugPrint('$_tag User denied location disclosure');
+=======
+>>>>>>> b40d7fe (Updated changes)
         return Future.error('Location disclosure was not accepted.');
       }
 
