@@ -399,33 +399,33 @@ class _AddWagesState extends State<AddWages> {
         children: [
           // Title + Date
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text("Add Attendance", style: AppTextStyle.textBold.copyWith(fontSize: 20, color: const Color(0xFF1E293B))),
-              Row(
-                children: [
-                  Text("Date", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w500, fontSize: 14)),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 130,
-                    height: 38,
-                    child: TextFormField(
-                      controller: dateRanger,
-                      readOnly: true,
-                      style: const TextStyle(fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: "dd-MM-yyyy",
-                        hintStyle: const TextStyle(fontSize: 12),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                        suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey, size: 18),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.blue.shade400)),
-                      ),
-                      onTap: () => _selectDate(context),
-                    ),
+              Expanded(
+                child: Text("Add Attendance", style: AppTextStyle.textBold.copyWith(fontSize: 20, color: const Color(0xFF1E293B))),
+              ),
+              Text("Date", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w500, fontSize: 14)),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 140,
+                height: 38,
+                child: TextFormField(
+                  controller: dateRanger,
+                  readOnly: true,
+                  style: const TextStyle(fontSize: 12),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: "dd-MM-yyyy",
+                    hintStyle: const TextStyle(fontSize: 12),
+                    contentPadding: const EdgeInsets.only(left: 6, right: 0, top: 10, bottom: 10),
+                    suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey, size: 18),
+                    suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.blue.shade400)),
                   ),
-                ],
+                  onTap: () => _selectDate(context),
+                ),
               ),
             ],
           ),
@@ -722,7 +722,7 @@ class _AddWagesState extends State<AddWages> {
         children: [
           Expanded(
             flex: 6,
-            child: isCustom && row != null
+            child: isCustom && row != null && row.id == null
                 ? SizedBox(
                     height: 42,
                     child: TextFormField(

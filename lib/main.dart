@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Msm Infratech',
+      title: 'Pojo Infra360',
       theme: AppTheme.appTheme,
       navigatorKey: navigatorKey,
       initialRoute: "/",

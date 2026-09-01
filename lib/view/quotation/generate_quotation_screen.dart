@@ -214,37 +214,41 @@ class GenerateQuotationScreen extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: IconButton(onPressed: (){
-                                  controller.quotationList.remove(data);
-                                  controller.calculateTotal();
-                                  controller.update();
-
-                                  controller.update();
-                                  print("LENGTH OF QUOTATION ${ controller.quotationList.value.length}");
-                                  controller.update();
-
-                                }, icon: Icon(Icons.cancel,color: Colors.red,)),
-                              ),
-                              TextFormField(
-                                controller: data.particular,
-                                decoration:textBoxDecoration(hint:"Enter Customer Address"),
-                                validator: (text){
-                                  if (text == null || text.isEmpty) {
-                                    return 'Required';
-                                  }
-                                  return null;
-                                },
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: data.particular,
+                                      decoration: textBoxDecoration(hint: "Enter Particulars"),
+                                      validator: (text) {
+                                        if (text == null || text.isEmpty) {
+                                          return 'Required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      controller.quotationList.remove(data);
+                                      controller.calculateTotal();
+                                      controller.update();
+                                    },
+                                    icon: const Icon(Icons.cancel, color: Colors.red),
+                                  ),
+                                ],
                               ),
                               SizedBox(height: 8,),
                               Row(
                                 children: [
-
-
-                                  Expanded(child:  TextFormField(
+                                  Expanded(child: TextFormField(
                                     controller: data.sqFt,
-                                    decoration:textBoxDecoration(hint:"Enter Customer Address"),
+                                    style: const TextStyle(fontSize: 12),
+                                    decoration: textBoxDecoration(hint: "Sq.Ft").copyWith(
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                                    ),
                                     onChanged: (value){
                                       final sqFt = double.tryParse(value) ?? 0;
                                       final rate = double.tryParse(data.rate?.text ?? '0') ?? 0;
@@ -257,39 +261,43 @@ class GenerateQuotationScreen extends StatelessWidget {
                                       }
                                       return null;
                                     },
-                                  ),),
-                                  SizedBox(width: 8,),
-                                Expanded(child:  DropdownButtonFormField2<String>(
-                                  isExpanded: true,
-                                  decoration: dropDownBoxDecoration(hint: "Select Unit"),
-                                  hint: Text('Select Unit', style: AppTextStyle.textHintText),
-                                  value: controller.units.contains(data.unit) ? data.unit : null, 
-                                  items: controller.units
-                                      .map((item) => DropdownMenuItem<String>(
-                                    value: item,
-                                    child: Text(item, style: AppTextStyle.textFieldHeadingStyle),
-                                  ))
-                                      .toList(),
-                                  validator: (value) {
-                                    if (value == null) {
-                                      return 'Please select Unit';
-                                    }
-                                    return null;
-                                  },
-                                  onChanged: (value) {
-                                    data.unit = value;
-                                  },
-                                  dropdownStyleData: DropdownStyleData(
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),),
-
-                                  SizedBox(width: 8,),
-
-
-                                  Expanded(child:  TextFormField(
+                                  )),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: DropdownButtonFormField2<String>(
+                                    isExpanded: true,
+                                    decoration: dropDownBoxDecoration(hint: "Unit").copyWith(
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.only(left: 6, right: 0, top: 10, bottom: 10),
+                                    ),
+                                    hint: Text('Unit', style: AppTextStyle.textHintText.copyWith(fontSize: 12)),
+                                    value: controller.units.contains(data.unit) ? data.unit : null, 
+                                    items: controller.units
+                                        .map((item) => DropdownMenuItem<String>(
+                                      value: item,
+                                      child: Text(item, style: AppTextStyle.textFieldHeadingStyle.copyWith(fontSize: 12)),
+                                    ))
+                                        .toList(),
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Required';
+                                      }
+                                      return null;
+                                    },
+                                    onChanged: (value) {
+                                      data.unit = value;
+                                    },
+                                    dropdownStyleData: DropdownStyleData(
+                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  )),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: TextFormField(
                                     controller: data.rate,
-                                    decoration:textBoxDecoration(hint:"Enter Customer Address"),
+                                    style: const TextStyle(fontSize: 12),
+                                    decoration: textBoxDecoration(hint: "Rate").copyWith(
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                                    ),
                                     onChanged: (value){
                                       final rate = double.tryParse(value) ?? 0;
                                       final sqFt = double.tryParse(data.sqFt?.text ?? '0') ?? 0;
@@ -302,19 +310,23 @@ class GenerateQuotationScreen extends StatelessWidget {
                                       }
                                       return null;
                                     },
-                                  ),),
-                                   SizedBox(width: 8,),
-                                  Expanded(child:  TextFormField(
+                                  )),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: TextFormField(
                                     controller: data.total,
                                     readOnly: true,
-                                    decoration:textBoxDecoration(hint:"Enter Customer Address"),
+                                    style: const TextStyle(fontSize: 12),
+                                    decoration: textBoxDecoration(hint: "Total").copyWith(
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                                    ),
                                     validator: (text){
                                       if (text == null || text.isEmpty) {
                                         return 'Required';
                                       }
                                       return null;
                                     },
-                                  ),),
+                                  )),
                                 ],
                               ),
                             ],

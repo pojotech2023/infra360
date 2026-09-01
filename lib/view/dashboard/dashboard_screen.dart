@@ -931,7 +931,7 @@ class _PremiumSiteCardState extends State<PremiumSiteCard> with SingleTickerProv
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Expanded(child: _buildFinStat(Icons.account_balance_wallet_rounded, "Budget", budget, Colors.teal)),
+                                  Expanded(child: _buildFinStat(Icons.account_balance_wallet_rounded, "Contract Value", budget, Colors.teal)),
                                   Container(width: 1, height: 40, color: Colors.grey.shade300),
                                   Expanded(child: _buildFinStat(Icons.trending_down_rounded, "Expenses", expense, Colors.deepOrange)),
                                   Container(width: 1, height: 40, color: Colors.grey.shade300),
@@ -1022,12 +1022,18 @@ class _PremiumSiteCardState extends State<PremiumSiteCard> with SingleTickerProv
           children: [
             Icon(icon, size: 12, color: color.withOpacity(0.8)),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
               ),
             ),
           ],

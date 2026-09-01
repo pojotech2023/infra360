@@ -4,11 +4,15 @@ import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/res/images.dart';
 
 class CommonAppBar {
-  static AppBar appBar({required VoidCallback onTap,required String title,List<Widget>? actions }) {
+  static AppBar appBar({required VoidCallback onTap, required String title, List<Widget>? actions, bool centerTitle = true}) {
     return AppBar(
       toolbarHeight: 80,
-      centerTitle: true,
-      title: Text(title,style: AppTextStyle.appBarTextStyle),
+      centerTitle: centerTitle,
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: centerTitle ? Alignment.center : Alignment.centerLeft,
+        child: Text(title, style: AppTextStyle.appBarTextStyle),
+      ),
       leading: Builder(
         builder: (context) {
           return IconButton(

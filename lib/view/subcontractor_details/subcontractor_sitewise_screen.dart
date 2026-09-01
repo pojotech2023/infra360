@@ -116,6 +116,7 @@ class _SubcontractorScreenState
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Subcontractor Details",
+          centerTitle: false,
           actions: [
             Obx(() => _canAdd
                 ? Padding(
@@ -241,15 +242,23 @@ class _SubcontractorScreenState
                                           ),
                                   ),
                                 ),
-                                if (_canRemove)
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: GestureDetector(
-                                      onTap: () => _showRemoveDialog(context, item),
-                                      child: const Icon(Icons.close, color: Colors.red, size: 20),
+                                  if (_canRemove)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () => _showRemoveDialog(context, item),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 2),
+                                          ),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 14),
+                                        ),
+                                      ),
                                     ),
-                                  ),
                               ],
                             ),
 

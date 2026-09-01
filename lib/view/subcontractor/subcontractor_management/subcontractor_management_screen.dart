@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:raptor_pro/model/subcontractor_list_model.dart';
 import 'package:raptor_pro/model/supervisor_list_model.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
@@ -291,15 +292,28 @@ class _SubcontractorManagementScreenState extends State<SubcontractorManagementS
                                       color: Color(0xFF78909C),
                                     ),
                                     SizedBox(width: 8),
-                                    Text(
-                                      subcontractorData.mobileNo ?? 'N/A',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF455A64),
-                                        fontWeight: FontWeight.w500,
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final phone = subcontractorData.mobileNo;
+                                        if (phone != null && phone.isNotEmpty) {
+                                          final Uri url = Uri.parse('tel:$phone');
+                                          if (await canLaunchUrl(url)) {
+                                            await launchUrl(url);
+                                          }
+                                        }
+                                      },
+                                      child: Text(
+                                        subcontractorData.mobileNo ?? 'N/A',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                          decorationColor: Colors.blue,
+                                        ),
                                       ),
                                     ),
-                                    SizedBox(width: 24),
+                                    SizedBox(width: 16),
                                     Icon(
                                       Icons.email_rounded,
                                       size: 18,

@@ -21,7 +21,7 @@ xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="Msminfra Tech"
+        android:label="Pojo Infra360"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

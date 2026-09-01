@@ -8,7 +8,7 @@
 PRODUCT_NAME = raptor_pro
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.pojotech.msminfratech
+PRODUCT_BUNDLE_IDENTIFIER = com.pojotech.infra360
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.pojotech. All rights reserved.

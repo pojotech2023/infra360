@@ -196,7 +196,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
                   ),
                 ),
                 onPressed: () {
-                  final String reportUrl = "http://msminfratech.pojotech.in/api/sites/${siteManagementList.id}/full-report";
+                  final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteManagementList.id}/full-report";
                   CommonFileDownloader.downloadAndOpen(
                     urls: reportUrl,
                     context: context,
@@ -261,9 +261,10 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
               ),
               child: Container(
                 color: AppColor.materialCategoryBGColor,
+                padding: const EdgeInsets.all(12.0),
                 child: Image.asset(
                   image,
-                  height: MediaQuery.of(context).size.height * 0.12,
+                  height: MediaQuery.of(context).size.height * 0.09,
                   fit: BoxFit.contain,
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:raptor_pro/model/vendor_management_model.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
@@ -265,15 +266,28 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
                                             color: Color(0xFF78909C),
                                           ),
                                           SizedBox(width: 8),
-                                          Text(
-                                            vendorManagementData.mobileNo ?? 'N/A',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Color(0xFF455A64),
-                                              fontWeight: FontWeight.w500,
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final phone = vendorManagementData.mobileNo;
+                                              if (phone != null && phone.isNotEmpty) {
+                                                final Uri url = Uri.parse('tel:$phone');
+                                                if (await canLaunchUrl(url)) {
+                                                  await launchUrl(url);
+                                                }
+                                              }
+                                            },
+                                            child: Text(
+                                              vendorManagementData.mobileNo ?? 'N/A',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.blue,
+                                                fontWeight: FontWeight.w600,
+                                                decoration: TextDecoration.underline,
+                                                decorationColor: Colors.blue,
+                                              ),
                                             ),
                                           ),
-                                          SizedBox(width: 24),
+                                          SizedBox(width: 16),
                                           Icon(
                                             Icons.email_rounded,
                                             size: 18,
@@ -294,51 +308,48 @@ class _VendorManagementScreenState extends State<VendorManagementScreen> {
                                         ],
                                       ),
                                       SizedBox(height: 12),
-                                      // GST info
-                                      if (vendorManagementData.gst != null && vendorManagementData.gst!.isNotEmpty)
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.receipt_rounded,
-                                              size: 18,
-                                              color: Color(0xFF78909C),
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'GST: ${vendorManagementData.gst}',
+                                      // GST and Address row
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.receipt_long_rounded,
+                                            size: 18,
+                                            color: Color(0xFF78909C),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              vendorManagementData.gst != null && vendorManagementData.gst!.isNotEmpty ? vendorManagementData.gst! : 'N/A',
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 color: Color(0xFF455A64),
                                                 fontWeight: FontWeight.w500,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
-                                        ),
-                                      SizedBox(height: 12),
-                                      // Address
-                                      if (vendorManagementData.address != null && vendorManagementData.address!.isNotEmpty)
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              Icons.location_on_rounded,
-                                              size: 18,
-                                              color: Color(0xFF78909C),
-                                            ),
-                                            SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                vendorManagementData.address ?? '',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Color(0xFF455A64),
-                                                  fontWeight: FontWeight.w400,
-                                                  height: 1.4,
-                                                ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Icon(
+                                            Icons.location_on_rounded,
+                                            size: 18,
+                                            color: Color(0xFF78909C),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(
+                                              vendorManagementData.address != null && vendorManagementData.address!.isNotEmpty ? vendorManagementData.address! : 'N/A',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF455A64),
+                                                fontWeight: FontWeight.w500,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),

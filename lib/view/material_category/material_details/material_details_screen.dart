@@ -60,6 +60,7 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
     return Scaffold(
       appBar: CommonAppBar.appBar(
         title: "Materials Details",
+        centerTitle: false,
         onTap: () => Get.back(),
         actions: [
           // ── View Request button ──────────────────────────
@@ -258,26 +259,21 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
         ),
         // ── × button ──────────
         Positioned(
-          top: 4,
-          right: 4,
+          top: 8,
+          right: 8,
           child: GestureDetector(
             onTap: () => _showConfirmRemoveDialog(context, key),
             child: Container(
-              width: 22,
-              height: 22,
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
                 color: Colors.red,
                 shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-                child: const Center(
-                  child: Text(
-                    "×",
-                    style: TextStyle(color: Colors.white, fontSize: 16, height: 1.0, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 14),
             ),
           ),
+        ),
       ],
     );
   }

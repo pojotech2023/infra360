@@ -1,21 +1,40 @@
 {
   "project_info": {
-    "project_number": "1094632369875",
-    "project_id": "msm-infra-tech",
-    "storage_bucket": "msm-infra-tech.firebasestorage.app"
+    "project_number": "862161934081",
+    "project_id": "infra360-38b97",
+    "storage_bucket": "infra360-38b97.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1094632369875:android:b7425ddc5430b4d972ae26",
+        "mobilesdk_app_id": "1:862161934081:android:0681a620111cb9f49c6d00",
         "android_client_info": {
-          "package_name": "com.pojotech.msminfratech"
+          "package_name": "com.pojotech.infra360"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCzT14h517lyl06iThlxXNWQnGsprU75-0"
+          "current_key": "AIzaSyCWGqBQCxoc-jke3_9sR6fa_QdTazCjkjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:862161934081:android:7fb37fa352a46a2e9c6d00",
+        "android_client_info": {
+          "package_name": "com.pojotech.infraclient"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWGqBQCxoc-jke3_9sR6fa_QdTazCjkjU"
         }
       ],
       "services": {

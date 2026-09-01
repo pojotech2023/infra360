@@ -1,2 +1,2 @@
-const baseUrl ="https://msminfratech.pojotech.in/api/";
-const imageUrl ="https://msminfratech.pojotech.in/public/storage";
+const baseUrl ="http://pojoinfra360.pojotech.in/api/";
+const imageUrl ="http://pojoinfra360.pojotech.in/public/storage";

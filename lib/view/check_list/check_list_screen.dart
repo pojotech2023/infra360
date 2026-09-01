@@ -41,6 +41,7 @@ class _CheckListScreenState extends State<CheckListScreen> {
     return Scaffold(
       appBar: CommonAppBar.appBar(
         title: "Check List",
+        centerTitle: false,
         onTap: () => Get.back(),
         actions: [
           GetBuilder<CheckListController>(

@@ -350,7 +350,7 @@ update();
 
   void siteFullExport(BuildContext context) {
     if (siteID.value.isNotEmpty) {
-      final String reportUrl = "http://msminfratech.pojotech.in/api/sites/${siteID.value}/full-report";
+      final String reportUrl = "http://pojoinfra360.pojotech.in/api/sites/${siteID.value}/full-report";
       CommonFileDownloader.downloadAndOpen(
         urls: reportUrl,
         context: context,
