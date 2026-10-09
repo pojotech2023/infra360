@@ -447,19 +447,41 @@ class AttendanceController extends GetxController {
     }
   }
 
+  void _purgeDateCache(String date) {
+    if (date.isEmpty) return;
+    datePhotoLookup.remove(date);
+    cachedFullMonthData?.dayPhotos?.remove(date);
+    if (cachedFullMonthData?.groupedByDate != null) {
+      cachedFullMonthData!.groupedByDate!.removeWhere(
+        (day) => day['date']?.toString() == date,
+      );
+    }
+    attendanceList.removeWhere((item) => item.date == date);
+  }
+
   void _buildDatePhotoLookup(AttendanceListModel? model) {
     datePhotoLookup.clear();
     if (model == null) return;
 
-    void merge(String? date, Map<String, dynamic> info) {
+    void merge(String? date, Map<String, dynamic> info, {bool overwrite = true}) {
       if (date == null || date.isEmpty) return;
       final existing = datePhotoLookup.putIfAbsent(date, () => <String, dynamic>{});
       for (final entry in info.entries) {
         final value = entry.value;
-        if (value != null && value.toString().trim().isNotEmpty) {
-          existing[entry.key] = value;
-        }
+        if (value == null || value.toString().trim().isEmpty) continue;
+        if (!overwrite && existing.containsKey(entry.key)) continue;
+        existing[entry.key] = value;
       }
+    }
+
+    // Lowest priority: per-category attendances (fallback only).
+    for (final day in model.attendances ?? <Attendances>[]) {
+      merge(day.date?.toString(), {
+        'check_in_time': day.time,
+        'check_in_photo': day.imageUrl,
+        'check_out_time': day.checkOutTime,
+        'check_out_photo': day.checkOutPhoto,
+      }, overwrite: false);
     }
 
     model.dayPhotos?.forEach((date, value) {
@@ -468,29 +490,21 @@ class AttendanceController extends GetxController {
       }
     });
 
+    // Highest priority: grouped_by_date is authoritative for day-level check-in/out.
     for (final day in model.groupedByDate ?? <Map<String, dynamic>>[]) {
       merge(day['date']?.toString(), {
         'check_in_time': day['check_in_time'] ?? day['time'],
         'check_in_photo': day['check_in_photo'] ?? day['image_url'],
         'check_out_time': day['check_out_time'] ?? day['out_time'],
         'check_out_photo': day['check_out_photo'] ?? day['out_image_url'],
-      });
+      }, overwrite: true);
     }
 
-    for (final day in model.attendances ?? <Attendances>[]) {
-      merge(day.date?.toString(), {
-        'check_in_time': day.time,
-        'check_in_photo': day.imageUrl,
-        'check_out_time': day.checkOutTime,
-        'check_out_photo': day.checkOutPhoto,
-      });
-    }
-
-    // ✅ UI WORKAROUND: If backend automatically copied Check-In time to Check-Out, discard it globally
+    // If backend copied check-in time to check-out without a real checkout, discard it.
     datePhotoLookup.forEach((date, data) {
       if (data['check_in_time'] != null && data['check_out_time'] == data['check_in_time']) {
-        data['check_out_time'] = null;
-        data['check_out_photo'] = null;
+        data.remove('check_out_time');
+        data.remove('check_out_photo');
       }
     });
   }
@@ -522,52 +536,65 @@ class AttendanceController extends GetxController {
     return null;
   }
 
+  String? _resolveCheckOutTime(Map<String, dynamic> data, String date, Map<String, dynamic>? dayPhotosForDate) {
+    final hasExplicitField = data.containsKey('check_out_time') || data.containsKey('out_time');
+    if (hasExplicitField) {
+      return _firstNonEmpty([data['check_out_time'], data['out_time']]);
+    }
+    return _firstNonEmpty([
+      dayPhotosForDate?['check_out_time'],
+      datePhotoLookup[date]?['check_out_time'],
+    ]);
+  }
+
+  String? _resolveCheckOutPhoto(Map<String, dynamic> data, String date, Map<String, dynamic>? dayPhotosForDate) {
+    final hasExplicitField = data.containsKey('check_out_photo') || data.containsKey('out_image_url');
+    if (hasExplicitField) {
+      return _firstNonEmpty([data['check_out_photo'], data['out_image_url']]);
+    }
+    return _firstNonEmpty([
+      dayPhotosForDate?['check_out_photo'],
+      datePhotoLookup[date]?['check_out_photo'],
+    ]);
+  }
+
   void _applyDatePhotosToRecords(List<Attendances> records) {
     for (final record in records) {
       final photos = datePhotoLookup[record.date ?? ''];
       if (photos == null) continue;
 
+      // Only backfill check-in fields. Check-out values are set in
+      // convertDataToAttendances from the authoritative grouped_by_date payload
+      // so stale cached checkout times are not re-applied after delete/re-entry.
       record.time ??= photos['check_in_time']?.toString();
       record.imageUrl ??= photos['check_in_photo']?.toString();
-      record.checkOutTime ??= photos['check_out_time']?.toString();
-      record.checkOutPhoto ??= photos['check_out_photo']?.toString();
     }
   }
 
   List<Attendances> convertDataToAttendances(Map<String, dynamic> data, int siteId, [Map<String, dynamic>? dayPhotosForDate]) {
     final String date = data['date'] ?? '';
     final String? checkInTime = _firstNonEmpty([
-      dayPhotosForDate?['check_in_time'],
       data['check_in_time'],
       data['time'],
+      dayPhotosForDate?['check_in_time'],
       datePhotoLookup[date]?['check_in_time'],
     ]);
     final String? checkInPhoto = _firstNonEmpty([
-      dayPhotosForDate?['check_in_photo'],
       data['check_in_photo'],
       data['image_url'],
+      dayPhotosForDate?['check_in_photo'],
       datePhotoLookup[date]?['check_in_photo'],
     ]);
-    String? checkOutTime = _firstNonEmpty([
-      dayPhotosForDate?['check_out_time'],
-      data['check_out_time'],
-      data['out_time'],
-      datePhotoLookup[date]?['check_out_time'],
-    ]);
-    String? checkOutPhoto = _firstNonEmpty([
-      dayPhotosForDate?['check_out_photo'],
-      data['check_out_photo'],
-      data['out_image_url'],
-      datePhotoLookup[date]?['check_out_photo'],
-    ]);
+    String? checkOutTime = _resolveCheckOutTime(data, date, dayPhotosForDate);
+    String? checkOutPhoto = _resolveCheckOutPhoto(data, date, dayPhotosForDate);
 
-    // ✅ UI WORKAROUND: If backend automatically copied Check-In time to Check-Out, discard it
+    // If backend automatically copied Check-In time to Check-Out, discard it.
     if (checkInTime != null && checkOutTime == checkInTime) {
       checkOutTime = null;
       checkOutPhoto = null;
     }
-    
-    // ✅ UI WORKAROUND: Discard old/stale Check-Out times that are before Check-In
+
+    // Discard check-out times that are before check-in.
     if (checkInTime != null && checkOutTime != null) {
       try {
         final format = DateFormat("HH:mm:ss");
@@ -776,6 +803,45 @@ class AttendanceController extends GetxController {
         checkOutImage.value = file;
       }
     }
+  }
+
+  /// Deletes all attendance and wages for a date, then refreshes from the API.
+  Future<bool> deleteAttendanceForDate(String isoDate) async {
+    if (siteId.value == null || isoDate.isEmpty) return false;
+
+    attendanceSave.value = true;
+    update();
+
+    _purgeDateCache(isoDate);
+
+    bool hasError = false;
+    print("🚀 [DELETE BY DATE] site=${siteId.value}, date=$isoDate");
+
+    final attendanceRes = await ApiData().deleteAttendanceByDateApi(siteId.value!, isoDate);
+    if (attendanceRes == null) {
+      print("❌ [DELETE BY DATE] Attendance delete failed");
+      hasError = true;
+    }
+
+    final wagesRes = await ApiData().deleteWagesRowApi({
+      "site_id": siteId.value,
+      "date": isoDate,
+    });
+    if (wagesRes == null) {
+      print("❌ [DELETE BY DATE] Wages delete failed");
+      hasError = true;
+    }
+
+    selectedDate.value = null;
+    await init(siteId.value);
+
+    if (hasError) {
+      showToastMessage("Failed to delete attendance for $isoDate.");
+    }
+
+    attendanceSave.value = false;
+    update();
+    return !hasError;
   }
 
   /// Deletes attendance by [attendanceId] (individual record ID).

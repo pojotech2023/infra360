@@ -133,7 +133,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                                  ),
                                  child: Column(
                                    children: [
-                                     _financialRow("Total Amount", vendorData.totalAmount.toString(), Colors.green),
+                                     _financialRow("Total Amount", vendorData.totalAmount?.toString() ?? "0", Colors.green),
                                      SizedBox(height: 12),
                                      _financialRow("Paid Amount", vendorData.paidAmount ?? "0", Colors.blue),
                                      SizedBox(height: 12),

@@ -16,7 +16,7 @@ class ConstantData {
 
 
   static final List<String> siteStatus = [
-    "Quoted","Ongoing","Completed"
+    "Ongoing","Completed"
   ];
   static final List<String> approveRequest = [
     "Approved","Rejected"
@@ -93,12 +93,26 @@ class ConstantData {
     "AGGREGATE",
     "RMC",
     "Gravel",
+    "Basic Exterior Wash",
+    "Doors & Windows",
+    "External/Outdoor",
+    "Finishing Materials",
+    "Glass & Aluminium",
+    "Hardware",
+    "Safety & PPE",
+    "Sanitary & Bath Fittings",
+    "Scaffolding & Formwork",
+    "Waterproofing & Insulation",
+    "Wood & Carpentry",
   ];
 
   static final Map<String, String> materialImages = {
+    "All Materials": Images.material,
+    "all materials": Images.material,
+    "all": Images.material,
     "Bricks": Images.brick,
     "Sand": Images.sandJpeg,
-    "Cement":  Images.cement,
+    "Cement": Images.cement,
     "Electrical Wires": Images.electricalWires,
     "Plumber": Images.plumber,
     "Tea": Images.tea,
@@ -115,9 +129,34 @@ class ConstantData {
     "Painting": Images.painting,
     "Steel": Images.steel,
     "AGGREGATE": Images.aggregate,
+    "Aggregate": Images.aggregate,
     "RMC": Images.rmc,
     "Gravel": Images.gravel,
+    "Basic Exterior Wash": Images.basicExteriorWash,
+    "Doors & Windows": Images.doorsAndWindows,
+    "External/Outdoor": Images.externalOutdoor,
+    "Finishing Materials": Images.finishingMaterials,
+    "Glass & Aluminium": Images.glassAndAluminium,
+    "Hardware": Images.hardware,
+    "Safety & PPE": Images.safetyAndPpe,
+    "Sanitary & Bath Fittings": Images.sanitaryAndBathFittings,
+    "Scaffolding & Formwork": Images.scaffoldingAndFormwork,
+    "Waterproofing & Insulation": Images.waterproofingAndInsulation,
+    "Wood & Carpentry": Images.woodAndCarpentry,
   };
+
+  static String getMaterialImage(String key) {
+    if (materialImages.containsKey(key)) {
+      return materialImages[key]!;
+    }
+    final cleanKey = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    for (var entry in materialImages.entries) {
+      if (entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') == cleanKey) {
+        return entry.value;
+      }
+    }
+    return Images.material;
+  }
 
   static final List<String> allSubcontractorKeys = [
     "Plumber",
@@ -127,9 +166,23 @@ class ConstantData {
     "Tiles Layer",
     "Granite Layer",
     "SS Welder",
-    "Carpenter",
     "Centering Works",
     "Mason Works",
+    "Civil Works Contractor",
+    "Steel & Structural Contractor",
+    "Waterproofing Contractor",
+    "Flooring Contractor",
+    "False Ceiling Contractor",
+    "Aluminium & Glass Contractor",
+    "HVAC Contractor",
+    "Fire & Safety Contractor",
+    "Fabrication Contractor",
+    "Road & Paving Contractor",
+    "Landscaping Contractor",
+    "Interior Works Contractor",
+    "Demolition Contractor",
+    "Heavy Equipment Contractor",
+    "MEP Contractor",
     "Petty Cash",
     "Rental Management",
   ];
@@ -142,12 +195,42 @@ class ConstantData {
     "Tiles Layer": Images.tilesLayer,
     "Granite Layer": Images.graniteLayer,
     "SS Welder": Images.ssWelder,
-    "Carpenter": Images.carpenter,
+    "Carpenter": Images.woodAndCarpentry,
     "Centering Works": Images.centeringWorks,
     "Mason Works": Images.masonWorks,
+    "Civil Works Contractor": Images.civilWorksContractor,
+    "Steel & Structural Contractor": Images.steel,
+    "Waterproofing Contractor": Images.waterproofingAndInsulation,
+    "Flooring Contractor": Images.granite,
+    "False Ceiling Contractor": Images.finishingMaterials,
+    "Aluminium & Glass Contractor": Images.glassAndAluminium,
+    "HVAC Contractor": Images.hardware,
+    "Fire & Safety Contractor": Images.safetyAndPpe,
+    "Fabrication Contractor": Images.welder,
+    "Road & Paving Contractor": Images.roadAndPavingContractor,
+    "Landscaping Contractor": Images.externalOutdoor,
+    "Interior Works Contractor": Images.interior,
+    "Demolition Contractor": Images.rcConcrete,
+    "Heavy Equipment Contractor": Images.transport,
+    "MEP Contractor": Images.lift,
     "Petty Cash": Images.pettyCash,
     "Rental Management": Images.rentalManagement,
+    "OTHERS": Images.othersSubcontractor,
+    "Others": Images.othersSubcontractor,
   };
+
+  static String getSubcontractorImage(String key) {
+    if (allSubcontractorImages.containsKey(key)) {
+      return allSubcontractorImages[key]!;
+    }
+    final cleanKey = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    for (var entry in allSubcontractorImages.entries) {
+      if (entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') == cleanKey) {
+        return entry.value;
+      }
+    }
+    return Images.material;
+  }
 
 
 

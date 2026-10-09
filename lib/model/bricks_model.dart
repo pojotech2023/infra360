@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class BricksModel {
   String? siteId;
   String? siteName;
@@ -78,11 +80,19 @@ class BricksList {
   String? unit;
   int? price;
   String? gst;
+  String? vendorMobile;
  // Null? availableUnitCount;
   dynamic status;
   String? createdAt;
   String? updatedAt;
   String? imageUrl;
+  String? orderNo;
+  String? category;
+  String? specification;
+  String? vendorGstin;
+  double? pricePerItem;
+  double? totalAmount;
+  dynamic rawItems;
 
   BricksList(
       {this.id,
@@ -96,6 +106,13 @@ class BricksList {
         this.price,
         this.gst,
         this.imageUrl,
+        this.orderNo,
+        this.category,
+        this.specification,
+        this.vendorGstin,
+        this.pricePerItem,
+        this.totalAmount,
+        this.rawItems,
        // this.availableUnitCount,
         this.status,
         this.createdAt,
@@ -105,22 +122,99 @@ class BricksList {
     id = json['id'];
     siteId = json['site_id'] ?? json['siteId'];
     vendorId = json['vendor_id']?.toInt();
+    orderNo = (json['order_no'] ?? json['orderNo'] ?? json['order_id'])?.toString();
     
     // Vendor handling: check for nested object or flat field
     if (json['vendor'] != null && json['vendor'] is Map) {
       vendorName = json['vendor']['name'];
       vendorId = json['vendor']['id']?.toInt();
+      vendorMobile = json['vendor']['mobile_no']?.toString();
+      vendorGstin = json['vendor']['gst']?.toString() ?? json['vendor']['gstin']?.toString();
     } else {
       vendorName = json['vendor_name'] ?? json['vendorName'] ?? json['vendor']?.toString();
+      vendorGstin = json['vendor_gstin']?.toString() ?? json['vendor_gst']?.toString() ?? json['gstin']?.toString();
     }
     
     materialType = json['material_type'] ?? json['materialType'];
+    category = json['category'] ?? json['category_name'] ?? json['material_category'] ?? json['item_name'] ?? json['name'];
+    specification = json['specification'] ?? json['spec'] ?? json['description'] ?? json['sub_type'] ?? json['details'];
     date = json['date'];
     quantity = json['quantity']?.toString() ?? json['qty']?.toString();
     unit = json['unit'];
     price = json['price'] != null ? double.tryParse(json['price'].toString())?.toInt() : json['amount'] != null ? double.tryParse(json['amount'].toString())?.toInt() : null;
     gst = json['gst']?.toString();
-    imageUrl = (json['image_url'] ?? json['image'] ?? json['imageUrl'])?.toString();
+    
+    // Price per item
+    if (json['price_per_item'] != null) {
+      pricePerItem = double.tryParse(json['price_per_item'].toString());
+    } else if (json['unit_price'] != null) {
+      pricePerItem = double.tryParse(json['unit_price'].toString());
+    } else if (json['rate'] != null) {
+      pricePerItem = double.tryParse(json['rate'].toString());
+    } else if (price != null && quantity != null) {
+      final q = double.tryParse(quantity!) ?? 1.0;
+      pricePerItem = q > 0 ? (price! / q) : price!.toDouble();
+    }
+
+    // Total Amount
+    if (json['total_amount'] != null) {
+      totalAmount = double.tryParse(json['total_amount'].toString());
+    } else if (json['amount'] != null) {
+      totalAmount = double.tryParse(json['amount'].toString());
+    } else if (price != null) {
+      final gstVal = double.tryParse(gst ?? '0') ?? 0.0;
+      totalAmount = price! + gstVal;
+    }
+
+    rawItems = json['items'] ?? json['order_items'];
+
+    // Deep specification extraction if null, empty, or '-'
+    if (specification == null || specification.toString().trim().isEmpty || specification == '-') {
+      specification = (json['size'] ?? json['size_specification'] ?? json['size_spec'])?.toString();
+    }
+    if ((specification == null || specification.toString().trim().isEmpty || specification == '-') && rawItems != null) {
+      try {
+        dynamic parsed = rawItems;
+        if (parsed is String && parsed.trim().isNotEmpty) {
+          try {
+            parsed = jsonDecode(parsed);
+          } catch (_) {}
+        }
+        if (parsed is List && parsed.isNotEmpty) {
+          for (var itemMap in parsed) {
+            if (itemMap is Map) {
+              final s = itemMap['specification'] ?? itemMap['spec'] ?? itemMap['size'] ?? itemMap['size_specification'] ?? itemMap['description'] ?? itemMap['sub_type'];
+              if (s != null && s.toString().trim().isNotEmpty) {
+                specification = s.toString().trim();
+                break;
+              }
+              if ((category == null || category!.isEmpty) && (itemMap['name'] != null || itemMap['item_name'] != null)) {
+                category = (itemMap['name'] ?? itemMap['item_name'] ?? itemMap['category'])?.toString();
+              }
+            }
+          }
+        } else if (parsed is Map) {
+          final s = parsed['specification'] ?? parsed['spec'] ?? parsed['size'] ?? parsed['size_specification'] ?? parsed['description'];
+          if (s != null && s.toString().trim().isNotEmpty) {
+            specification = s.toString().trim();
+          }
+        }
+      } catch (_) {}
+    }
+    // Deep fallback from items_summary, items string, item_name, or category
+    if (specification == null || specification.toString().trim().isEmpty || specification == '-') {
+      for (var candidate in [json['items_summary'], json['items'], json['item_name'], json['category']]) {
+        if (candidate is String && candidate.contains('(') && candidate.contains(')')) {
+          final reg = RegExp(r'\((.*?)\)');
+          final match = reg.firstMatch(candidate);
+          if (match != null && match.group(1) != null && match.group(1)!.trim().isNotEmpty) {
+            specification = match.group(1)!.trim();
+            break;
+          }
+        }
+      }
+    }
+    imageUrl = (json['image_url'] ?? json['image'] ?? json['imageUrl'] ?? json['attachment'])?.toString();
     print("🧱 BRICKS JSON: $json");
     status = json['status'] ?? json['approval_status'];
     createdAt = json['created_at'];

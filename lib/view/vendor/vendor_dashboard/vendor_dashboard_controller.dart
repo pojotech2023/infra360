@@ -15,12 +15,16 @@ class VendorDashboardController extends GetxController{
   }
   init()async{
     isLoading.value=true;
- VendorDashboardModel ?vendorDashboardModel=   await ApiData().vendorDashboardList();
+    try {
+      VendorDashboardModel ?vendorDashboardModel=   await ApiData().vendorDashboardList();
 
- if(vendorDashboardModel!=null){
-   vendorDataList.value=vendorDashboardModel.data??[];
- }
-    isLoading.value=false;
-
+      if(vendorDashboardModel!=null){
+        vendorDataList.value=vendorDashboardModel.data??[];
+      }
+    } catch(e) {
+      print("Error loading vendor dashboard: $e");
+    } finally {
+      isLoading.value=false;
+    }
   }
 }

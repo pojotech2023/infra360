@@ -235,7 +235,7 @@ class PurchaseBillController extends GetxController {
     subTotalAmount.value = sum;
     double gstPercent = double.tryParse(gstPercentageController.text) ?? 0.0;
     gstAmount.value = sum * (gstPercent / 100);
-    totalAmount.value = sum + gstAmount.value;
+    totalAmount.value = sum;
     update();
   }
 

@@ -159,7 +159,11 @@ class _SubcontractorScreenState
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (controller.subcontractors.isEmpty) {
+              final displayList = controller.subcontractors
+                  .where((item) => item.title.toLowerCase() != 'others')
+                  .toList();
+
+              if (displayList.isEmpty) {
                 return const Center(child: Text("No data available"));
               }
 
@@ -175,13 +179,14 @@ class _SubcontractorScreenState
                   crossAxisSpacing: 16,
                   childAspectRatio: 0.68, // Reduced for more vertical space
                 ),
-                itemCount: controller.subcontractors.length,
+                itemCount: displayList.length,
                 itemBuilder: (context, index) {
-                  final item = controller.subcontractors[index];
+                  final item = displayList[index];
                   return InkWell(
                     onTap: () {
                       final isPettyOrRental =
                           item.title == 'Petty Cash' || item.title == 'Rental Management';
+                      final isOthers = item.title.toLowerCase() == 'others';
                       if (isPettyOrRental) {
                         Get.to(
                           () => SitePaymentHistoryScreen(),
@@ -191,6 +196,8 @@ class _SubcontractorScreenState
                             siteName: siteManagementList.siteName ?? '',
                           ),
                         );
+                      } else if (isOthers) {
+                        Get.to(OtherSubcontractorScreen(), arguments: siteManagementList.id);
                       } else {
                         Get.to(() => RequestDetailsScreen(), arguments: SubcontracorDetailsArgs(
                           id: siteManagementList.id ?? 0,
@@ -228,7 +235,7 @@ class _SubcontractorScreenState
                                             height: MediaQuery.of(context).size.height * 0.12,
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) => Image.asset(
-                                              Images.material,
+                                              item.image,
                                               width: MediaQuery.of(context).size.width,
                                               height: MediaQuery.of(context).size.height * 0.12,
                                               fit: BoxFit.contain,

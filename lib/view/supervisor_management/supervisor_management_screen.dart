@@ -14,6 +14,7 @@ import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/widgets/log_out.dart';
 import 'package:raptor_pro/view/supervisor_management/supervisor_map_screen.dart';
 import 'package:raptor_pro/view/supervisor_management/all_supervisors_map_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SuperVisorManagementScreen extends StatefulWidget{
   @override
@@ -63,7 +64,7 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                   icon: const Icon(Icons.map_rounded),
                   label: const Text('View All Locations'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00897B),
+                    backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -96,13 +97,13 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFF00897B).withOpacity(0.12),
+                        color: Color(0xFF1565C0).withOpacity(0.12),
                         blurRadius: 24,
                         offset: Offset(0, 8),
                         spreadRadius: 0,
                       ),
                       BoxShadow(
-                        color: Color(0xFF00897B).withOpacity(0.06),
+                        color: Color(0xFF1565C0).withOpacity(0.06),
                         blurRadius: 12,
                         offset: Offset(0, 4),
                         spreadRadius: 0,
@@ -127,12 +128,13 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Color(0xFF00897B).withOpacity(0.05),
-                                  Color(0xFF26A69A).withOpacity(0.02),
+                                  Color(0xFF1565C0).withOpacity(0.05),
+                                  Color(0xFF42A5F5).withOpacity(0.02),
                                 ],
                               ),
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Avatar
                                 Container(
@@ -143,14 +145,14 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF00897B),
-                                        Color(0xFF26A69A),
+                                        Color(0xFF1565C0),
+                                        Color(0xFF42A5F5),
                                       ],
                                     ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Color(0xFF00897B).withOpacity(0.3),
+                                        color: Color(0xFF1565C0).withOpacity(0.3),
                                         blurRadius: 12,
                                         offset: Offset(0, 4),
                                       ),
@@ -181,17 +183,17 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                           color: Color(0xFF1A365D),
                                           letterSpacing: 0.2,
                                         ),
-                                        maxLines: 1,
+                                        maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(height: 6),
                                       Container(
                                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: Color(0xFF26A69A).withOpacity(0.12),
+                                          color: Color(0xFF42A5F5).withOpacity(0.12),
                                           borderRadius: BorderRadius.circular(12),
                                           border: Border.all(
-                                            color: Color(0xFF26A69A).withOpacity(0.3),
+                                            color: Color(0xFF42A5F5).withOpacity(0.3),
                                             width: 1,
                                           ),
                                         ),
@@ -201,7 +203,7 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                             Icon(
                                               Icons.badge_rounded,
                                               size: 14,
-                                              color: Color(0xFF00897B),
+                                              color: Color(0xFF1565C0),
                                             ),
                                             SizedBox(width: 4),
                                             Flexible(
@@ -210,7 +212,7 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF00897B),
+                                                  color: Color(0xFF1565C0),
                                                   letterSpacing: 0.3,
                                                 ),
                                                 maxLines: 1,
@@ -229,7 +231,7 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Color(0xFF26A69A).withOpacity(0.1),
+                                        color: Color(0xFF42A5F5).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: InkWell(
@@ -242,7 +244,7 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                           child: Icon(
                                             Icons.edit_rounded,
                                             size: 20,
-                                            color: Color(0xFF00897B),
+                                            color: Color(0xFF1565C0),
                                           ),
                                         ),
                                       ),
@@ -315,15 +317,30 @@ class _SuperVisorManagementScreenState extends State<SuperVisorManagementScreen>
                                       color: Color(0xFF78909C),
                                     ),
                                     SizedBox(width: 8),
-                                    Text(
-                                      superVisorData.mobileNo ?? 'N/A',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF455A64),
-                                        fontWeight: FontWeight.w500,
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final phone = superVisorData.mobileNo;
+                                        if (phone != null && phone.isNotEmpty) {
+                                          final Uri url = Uri.parse('tel:$phone');
+                                          if (await canLaunchUrl(url)) {
+                                            await launchUrl(url);
+                                          }
+                                        }
+                                      },
+                                      child: Text(
+                                        superVisorData.mobileNo ?? 'N/A',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF455A64),
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                    SizedBox(width: 24),
+                                  ],
+                                ),
+                                SizedBox(height: 12),
+                                Row(
+                                  children: [
                                     Icon(
                                       Icons.email_rounded,
                                       size: 18,

@@ -71,9 +71,11 @@ class _AgentManagementScreenState extends State<AgentManagementScreen> {
 
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                textWidget("Name : ",agentData.name??""),
+                                Expanded(child: textWidget("Name : ",agentData.name??"")),
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     InkWell(
                                       onTap: (){
@@ -126,15 +128,17 @@ class _AgentManagementScreenState extends State<AgentManagementScreen> {
   }
   textWidget(String title,String value){
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: AppTextStyle.textRegular15,
         ),
-        Text(
-          value,
-          style: AppTextStyle.textMedium.copyWith(fontSize: 15),
-
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyle.textMedium.copyWith(fontSize: 15),
+          ),
         ),
       ],
     );

@@ -60,7 +60,7 @@ class _MaterialRequestListScreenState extends State<MaterialRequestListScreen> {
       final supervisorMob = userDetails.data?.user?.mobileNo ?? 'Unknown Mobile';
 
       String message = """
-*SS Builders*
+*Pojo infra 360*
 Site Name: $siteName - Material Request
 Location: N/A
 Material Type: ${item.materialItem}
@@ -397,7 +397,7 @@ Remarks: ${item.remarks ?? 'N/A'}
 
   Widget _actionButton({
     required String label,
-    required IconData icon,
+    required dynamic icon,
     required Color color,
     required VoidCallback onTap,
   }) {
@@ -412,7 +412,10 @@ Remarks: ${item.remarks ?? 'N/A'}
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 12),
+            if (icon is IconData)
+              Icon(icon, color: Colors.white, size: 12)
+            else if (icon is String)
+              Image.asset(icon, height: 12, width: 12),
             const SizedBox(width: 3),
             Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
           ],
@@ -626,10 +629,10 @@ Remarks: ${item.remarks ?? 'N/A'}
                 runSpacing: 8,
                 children: [
                   Text(_timeAgo(item.reviewedAt), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  _actionButton(
-                    label: "Send to WhatsApp",
-                    icon: Icons.send,
-                    color: isApproved ? Colors.green : Colors.grey,
+                    _actionButton(
+                      label: "Send to WhatsApp",
+                      icon: 'assets/images/whatsapp.png',
+                      color: isApproved ? Colors.green : Colors.grey,
                     onTap: () {
                       if (isApproved) {
                         _sendToWhatsApp(item);
@@ -681,7 +684,7 @@ Remarks: ${item.remarks ?? 'N/A'}
                       const Text("Pending Review", style: TextStyle(color: Colors.grey)),
                       _actionButton(
                         label: "Send to WhatsApp",
-                        icon: Icons.send,
+                        icon: 'assets/images/whatsapp.png',
                         color: Colors.grey,
                         onTap: () {},
                       ),

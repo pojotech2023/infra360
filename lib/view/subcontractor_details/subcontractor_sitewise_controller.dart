@@ -6,7 +6,7 @@ import 'package:raptor_pro/utils/const_data.dart';
 import '../../model/my_subcontractor_list_model.dart';
 import '../../utils/res/images.dart';
 import 'package:flutter/material.dart';
-import 'package:raptor_pro/service/api_service.dart';
+import 'package:raptor_pro/utils/url_helper.dart';
 
 class SubcontractorController extends GetxController {
   // Observable list of subcontractor items (title, image, amount)
@@ -82,13 +82,16 @@ class SubcontractorController extends GetxController {
       final addedDynamicTitles = <String>{};
       for (var type in dynamicTypes) {
         final normalizedKey = type.name.toLowerCase();
+        if (normalizedKey == 'others') continue;
         final totalAmount = apiData[normalizedKey]?.totalAmounts ?? 0;
-        
+        final rawNetworkUrl = type.imageUrl.isNotEmpty ? type.imageUrl : null;
+        final fullNetworkUrl = UrlHelper.getFullImageUrl(rawNetworkUrl);
+
         subcontractors.add(SubcontractorItem(
           id: type.id,
           title: type.name,
-          image: Images.material, // fallback for dynamic
-          networkImageUrl: type.imageUrl.isNotEmpty ? type.imageUrl : null,
+          image: ConstantData.getSubcontractorImage(type.name),
+          networkImageUrl: fullNetworkUrl.isNotEmpty ? fullNetworkUrl : null,
           totalAmount: totalAmount,
         ));
         addedDynamicTitles.add(normalizedKey);
@@ -97,20 +100,47 @@ class SubcontractorController extends GetxController {
       // Loop through static list (ensures consistent order for hardcoded ones)
       for (var key in ConstantData.allSubcontractorKeys) {
         final normalizedKey = key.toLowerCase();
+        if (normalizedKey == 'others') continue;
         if (addedDynamicTitles.contains(normalizedKey)) continue; // skip if already added from dynamic
 
-        final imagePath =
-            ConstantData.allSubcontractorImages[key] ?? Images.material;
+        final imagePath = ConstantData.getSubcontractorImage(key);
 
-        final totalAmount = apiData[normalizedKey]?.totalAmounts ?? 0;
+        final matchedData = apiData[normalizedKey] ??
+            apiData[key] ??
+            apiData[key.toLowerCase().replaceAll(' ', '_')] ??
+            apiData[key.toLowerCase().replaceAll('&', 'and')] ??
+            apiData[key.toLowerCase().replaceAll(' ', '')];
+
+        final totalAmount = matchedData?.totalAmounts ?? 0;
+        final rawNetworkUrl = matchedData?.imageUrl;
+        final fullNetworkUrl = UrlHelper.getFullImageUrl(rawNetworkUrl);
 
         subcontractors.add(SubcontractorItem(
           id: null,
           title: key,
           image: imagePath,
+          networkImageUrl: fullNetworkUrl.isNotEmpty ? fullNetworkUrl : null,
           totalAmount: totalAmount,
         ));
       }
+
+      // Add any remaining keys from apiData that weren't captured above
+      apiData.forEach((apiKey, val) {
+        final cleanKey = apiKey.toLowerCase();
+        if (cleanKey == 'others') return;
+        if (!subcontractors.any((item) => item.title.toLowerCase() == cleanKey || item.title.toLowerCase().replaceAll(' ', '_') == cleanKey)) {
+          final title = apiKey.replaceAll('_', ' ').split(' ').map((w) => w.isNotEmpty ? (w[0].toUpperCase() + w.substring(1)) : '').join(' ');
+          final rawNetworkUrl = val.imageUrl;
+          final fullNetworkUrl = UrlHelper.getFullImageUrl(rawNetworkUrl);
+          subcontractors.add(SubcontractorItem(
+            id: null,
+            title: title,
+            image: ConstantData.getSubcontractorImage(title),
+            networkImageUrl: fullNetworkUrl.isNotEmpty ? fullNetworkUrl : null,
+            totalAmount: val.totalAmounts,
+          ));
+        }
+      });
     } catch (e) {
       print("Error loading subcontractor data: $e");
     } finally {

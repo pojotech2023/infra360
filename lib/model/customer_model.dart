@@ -66,6 +66,7 @@ class Customers {
   int? createdBy;
   int? updatedBy;
   Site? site;
+  String? siteName;
 
   Customers({
     this.id,
@@ -82,23 +83,41 @@ class Customers {
     this.createdBy,
     this.updatedBy,
     this.site,
+    this.siteName,
   });
 
   Customers.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    siteId = json['site_id'];
-    name = json['name'];
-    mobileNo = json['mobile_no'];
-    email = json['email'];
-    dob = json['dob'];
-    address = json['address'];
-    isInactive = json['is_inactive'];
-    marriageDate = json['marriage_date'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    createdBy = json['created_by'];
-    updatedBy = json['updated_by'];
-    site = json['site'] != null ? Site.fromJson(json['site']) : null;
+    id = json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '');
+    siteId = json['site_id'] is int ? json['site_id'] : int.tryParse(json['site_id']?.toString() ?? '');
+    name = json['name']?.toString();
+    mobileNo = json['mobile_no']?.toString();
+    email = json['email']?.toString();
+    dob = json['dob']?.toString();
+    address = json['address']?.toString();
+    isInactive = json['is_inactive'] is int ? json['is_inactive'] : int.tryParse(json['is_inactive']?.toString() ?? '');
+    marriageDate = json['marriage_date']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    createdBy = json['created_by'] is int ? json['created_by'] : int.tryParse(json['created_by']?.toString() ?? '');
+    updatedBy = json['updated_by'] is int ? json['updated_by'] : int.tryParse(json['updated_by']?.toString() ?? '');
+    if (json['site'] != null && json['site'] is Map) {
+      site = Site.fromJson(Map<String, dynamic>.from(json['site']));
+    }
+    siteName = json['site_name']?.toString() ??
+        site?.siteName ??
+        (json['site'] is Map
+            ? (json['site']['site_name']?.toString() ?? json['site']['name']?.toString())
+            : (json['site'] is String ? json['site'].toString() : null));
+  }
+
+  String get displaySiteName {
+    if (siteName != null && siteName!.trim().isNotEmpty) {
+      return siteName!.trim();
+    }
+    if (site?.siteName != null && site!.siteName!.trim().isNotEmpty) {
+      return site!.siteName!.trim();
+    }
+    return '';
   }
 
   Map<String, dynamic> toJson() {
@@ -115,6 +134,7 @@ class Customers {
     data['updated_at'] = updatedAt;
     data['created_by'] = createdBy;
     data['updated_by'] = updatedBy;
+    data['site_name'] = siteName;
     if (site != null) {
       data['site'] = site!.toJson();
     }

@@ -150,7 +150,7 @@ update();
           searchStatusIsError.value = true;
         }
       } else {
-        searchStatusMessage.value = 'Unable to fetch customer list. Please try again.';
+        searchStatusMessage.value = 'Unable to fetch Customer Management. Please try again.';
         searchStatusIsError.value = true;
       }
     } catch (e) {

@@ -8,19 +8,25 @@ class VendorDashboardModel {
       {this.responseCode, this.data, this.status, this.message});
 
   VendorDashboardModel.fromJson(Map<String, dynamic> json) {
-    responseCode = json['response code'];
-    if (json['data'] != null) {
+    responseCode = json['response code'] != null
+        ? int.tryParse(json['response code'].toString())
+        : null;
+    if (json['data'] != null && json['data'] is List) {
       data = <VendorData>[];
       json['data'].forEach((v) {
-        data!.add( VendorData.fromJson(v));
+        if (v is Map<String, dynamic>) {
+          data!.add(VendorData.fromJson(v));
+        } else if (v is Map) {
+          data!.add(VendorData.fromJson(Map<String, dynamic>.from(v)));
+        }
       });
     }
-    status = json['status'];
-    message = json['message'];
+    status = json['status'] == true || json['status'] == 1 || json['status']?.toString() == 'true';
+    message = json['message']?.toString();
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data =  Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['response code'] = this.responseCode;
     if (this.data != null) {
       data['data'] = this.data!.map((v) => v.toJson()).toList();
@@ -34,7 +40,7 @@ class VendorDashboardModel {
 class VendorData {
   String? vendorName;
   int? vendorId;
-  int? totalAmount;
+  dynamic totalAmount;
   String? paidAmount;
   String? pendingAmount;
 
@@ -46,15 +52,17 @@ class VendorData {
         this.pendingAmount});
 
   VendorData.fromJson(Map<String, dynamic> json) {
-    vendorName = json['vendor_name'];
-    vendorId = json['vendor_id'];
+    vendorName = json['vendor_name']?.toString();
+    vendorId = json['vendor_id'] != null
+        ? int.tryParse(json['vendor_id'].toString())
+        : null;
     totalAmount = json['total_amount'];
-    paidAmount = json['paid_amount'];
-    pendingAmount = json['pending_amount'];
+    paidAmount = json['paid_amount']?.toString();
+    pendingAmount = json['pending_amount']?.toString();
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data =  Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['vendor_name'] = this.vendorName;
     data['vendor_id'] = this.vendorId;
     data['total_amount'] = this.totalAmount;

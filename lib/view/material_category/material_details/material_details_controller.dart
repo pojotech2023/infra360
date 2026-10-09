@@ -91,11 +91,43 @@ class MaterialDetailsController extends GetxController{
     /// 2) Temporary map to merge built-in, existing data, and dynamic material_types
     final Map<String, MaterialItem> finalMaterials = {};
 
+    // ── Calculate "All Materials" consolidated totals ──
+    int totalUnits = 0;
+    int totalValues = 0;
+    if (materialModel?.data != null) {
+      materialModel!.data!.forEach((k, v) {
+        final lk = k.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+        if (lk != 'allmaterials' && lk != 'total') {
+          totalUnits += v.units;
+          totalValues += v.values;
+        }
+      });
+    }
+
+    if (materialModel?.totalUnits != null && materialModel!.totalUnits! > totalUnits) {
+      totalUnits = materialModel!.totalUnits!;
+    }
+    if (materialModel?.totalValues != null && materialModel!.totalValues! > totalValues) {
+      totalValues = materialModel!.totalValues!;
+    }
+
+    finalMaterials['All Materials'] = MaterialItem(
+      name: 'All Materials',
+      slug: 'all',
+      units: totalUnits,
+      values: totalValues,
+    );
+
     // First, populate all materials from material_types (Dynamic Materials)
     if (materialModel != null && materialModel.materialTypes != null) {
       for (var mType in materialModel.materialTypes!) {
         final key = mType.slug;
         final displayKey = mType.name;
+        // Skip if it's all materials
+        if (displayKey.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '') == 'allmaterials' ||
+            displayKey.toLowerCase() == 'all') {
+          continue;
+        }
         // Check if there is data for this dynamic material
         final existingItem = materialModel.data?[mType.slug] ??
                              materialModel.data?[key] ??
@@ -128,15 +160,22 @@ class MaterialDetailsController extends GetxController{
     // Next, populate standard/built-in materials
     for (var key in ConstantData.allMaterialKeys) {
       final String safeKey = key.toLowerCase();
-      
-      // Skip if this built-in material was hidden by the user
-      if (hiddenDefaults.contains(safeKey)) {
+      final existingItem = materialModel?.data?[key] ??
+                           materialModel?.data?[safeKey] ??
+                           materialModel?.data?[key.replaceAll(' ', '_').toLowerCase()] ??
+                           materialModel?.data?[key.replaceAll(' ', '')] ??
+                           materialModel?.data?[key.replaceAll('&', 'and').toLowerCase()] ??
+                           materialModel?.data?[key.replaceAll('&', '_').toLowerCase()] ??
+                           materialModel?.data?[key.replaceAll('/', '_').toLowerCase()] ??
+                           materialModel?.data?[key.replaceAll('/', '').toLowerCase()];
+
+      // Skip if this built-in material was hidden by the user AND has no active data
+      if (hiddenDefaults.contains(safeKey) && (existingItem == null || (existingItem.units == 0 && existingItem.values == 0))) {
         continue;
       }
 
       // Only add if not already added by material_types
       if (!finalMaterials.keys.any((k) => k.toLowerCase() == safeKey)) {
-        final existingItem = materialModel?.data?[key] ?? materialModel?.data?[safeKey];
         finalMaterials[key] = existingItem ?? MaterialItem(units: 0, values: 0);
       }
     }
@@ -145,6 +184,9 @@ class MaterialDetailsController extends GetxController{
     if (materialModel != null && materialModel.data != null) {
       materialModel.data!.forEach((key, value) {
         final String safeKey = key.toLowerCase();
+        final String cleanKey = safeKey.replaceAll(RegExp(r'[^a-z]'), '');
+        if (cleanKey == 'all' || cleanKey == 'allmaterials') return;
+
         // Check if already in finalMaterials
         if (!finalMaterials.keys.any((k) => k.toLowerCase() == safeKey)) {
           final String displayKey = key.isEmpty ? key : key[0].toUpperCase() + key.substring(1);

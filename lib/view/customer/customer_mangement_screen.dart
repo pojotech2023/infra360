@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../utils/app_text_style.dart';
 import '../../utils/const_data.dart';
@@ -10,23 +10,17 @@ import '../widgets/common_app_bar.dart';
 import '../widgets/common_button.dart';
 import '../widgets/common_loader.dart';
 import 'customer_Management_controller.dart';
-import 'customer_list_controller.dart';
-import 'package:get/get.dart';
-
 
 class CustomerMangementScreen extends StatelessWidget {
   CustomerMangementScreen({super.key});
 
-  CustomerManagementController controller = Get.put(
+  final CustomerManagementController controller = Get.put(
       CustomerManagementController());
-
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Scaffold(
       appBar: CommonAppBar.appBar(
           title: "Edit Customer",
@@ -37,11 +31,43 @@ class CustomerMangementScreen extends StatelessWidget {
           Form(
             key: _formKey,
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text("Site Name", style: AppTextStyle.textFieldHeadingStyle,),
+                  VerticalSpacing.d5px(),
+                  Obx(() {
+                    if (controller.siteList.isEmpty) {
+                      return TextFormField(
+                        controller: controller.siteNameEditingController,
+                        readOnly: true,
+                        decoration: textBoxDecoration(hint: "Site Name"),
+                      );
+                    }
+                    return DropdownButtonFormField<int>(
+                      value: controller.siteList.any((s) => s.id == controller.selectedSiteId.value)
+                          ? controller.selectedSiteId.value
+                          : null,
+                      decoration: textBoxDecoration(hint: "Select Site"),
+                      isExpanded: true,
+                      items: controller.siteList.map((site) {
+                        return DropdownMenuItem<int>(
+                          value: site.id,
+                          child: Text(site.siteName ?? "Site #${site.id}"),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        controller.selectedSiteId.value = val;
+                        final matched = controller.siteList.firstWhereOrNull((s) => s.id == val);
+                        if (matched != null) {
+                          controller.siteNameEditingController.text = matched.siteName ?? '';
+                        }
+                      },
+                    );
+                  }),
 
+                  VerticalSpacing.d15px(),
                   Text("Name", style: AppTextStyle.textFieldHeadingStyle,),
                   VerticalSpacing.d5px(),
                   TextFormField(
@@ -53,8 +79,6 @@ class CustomerMangementScreen extends StatelessWidget {
                       }
                       return null;
                     },
-
-
                   ),
 
                   VerticalSpacing.d15px(),
@@ -66,7 +90,6 @@ class CustomerMangementScreen extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     inputFormatters: tenDigitPhoneFormatter(),
-
                     decoration: textBoxDecoration(
                         hint: "Enter your mobile number"),
                     validator: (text) {
@@ -78,10 +101,7 @@ class CustomerMangementScreen extends StatelessWidget {
                       }
                       return null;
                     },
-
-
                   ),
-
 
                   VerticalSpacing.d15px(),
                   Text("Email Id", style: AppTextStyle.textFieldHeadingStyle,),
@@ -89,12 +109,6 @@ class CustomerMangementScreen extends StatelessWidget {
                   TextFormField(
                     controller: controller.emailEditingController,
                     decoration: textBoxDecoration(hint: "Enter your email"),
-                    // validator: (text){
-                    //   if (text == null || text.isEmpty) {
-                    //     return 'Required';
-                    //   }
-                    //   return null;
-                    // },
                   ),
                   VerticalSpacing.d15px(),
                   Text("Date Of Birth",
@@ -102,10 +116,9 @@ class CustomerMangementScreen extends StatelessWidget {
 
                   TextFormField(
                     controller: controller.dobEditingController,
-                    decoration:textBoxDecoration(hint:"dd-MM-yyyy",
-                        suffixIcon: Icon(Icons.calendar_month,color: Colors.grey,)),
+                    decoration: textBoxDecoration(hint: "dd-MM-yyyy",
+                        suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey,)),
                     readOnly: true,
-
                     onTap: () async {
                       String pickedDate = await selectDate(context);
                       if (pickedDate.isNotEmpty) {
@@ -118,36 +131,7 @@ class CustomerMangementScreen extends StatelessWidget {
                       }
                       return null;
                     },
-
-
-
                   ),
-                  VerticalSpacing.d15px(),
-                 /* Text("Marriage Date",
-                    style: AppTextStyle.textFieldHeadingStyle,),
-
-                  TextFormField(
-                    controller: controller.marrageDateEditingController,
-                    decoration:textBoxDecoration(hint:"dd-MM-yyyy",
-                        suffixIcon: Icon(Icons.calendar_month,color: Colors.grey,)),
-                    readOnly: true,
-
-                    onTap: () async {
-                      String pickedDate = await selectDate(context);
-                      if (pickedDate.isNotEmpty) {
-                        controller.marrageDateEditingController.text = pickedDate;
-                      }
-                    },
-                    validator: (text){
-                      if (text == null || text.isEmpty) {
-                        return 'Required';
-                      }
-                      return null;
-                    },
-
-
-
-                  ),*/
 
                   VerticalSpacing.d15px(),
                   Text("Address", style: AppTextStyle.textFieldHeadingStyle,),
@@ -161,9 +145,6 @@ class CustomerMangementScreen extends StatelessWidget {
                       if (text == null || text.isEmpty) {
                         return 'Required';
                       }
-
-                      return null;
-
                       return null;
                     },
                   ),
@@ -171,32 +152,18 @@ class CustomerMangementScreen extends StatelessWidget {
                   VerticalSpacing.d30px(),
 
                   Obx(() {
-                    return
-                      controller.isSaveLoading.value ? Center(
-                          child: CommonLoader()) : CommonButton(onTap: () {
-                        if (_formKey.currentState!.validate()) {
-                          controller.updateCustomer();
-                          /* if(Get.arguments==null){
-                         controller.addSupervisor(nameEditingController.text, mobileNumberEditingController.text,
-                             emailEditingController.text,passwordEditingController.text,confirmPasswordEditingController.text);
-                       }
-                       else{
-                         SuperVisorData ?superVisorData = Get.arguments;
-
-                         controller.updateSupervisor(
-                             superVisorData!.id!,
-                             nameEditingController.text, mobileNumberEditingController.text,
-                             emailEditingController.text,passwordEditingController.text,confirmPasswordEditingController.text);
-                       }*/
-                        }
-                      }, text: Get.arguments == null ? "Save" : "Update");
-                  }
-                  ),
+                    return controller.isSaveLoading.value
+                        ? const Center(child: CommonLoader())
+                        : CommonButton(onTap: () {
+                            if (_formKey.currentState!.validate()) {
+                              controller.updateCustomer();
+                            }
+                          }, text: Get.arguments == null ? "Save" : "Update");
+                  }),
                 ],
               ),
             ),
           )),
-
     );
   }
 }

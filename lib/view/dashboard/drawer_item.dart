@@ -20,6 +20,7 @@ import '../quotation/quotation_history_screen.dart';
 import '../subcontractor/subcontractor_main_screen.dart';
 import '../unit_master/unit_master_screen.dart';
 import '../terms_condition/terms_condition_screen.dart';
+import '../properties_list/properties_list_screen.dart';
 
 class DrawerWidget extends StatelessWidget {
   const DrawerWidget({super.key});
@@ -140,20 +141,20 @@ class DrawerWidget extends StatelessWidget {
 
                       // Customer List — permission controlled for supervisor
                       if (canShow((p) => p.customerManagement?.canAccessCustomer ?? false))
-                        drawerItem(Images.customer, 'Customer List', onTap: () {
+                        drawerItem(Images.customer, 'Customer Management', onTap: () {
                           Get.to(CustomerListScreen());
                         }),
 
                       // Vendor Creation — permission controlled for supervisor
                       if (canShow((p) => p.vendorManagement?.canAccessVendor ?? false))
-                        drawerItem(Images.vendor, 'Vendor Creation', onTap: () {
+                        drawerItem(Images.vendor, 'Vendor', onTap: () {
                           Get.to(VendorMainScreen());
                         }),
 
                       // SubContractor Creation — permission controlled for supervisor
                       if (canShow((p) => p.subcontractorManagement?.canAccessSubcontractor ?? false))
                         drawerItem(Images.subcontractor,
-                            'SubContractor Creation', onTap: () {
+                            'SubContractor', onTap: () {
                           Get.to(SubContractorMainScreen());
                         }),
 
@@ -164,6 +165,11 @@ class DrawerWidget extends StatelessWidget {
                             onTap: () {
                           Get.to(SuperVisorManagementScreen());
                         }),
+
+                      // Property List
+                      drawerItem(Images.properties, 'Property List', onTap: () {
+                        Get.to(() => const PropertiesListScreen());
+                      }),
 
                       // Unit Master — admin only
                       if (controller.userDetails.data!.role!.toLowerCase() ==

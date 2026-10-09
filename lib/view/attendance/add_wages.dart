@@ -197,10 +197,18 @@ class _AddWagesState extends State<AddWages> {
       _prefillCounts();
       _prefillAmounts();
 
-      if (attendanceData[0].time != null) controller.checkInTime.value = attendanceData[0].time;
-      if (attendanceData[0].checkOutTime != null) controller.checkOutTime.value = attendanceData[0].checkOutTime;
-      if (attendanceData[0].imageUrl != null) controller.checkInImageUrl.value = attendanceData[0].imageUrl;
-      if (attendanceData[0].checkOutPhoto != null) controller.checkOutImageUrl.value = attendanceData[0].checkOutPhoto;
+      if (attendanceData[0].time != null && attendanceData[0].time!.trim().isNotEmpty) {
+        controller.checkInTime.value = attendanceData[0].time;
+      }
+      if (attendanceData[0].checkOutTime != null && attendanceData[0].checkOutTime!.trim().isNotEmpty) {
+        controller.checkOutTime.value = attendanceData[0].checkOutTime;
+      }
+      if (attendanceData[0].imageUrl != null && attendanceData[0].imageUrl!.trim().isNotEmpty) {
+        controller.checkInImageUrl.value = attendanceData[0].imageUrl;
+      }
+      if (attendanceData[0].checkOutPhoto != null && attendanceData[0].checkOutPhoto!.trim().isNotEmpty) {
+        controller.checkOutImageUrl.value = attendanceData[0].checkOutPhoto;
+      }
 
       final fixedCategories = ["Mason", "Helper", "Fitter", "Centring Helper"];
       for (final item in attendanceData) {

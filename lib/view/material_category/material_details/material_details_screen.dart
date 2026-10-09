@@ -14,6 +14,7 @@ import 'package:raptor_pro/utils/const_data.dart';
 import 'package:raptor_pro/utils/res/colors.dart';
 import 'package:raptor_pro/utils/res/images.dart';
 import 'package:raptor_pro/utils/res/spacing.dart';
+import 'package:raptor_pro/utils/url_helper.dart';
 import 'package:raptor_pro/view/material_category/material_request/add_material_type_dialog.dart';
 import 'package:raptor_pro/view/material_category/material_request/material_request_list_screen.dart';
 import 'package:raptor_pro/view/material_category/other_material/others_material.dart';
@@ -21,6 +22,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/toast.dart';
 
 import 'package:raptor_pro/view/material_category/bricks_details_screen.dart';
+import 'package:raptor_pro/view/material_category/all_materials/all_materials_screen.dart';
 
 import '../../../model/site_management_model.dart';
 import 'material_details_controller.dart';
@@ -127,7 +129,7 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
                     maxCrossAxisExtent: 300,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 0.7,
                   ),
                   itemCount: materialList.length,
                   itemBuilder: (context, index) {
@@ -168,16 +170,38 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
 
   /// Builds a single material grid card with the × delete button on top-right (admin only)
   Widget _buildMaterialCard(BuildContext context, String key, dynamic value) {
-    final String? imagePath = ConstantData.materialImages[key];
-    final String? networkImageUrl = (value is MaterialItem && value.imageUrl != null && value.imageUrl!.isNotEmpty) ? value.imageUrl : null;
-    
-    print("📸 [_buildMaterialCard] key=$key, imagePath=$imagePath, networkImageUrl=$networkImageUrl, valueImageUrl=${value is MaterialItem ? value.imageUrl : null}");
+    final bool isAllMaterials = key.toLowerCase() == 'all materials' ||
+        key.toLowerCase() == 'all' ||
+        key.toLowerCase() == 'all_materials';
+    final String fallbackAsset = isAllMaterials ? Images.material : ConstantData.getMaterialImage(key);
+    final String? rawNetworkUrl = (value is MaterialItem && value.imageUrl != null && value.imageUrl!.isNotEmpty) ? value.imageUrl : null;
+    final String fullNetworkUrl = UrlHelper.getFullImageUrl(rawNetworkUrl);
+
+    print("📸 [_buildMaterialCard] key=$key, isAllMaterials=$isAllMaterials, fallbackAsset=$fallbackAsset, fullNetworkUrl=$fullNetworkUrl");
 
     return Stack(
       children: [
         // ── Main card (tappable) ──────────────────────────────
         InkWell(
           onTap: () async {
+            if (isAllMaterials) {
+              await Get.to(
+                () => const AllMaterialsManagementScreen(),
+                arguments: MaterialDetailsArgs(
+                  id: siteManagementList.id ?? 0,
+                  siteName: siteManagementList.siteName ?? '',
+                  siteLocation: siteManagementList.location ?? '',
+                  itemKey: 'all',
+                  itemData: value,
+                  supervisorId: siteManagementList.supervisor?.id.toString() ?? '',
+                  supervisorName: siteManagementList.supervisor?.name.toString() ?? '',
+                  supervisorMob: siteManagementList.supervisor?.mobileNo.toString() ?? '',
+                ),
+              );
+              controller.init(siteManagementList.id ?? 0);
+              return;
+            }
+
             await Get.to(
               () => BricksDetailsScreen(),
               arguments: MaterialDetailsArgs(
@@ -209,26 +233,25 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
                   child: Container(
                     margin: const EdgeInsets.all(7),
                     color: AppColor.materialCategoryBGColor,
-                    child: networkImageUrl != null
+                    child: fullNetworkUrl.isNotEmpty
                         ? Image.network(
-                            networkImageUrl,
+                            fullNetworkUrl,
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height * 0.13,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+                            errorBuilder: (context, error, stackTrace) => Image.asset(
+                              fallbackAsset,
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height * 0.13,
+                              fit: BoxFit.fitHeight,
+                            ),
                           )
-                        : imagePath != null
-                            ? Image.asset(
-                                imagePath,
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height * 0.13,
-                                fit: BoxFit.fitHeight,
-                              )
-                            : SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.13,
-                                child: const Icon(Icons.category, size: 48, color: Colors.grey),
-                              ),
+                        : Image.asset(
+                            fallbackAsset,
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height * 0.13,
+                            fit: BoxFit.fitHeight,
+                          ),
                   ),
                 ),
                 VerticalSpacing.d10px(),
@@ -248,7 +271,7 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
                 ),
                 Center(
                   child: Text(
-                    "Values - ${value.values}",
+                    "Values - ₹${value.values}",
                     textAlign: TextAlign.center,
                     style: AppTextStyle.textMedium.copyWith(color: const Color(0xFF0B9F08), fontSize: 13),
                   ),
@@ -257,23 +280,24 @@ class _MaterialDetailsScreenState extends State<MaterialDetailsScreen> {
             ),
           ),
         ),
-        // ── × button ──────────
-        Positioned(
-          top: 8,
-          right: 8,
-          child: GestureDetector(
-            onTap: () => _showConfirmRemoveDialog(context, key),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+        // ── × button (Hidden for "All Materials") ──────────
+        if (_isAdmin && !isAllMaterials)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => _showConfirmRemoveDialog(context, key),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 14),
             ),
           ),
-        ),
       ],
     );
   }

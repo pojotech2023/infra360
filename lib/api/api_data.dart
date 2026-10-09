@@ -43,6 +43,7 @@ import '../model/drawing_model.dart';
 import '../model/employee_list_model.dart';
 import '../model/excel_attendance_download.dart';
 import '../model/material_request_success_model.dart';
+import 'package:raptor_pro/view/widgets/toast.dart';
 import '../model/my_subcontractor_list_model.dart';
 import '../model/profile_update_success_model.dart';
 import '../model/quotation_model.dart';
@@ -444,8 +445,28 @@ required String status,
 
     final token = PreferenceUtils().getSessionToken();
 
-    final request = http.MultipartRequest('POST', uri)
-      ..fields.addAll(input);
+    final request = http.MultipartRequest('POST', uri);
+
+    // Expand items if it's a JSON array string to bracket notation for Laravel
+    input.forEach((key, value) {
+      if (key == 'items') {
+        try {
+          final decoded = jsonDecode(value);
+          if (decoded is List) {
+            for (int i = 0; i < decoded.length; i++) {
+              final itm = decoded[i];
+              if (itm is Map) {
+                itm.forEach((subKey, subVal) {
+                  request.fields['items[$i][$subKey]'] = subVal?.toString() ?? '';
+                });
+              }
+            }
+            return;
+          }
+        } catch (_) {}
+      }
+      request.fields[key] = value;
+    });
 
     // ✅ Add Authorization header
     request.headers.addAll({
@@ -453,7 +474,7 @@ required String status,
       'Authorization': 'Bearer $token',
     });
 
-    print("Input ${input}");
+    print("Input ${request.fields}");
     print("REQUEST HEADER ${request.headers}");
 
     // ✅ Attach file only if it’s provided and valid
@@ -477,6 +498,19 @@ required String status,
         return MaterialRequestSuccessModel.fromJson(body);
       } else {
         print("❌ Upload failed. Status: ${response.statusCode}");
+        try {
+          final Map<String, dynamic> errJson = json.decode(res.body);
+          if (errJson.containsKey('errors')) {
+            final errors = errJson['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              final firstErr = errors.values.first;
+              final errMsg = firstErr is List ? firstErr.first.toString() : firstErr.toString();
+              showToastMessage(errMsg);
+            }
+          } else if (errJson.containsKey('message')) {
+            showToastMessage(errJson['message'].toString());
+          }
+        } catch (_) {}
       }
     } catch (e) {
       print("🚨 Exception while uploading: $e");
@@ -565,14 +599,24 @@ required String status,
     return null;
   }
   
-  Future<ExcelAttendanceDownloadModel?> materialExportApi(String siteId, String materialType, String month) async {
+  Future<ExcelAttendanceDownloadModel?> materialExportApi(String siteId, String materialType, String month, {String? fromDate, String? toDate}) async {
     final queryParams = <String, String>{
       'site_id': siteId,
       'material_type': materialType,
-      'month': month
+      'month': month,
     };
+    if (fromDate != null && fromDate.isNotEmpty) {
+      queryParams['from_date'] = fromDate;
+      queryParams['start_date'] = fromDate;
+    }
+    if (toDate != null && toDate.isNotEmpty) {
+      queryParams['to_date'] = toDate;
+      queryParams['end_date'] = toDate;
+    }
     final uri = Uri(path: "material-export", queryParameters: queryParams);
+    print("📤 materialExportApi REQUEST: $uri");
     final response = await ApiService().sendAsync("GET", uri.toString(), null, true);
+    print("📥 materialExportApi RESPONSE: ${response?.statusCode} -> ${response?.body}");
     if (response != null && response.statusCode == 200) {
       return ExcelAttendanceDownloadModel.fromJson(json.decode(response.body));
     }
@@ -1439,13 +1483,12 @@ print("REQUEST HEADER ${request.headers}");
     final response =
     await ApiService().sendAsync("GET", "vendor-dashboard", null, true);
 
-
-    if (response != null) {
-      final Map<String, dynamic> body = json.decode(response.body);
-
-
-      if (response.statusCode == 200) {
+    if (response != null && response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> body = json.decode(response.body);
         return VendorDashboardModel.fromJson(body);
+      } catch (e) {
+        print("VendorDashboard API decode error: $e");
       }
     }
 
@@ -1632,42 +1675,122 @@ print("REQUEST HEADER ${request.headers}");
     return null;
   }
 
-  Future<CommonSuccessResponseModel?> addProperty(String name,String location,String type,
-      String amount,String reMarks,File ?file) async {
-    var uri = Uri.parse("${baseUrl}property-add");
-
-
-    print("uri ${uri}");
-    var request = http.MultipartRequest('POST', uri);
+  Future<CommonSuccessResponseModel?> addProperty(
+    String name,
+    String location,
+    String type,
+    String amount,
+    String remarks,
+    dynamic imageFile,
+  ) async {
+    final uri = Uri.parse("${baseUrl}property-add");
+    final token = PreferenceUtils().getSessionToken();
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
     request.fields['name'] = name;
     request.fields['location'] = location;
     request.fields['type'] = type;
     request.fields['amount'] = amount;
-    request.fields['remarks'] = reMarks;
-    request.headers['Authorization'] = 'Bearer ${PreferenceUtils().getSessionToken()}';
+    request.fields['remarks'] = remarks;
 
-    if(file!=null){
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'image',
-        file!.path,
-      ),
-    );
+    if (imageFile != null && imageFile.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
     }
 
-    var response = await request.send();
-
-
-    if (response.statusCode == 200) {
-      final res = await http.Response.fromStream(response);
-      final Map<String, dynamic> body = json.decode(res.body);
-      print(" json.decode(res.body) ${ json.decode(res.body)}");
-      return CommonSuccessResponseModel.fromJson(body);
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      } else {
+        print("addProperty error: ${response.statusCode} -> ${response.body}");
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    } catch (e) {
+      print("addProperty exception: $e");
     }
-
-
     return null;
   }
+
+  // ─── Property Management APIs ─────────────────────────────────────────────
+  Future<List<String>> propertyFormApi() async {
+    return ["Plot", "Land"];
+  }
+
+  Future<PropertyListData?> propertyDetailApi(int id) async {
+    final response = await ApiService().sendAsync("GET", "property/$id", null, true);
+    if (response != null && response.statusCode == 200) {
+      try {
+        final body = json.decode(response.body);
+        if (body['data'] != null) {
+          return PropertyListData.fromJson(body['data']);
+        }
+      } catch (e) {
+        print("Error parsing propertyDetailApi: $e");
+      }
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> updateProperty(
+    int id,
+    String name,
+    String location,
+    String type,
+    String amount,
+    String remarks,
+    dynamic imageFile,
+  ) async {
+    final uri = Uri.parse("${baseUrl}property-update/$id");
+    final token = PreferenceUtils().getSessionToken();
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    request.fields['name'] = name;
+    request.fields['location'] = location;
+    request.fields['type'] = type;
+    request.fields['amount'] = amount;
+    request.fields['remarks'] = remarks;
+
+    if (imageFile != null && imageFile.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    }
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      } else {
+        print("updateProperty error: ${response.statusCode} -> ${response.body}");
+        final Map<String, dynamic> body = json.decode(response.body);
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    } catch (e) {
+      print("updateProperty exception: $e");
+    }
+    return null;
+  }
+
+  Future<CommonSuccessResponseModel?> deleteProperty(int id) async {
+    final response = await ApiService().sendAsync("DELETE", "property-delete/$id", null, true);
+    if (response != null) {
+      final Map<String, dynamic> body = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return CommonSuccessResponseModel.fromJson(body);
+      }
+    }
+    return null;
+  }
+
 
 
   Future<AgentListModel?> agentList() async {
@@ -2796,33 +2919,70 @@ print("REQUEST HEADER ${request.headers}");
 
   Future<CommonSuccessResponseModel?> updateMaterialApi(int materialId, Map<String, dynamic> data, {dynamic attachment}) async {
     final token = PreferenceUtils().getSessionToken();
-    final uri = Uri.parse("${baseUrl}material-update/$materialId");
-    var request = http.MultipartRequest('POST', uri);
-    
-    data.forEach((key, value) {
-      if (value != null) {
-        request.fields[key] = value.toString();
-        print("updateMaterialApi field: $key = ${value.toString()}");
-      }
-    });
-    
-    request.headers.addAll({
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
-    
-    if (attachment != null && attachment is File && attachment.path.isNotEmpty) {
-      request.files.add(await http.MultipartFile.fromPath('attachment', attachment.path));
-    }
-    
+    final endpoint = "${baseUrl}material-update/$materialId";
+
     try {
-      final response = await request.send();
-      final res = await http.Response.fromStream(response);
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final uri = Uri.parse(endpoint);
+      var request = http.MultipartRequest('POST', uri);
+
+      data.forEach((key, value) {
+        if (value != null) {
+          if (key == 'items') {
+            try {
+              final decoded = value is String ? jsonDecode(value) : value;
+              if (decoded is List) {
+                for (int i = 0; i < decoded.length; i++) {
+                  final itm = decoded[i];
+                  if (itm is Map) {
+                    itm.forEach((subKey, subVal) {
+                      request.fields['items[$i][$subKey]'] = subVal?.toString() ?? '';
+                    });
+                  }
+                }
+                return;
+              }
+            } catch (_) {}
+          }
+          request.fields[key] = value.toString();
+        }
+      });
+
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+
+      if (attachment != null && attachment is File && attachment.path.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('attachment', attachment.path));
+      }
+
+      print("📤 updateMaterialApi REQUEST to $endpoint: ${request.fields}");
+      final streamedResponse = await request.send();
+      final res = await http.Response.fromStream(streamedResponse);
+      print("📥 updateMaterialApi RESPONSE from $endpoint: ${res.statusCode} -> ${res.body}");
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return CommonSuccessResponseModel.fromJson(jsonDecode(res.body));
+      } else {
+        try {
+          final json = jsonDecode(res.body);
+          if (json['status'] == true || json['status'] == 1 || json['success'] == true) {
+            return CommonSuccessResponseModel.fromJson(json);
+          }
+          if (json.containsKey('errors')) {
+            final errors = json['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              final firstErr = errors.values.first;
+              final errMsg = firstErr is List ? firstErr.first.toString() : firstErr.toString();
+              showToastMessage(errMsg);
+            }
+          } else if (json.containsKey('message')) {
+            showToastMessage(json['message'].toString());
+          }
+        } catch (_) {}
       }
     } catch (e) {
-      print("Exception in updateMaterialApi: $e");
+      print("Exception in updateMaterialApi ($endpoint): $e");
     }
     return null;
   }
@@ -2838,7 +2998,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> deleteAttendanceByDateApi(int siteId, String formattedDate) async {
-    final response = await ApiService().sendAsync("DELETE", "delete-attendance-by-date", {'site_id': siteId, 'date': formattedDate}, true);
+    final response = await ApiService().sendAsync("DELETE", "attendance-delete-date/$siteId/$formattedDate", null, true);
     if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
       return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }
@@ -2854,7 +3014,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> deleteWagesRowApi(Map<String, dynamic> data) async {
-    final response = await ApiService().sendAsync("DELETE", "delete-wages-row", data, true);
+    final response = await ApiService().sendAsync("POST", "wages/delete", data, true);
     if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
       return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
     }

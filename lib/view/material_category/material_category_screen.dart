@@ -90,7 +90,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
       if (canShow((p) => p.siteManagement?.canViewSubcontractor ?? false))
         {
           "title": "Sub Contractor",
-          "image": Images.subcontractors,
+          "image": Images.subcontractor_1,
           "onTap": () =>
               Get.to(() => SubcontractorScreen(), arguments: siteManagementList),
         },
@@ -217,7 +217,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
               maxCrossAxisExtent: 250,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 0.8,
+              childAspectRatio: 0.95,
             ),
             itemCount: items.length,
             itemBuilder: (context, index) {
@@ -252,7 +252,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.only(
@@ -260,6 +260,7 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
                 topRight: Radius.circular(15),
               ),
               child: Container(
+                width: double.infinity,
                 color: AppColor.materialCategoryBGColor,
                 padding: const EdgeInsets.all(12.0),
                 child: Image.asset(
@@ -271,13 +272,15 @@ class _MaterialCategoryScreenState extends State<MaterialCategoryScreen> {
             ),
             VerticalSpacing.d10px(),
             Center(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AppTextStyle.materialTitleText,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyle.materialTitleText,
+                ),
               ),
             ),
-            VerticalSpacing.d10px(),
           ],
         ),
       ),

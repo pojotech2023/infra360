@@ -100,49 +100,27 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                   physics: const BouncingScrollPhysics(),
                   children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Container(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  titleData(context, 'Site Name',
-                                      siteManagementList.siteName ?? ''),
-                                  titleData(context, 'Duration',
-                                      siteManagementList.duration ?? ''),
-                                  titleData(
-                                    context,
-                                    'Location',
-                                    siteManagementList.location ?? '',
-                                    onTap: isGoogleMapsLink(
-                                        siteManagementList.location ?? '')
-                                        ? () => openGoogleMap(
-                                        siteManagementList.location!)
-                                        : null,
-                                  ),
-                                ],
-                              )),
+                          child: titleData(context, 'Site Name',
+                              siteManagementList.siteName ?? ''),
                         ),
-                        Image.network(
-                          UrlHelper.getFullImageUrl(siteManagementList.siteImg),
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.fitWidth,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                                width: 120,
-                                height: 120,
-                                alignment: Alignment.center,
-                                color: Colors.grey[300],
-                                child: Text(
-                                  "No Image",
-                                  style: AppTextStyle.textRegularSmall,
-                                ));
-                          },
+                        Expanded(
+                          child: titleData(context, 'Duration',
+                              siteManagementList.duration ?? ''),
                         ),
                       ],
+                    ),
+                    titleData(
+                      context,
+                      'Location',
+                      siteManagementList.location ?? '',
+                      onTap: isGoogleMapsLink(
+                              siteManagementList.location ?? '')
+                          ? () => openGoogleMap(
+                              siteManagementList.location!)
+                          : null,
                     ),
                     // Site details
 
@@ -165,8 +143,20 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                               siteManagementList.supervisor?.name ?? ''),
                         ),
                         Expanded(
-                          child: titleData(context, 'Supervisor Mob',
-                              siteManagementList.supervisor?.mobileNo ?? ''),
+                          child: titleData(
+                            context,
+                            'Supervisor Mob',
+                            siteManagementList.supervisor?.mobileNo ?? '',
+                            onTap: () async {
+                              final phone = siteManagementList.supervisor?.mobileNo;
+                              if (phone != null && phone.isNotEmpty) {
+                                final uri = Uri.parse("tel:$phone");
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri);
+                                }
+                              }
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -233,8 +223,14 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                               Icons.phone,
                               'Mobile No',
                               customerDetails.mobileNo ?? '-',
-                              onTap: () {
-                                // optionally launch dialer
+                              onTap: () async {
+                                final phone = customerDetails.mobileNo;
+                                if (phone != null && phone != '-' && phone.isNotEmpty) {
+                                  final uri = Uri.parse("tel:$phone");
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri);
+                                  }
+                                }
                               },
                             ),
                           ),

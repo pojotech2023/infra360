@@ -158,6 +158,7 @@ class PurchaseBillScreen extends StatelessWidget {
                   VerticalSpacing.d20px(),
 
                   // ─── PO Fields ───────────────────────────────────────────
+                  /*
                   _label('Vendor GST No'),
                   TextFormField(
                     controller: ctrl.vendorGstNoController,
@@ -307,6 +308,7 @@ class PurchaseBillScreen extends StatelessWidget {
                     ],
                   ),
                   VerticalSpacing.d20px(),
+                  */
 
 
                   // ─── Particulars section ──────────────────────────────────
@@ -430,7 +432,7 @@ class PurchaseBillScreen extends StatelessWidget {
                   VerticalSpacing.d15px(),
 
                   // ─── Total ────────────────────────────────────────────────
-                  Row(
+                  /* Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(
@@ -474,6 +476,14 @@ class PurchaseBillScreen extends StatelessWidget {
                             ],
                           )),
                     ],
+                  ), */
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Obx(() => Text(
+                      'Total: ₹ ${ctrl.totalAmount.value.toStringAsFixed(2)}',
+                      style: AppTextStyle.textFieldHeadingStyle.copyWith(
+                          fontSize: 18, color: const Color(0xFF5C4DB1)),
+                    )),
                   ),
 
                   // ─── Terms & Conditions ──────────────────────────────────────────

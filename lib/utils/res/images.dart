@@ -19,6 +19,7 @@ class Images {
   static const String vendor = "assets/images/vendor.svg";
   static const String supervisor = "assets/images/supervisor.svg";
   static const String subcontractor = "assets/images/subcontractor.svg";
+  static const String subcontractor_1 = "assets/images/subcontractor_1.jpeg";
   static const String user = "assets/images/user.svg";
   static const String customer = "assets/images/customer.svg";
   static const String quotation = "assets/images/quotation.svg";
@@ -43,8 +44,9 @@ class Images {
   static const String rcc = "assets/images/rcc.png";
   static const String transport = "assets/images/Transport.jpeg";
   static const String interior = "assets/images/Interior.jpeg";
-  static const String subcontractors = "assets/images/subcontractor_1.jpeg";
-  static const String material = "assets/images/material.jpeg";
+  static const String material = "assets/images/material.png";
+  static const String materialPng = "assets/images/material.png";
+  static const String materialJpeg = "assets/images/material.jpeg";
   static const String painter = "assets/images/painter.jpeg";
   static const String others = "assets/images/others.svg";
   static const String totalWages = "assets/images/totalWages.svg";
@@ -72,5 +74,18 @@ class Images {
   static const String aggregate = "assets/images/Aggregate.jpeg";
   static const String gravel = "assets/images/Gravel.jpeg";
   static const String sandJpeg = "assets/images/Sand.jpeg";
-
+  static const String basicExteriorWash = "assets/images/basic_exterior_wash.png";
+  static const String doorsAndWindows = "assets/images/doors_and_windows.png";
+  static const String externalOutdoor = "assets/images/external_outdoor.png";
+  static const String finishingMaterials = "assets/images/finishing_materials.png";
+  static const String glassAndAluminium = "assets/images/glass_and_aluminium.png";
+  static const String hardware = "assets/images/hardware.png";
+  static const String safetyAndPpe = "assets/images/safety_and_ppe.png";
+  static const String sanitaryAndBathFittings = "assets/images/sanitary_and_bath_fittings.png";
+  static const String scaffoldingAndFormwork = "assets/images/scaffolding_and_formwork.png";
+  static const String waterproofingAndInsulation = "assets/images/waterproofing_and_insulation.png";
+  static const String woodAndCarpentry = "assets/images/wood_and_carpentry.png";
+  static const String civilWorksContractor = "assets/images/civil_works_contractor.png";
+  static const String roadAndPavingContractor = "assets/images/road_and_paving_contractor.png";
+  static const String othersSubcontractor = "assets/images/others_subcontractor.png";
 }

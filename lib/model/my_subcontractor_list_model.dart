@@ -32,12 +32,14 @@ class SubcontractorResponse {
 
 class SubcontractorData {
   final num totalAmounts;
+  final String? imageUrl;
 
-  SubcontractorData({required this.totalAmounts});
+  SubcontractorData({required this.totalAmounts, this.imageUrl});
 
   factory SubcontractorData.fromJson(Map<String, dynamic> json) {
     return SubcontractorData(
-      totalAmounts: json['totalAmounts'] ?? 0,
+      totalAmounts: json['totalAmounts'] ?? json['total_amount'] ?? json['total_wages'] ?? 0,
+      imageUrl: (json['image_url'] ?? json['image'] ?? json['imageUrl'])?.toString(),
     );
   }
 }

@@ -88,8 +88,13 @@ class BricksDetailsController extends GetxController {
     final String itemKey = materialDetailsArgs?.itemKey ?? "";
     final String month = "${selectedYear.value}-${selectedMonth.value.toString().padLeft(2, '0')}";
 
-    final res = await ApiData().materialExportApi(siteId, itemKey, month);
-
+    final res = await ApiData().materialExportApi(
+      siteId,
+      itemKey,
+      month,
+      fromDate: fromDate,
+      toDate: toDate,
+    );                                                                          
     if (res != null && res.downloadUrl != null) {
       CommonFileDownloader.downloadAndOpen(
         urls: res.downloadUrl ?? "",

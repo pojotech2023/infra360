@@ -53,7 +53,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           onTap: () {
             Get.back();
           },actions: [
-            InkWell(
+            GestureDetector(
               onTap:()=>  controller.attendanceExcelDownload(context),
               child: Image.asset(
                 'assets/images/xls.png',
@@ -552,24 +552,8 @@ mainAxisAlignment: MainAxisAlignment.center,
                                                   );
 
                                                   try {
-                                                    // Delete all records for this date by calling delete for each ID
-                                                    print("Starting to delete ${items.length} records for date $displayDate");
-                                                    for (var item in items) {
-                                                      print("Checking item: category=${item.category}, count=${item.count}, id=${item.id}");
-                                                      if (item.id != null) {
-                                                        print("➡️ Deleting record with ID: ${item.id}");
-                                                        await controller.deleteAttendance(item.id!);
-                                                      } else {
-                                                        print("⚠️ Skipping delete for ${item.category} because ID is NULL");
-                                                      }
-                                                    }
-                                                    print("Delete operation completed. Now deleting wages for $displayDate");
-                                                    await ApiData().deleteWagesRowApi({
-                                                      "site_id": controller.siteId.value,
-                                                      "date": rawDate,
-                                                    });
-                                                    print("Wages deletion requested. Fetching latest data...");
-                                                    await controller.init(controller.siteId.value);
+                                                    print("Deleting attendance and wages for date $displayDate ($rawDate)");
+                                                    await controller.deleteAttendanceForDate(rawDate);
                                                   } catch (e) {
                                                     print("Error during deletion: $e");
                                                   } finally {
@@ -788,51 +772,99 @@ mainAxisAlignment: MainAxisAlignment.center,
 
   String _resolvePhotoUrl(String? path) => UrlHelper.getFullImageUrl(path);
 
-  Attendances? _photoSourceForDate(List<Attendances> items) {
-    // First check individual records for photos
+  Map<String, String?> _dayMetaForDate(List<Attendances> items) {
+    String? checkInTime;
+    String? checkOutTime;
+    String? checkInPhoto;
+    String? checkOutPhoto;
+
+    void absorb(Attendances item) {
+      if ((item.time ?? '').trim().isNotEmpty) checkInTime ??= item.time;
+      if ((item.checkOutTime ?? '').trim().isNotEmpty) checkOutTime ??= item.checkOutTime;
+      if ((item.imageUrl ?? '').trim().isNotEmpty) checkInPhoto ??= item.imageUrl;
+      if ((item.checkOutPhoto ?? '').trim().isNotEmpty) checkOutPhoto ??= item.checkOutPhoto;
+    }
+
     for (final item in items) {
-      final hasCheckIn = item.imageUrl != null && item.imageUrl!.trim().isNotEmpty;
-      final hasCheckOut = item.checkOutPhoto != null && item.checkOutPhoto!.trim().isNotEmpty;
-      if (hasCheckIn || hasCheckOut) return item;
+      absorb(item);
     }
-    
-    // If no individual records have photos, check the controller's datePhotoLookup for day-level photos
-    if (items.isNotEmpty) {
-      final date = items.first.date;
-      if (date != null) {
-        final dayPhotos = controller.datePhotoLookup[date];
-        if (dayPhotos != null) {
-          final checkInPhoto = dayPhotos['check_in_photo']?.toString();
-          final checkOutPhoto = dayPhotos['check_out_photo']?.toString();
-          final hasCheckIn = checkInPhoto != null && checkInPhoto.trim().isNotEmpty;
-          final hasCheckOut = checkOutPhoto != null && checkOutPhoto.trim().isNotEmpty;
-          
-          if (hasCheckIn || hasCheckOut) {
-            // Return the first item with day-level photos applied
-            final item = items.first;
-            item.imageUrl = checkInPhoto;
-            item.checkOutPhoto = checkOutPhoto;
-            item.time = dayPhotos['check_in_time']?.toString();
-            item.checkOutTime = dayPhotos['check_out_time']?.toString();
-            return item;
-          }
-        }
-      }
-    }
-    
-    return items.isNotEmpty ? items.first : null;
+
+    return {
+      'checkInTime': checkInTime,
+      'checkOutTime': checkOutTime,
+      'checkInPhoto': checkInPhoto,
+      'checkOutPhoto': checkOutPhoto,
+    };
+  }
+
+  Widget _buildCheckInOutColumn({
+    required BuildContext context,
+    required String label,
+    required String? time,
+    required String? photoPath,
+    required bool isCheckIn,
+  }) {
+    final photoUrl = _resolvePhotoUrl(photoPath);
+    final hasPhoto = photoUrl.isNotEmpty;
+    final hasTime = time != null && time.trim().isNotEmpty;
+
+    if (!hasPhoto && !hasTime) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(right: isCheckIn ? 24.0 : 8.0),
+      child: Column(
+        children: [
+          if (hasPhoto)
+            GestureDetector(
+              onTap: () => FullScreenImageViewer.show(context, photoUrl),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  photoUrl,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.image, size: 24, color: Colors.grey);
+                  },
+                ),
+              ),
+            )
+          else
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Icon(Icons.access_time, size: 22, color: Colors.grey.shade500),
+            ),
+          if (hasTime) ...[
+            const SizedBox(height: 4),
+            Text("$label: ${_formatTime(time)}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildCardFooterPhotos(List<Attendances> items, BuildContext context) {
-    final item = _photoSourceForDate(items);
-    if (item == null) return const SizedBox.shrink();
+    if (items.isEmpty) return const SizedBox.shrink();
 
-    final checkInUrl = _resolvePhotoUrl(item.imageUrl);
-    final checkOutUrl = _resolvePhotoUrl(item.checkOutPhoto);
-    final hasCheckIn = checkInUrl.isNotEmpty;
-    final hasCheckOut = checkOutUrl.isNotEmpty;
+    final meta = _dayMetaForDate(items);
+    final checkInTime = meta['checkInTime'];
+    final checkOutTime = meta['checkOutTime'];
+    final checkInPhoto = meta['checkInPhoto'];
+    final checkOutPhoto = meta['checkOutPhoto'];
 
-    if (!hasCheckIn && !hasCheckOut) {
+    final hasCheckInPhoto = _resolvePhotoUrl(checkInPhoto).isNotEmpty;
+    final hasCheckOutPhoto = _resolvePhotoUrl(checkOutPhoto).isNotEmpty;
+    final hasCheckInTime = checkInTime != null && checkInTime.trim().isNotEmpty;
+    final hasCheckOutTime = checkOutTime != null && checkOutTime.trim().isNotEmpty;
+
+    if (!hasCheckInPhoto && !hasCheckOutPhoto && !hasCheckInTime && !hasCheckOutTime) {
       return const SizedBox.shrink();
     }
 
@@ -850,56 +882,20 @@ mainAxisAlignment: MainAxisAlignment.center,
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (hasCheckIn)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 24.0),
-                      child: Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () => FullScreenImageViewer.show(context, checkInUrl),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                checkInUrl,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.image, size: 24, color: Colors.grey);
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text("In: ${_formatTime(item.time)}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  if (hasCheckOut)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () => FullScreenImageViewer.show(context, checkOutUrl),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                checkOutUrl,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.image, size: 24, color: Colors.grey);
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text("Out: ${_formatTime(item.checkOutTime)}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
+                  _buildCheckInOutColumn(
+                    context: context,
+                    label: "In",
+                    time: checkInTime,
+                    photoPath: checkInPhoto,
+                    isCheckIn: true,
+                  ),
+                  _buildCheckInOutColumn(
+                    context: context,
+                    label: "Out",
+                    time: checkOutTime,
+                    photoPath: checkOutPhoto,
+                    isCheckIn: false,
+                  ),
                 ],
               ),
             ],

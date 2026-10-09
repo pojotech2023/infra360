@@ -38,9 +38,12 @@ class PropertyListData {
   String? amount;
   String? remarks;
   String? image;
+  String? imageUrl;
   int? isInactive;
   String? createdAt;
   String? updatedAt;
+  int? createdBy;
+  int? updatedBy;
 
   PropertyListData(
       {this.id,
@@ -50,25 +53,31 @@ class PropertyListData {
         this.amount,
         this.remarks,
         this.image,
+        this.imageUrl,
         this.isInactive,
         this.createdAt,
-        this.updatedAt});
+        this.updatedAt,
+        this.createdBy,
+        this.updatedBy});
 
   PropertyListData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
     location = json['location'];
     type = json['type'];
-    amount = json['amount'];
+    amount = json['amount']?.toString();
     remarks = json['remarks'];
     image = json['image'];
+    imageUrl = json['image_url'];
     isInactive = json['is_inactive'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
+    createdBy = json['created_by'];
+    updatedBy = json['updated_by'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data =  Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['id'] = this.id;
     data['name'] = this.name;
     data['location'] = this.location;
@@ -76,9 +85,12 @@ class PropertyListData {
     data['amount'] = this.amount;
     data['remarks'] = this.remarks;
     data['image'] = this.image;
+    data['image_url'] = this.imageUrl;
     data['is_inactive'] = this.isInactive;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
+    data['created_by'] = this.createdBy;
+    data['updated_by'] = this.updatedBy;
     return data;
   }
 }

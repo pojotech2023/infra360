@@ -58,7 +58,6 @@ class NewServiceRequestScreen extends StatelessWidget {
                       ),
                     );
                   }).toList(),
-
                   validator: (value) {
                     if (value == null) {
                       return 'Please select Subcontractor';
@@ -240,7 +239,7 @@ class NewServiceRequestScreen extends StatelessWidget {
                      }
                    }
                  },
-                 icon: Icon(Icons.chat, color: Colors.white), // Using chat icon as a placeholder for WhatsApp if flutter_svg is not used
+                 icon: Image.asset('assets/images/whatsapp.png', width: 24, height: 24, color: Colors.white),
                  label: Text(
                    controller.isEditMode ? "Update Service\nWhatsApp" : "Send Service to SubContractor\nWhatsApp",
                    textAlign: TextAlign.center,
