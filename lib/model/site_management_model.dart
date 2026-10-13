@@ -74,7 +74,11 @@ class SiteManagementList {
     siteName = json['site_name']?.toString();
     siteImg = json['site_image_url']?.toString() ?? json['site_img']?.toString();
     location = json['location']?.toString();
-    value = json['budget_amount']?.toString() ?? json['value']?.toString();
+    value = (json['budget_amount'] != null && json['budget_amount'].toString().trim().isNotEmpty)
+        ? json['budget_amount'].toString()
+        : (json['contract_value']?.toString() ??
+            json['contractValue']?.toString() ??
+            json['value']?.toString());
     flatArea = json['flat_area']?.toString();
     builtupArea = json['built_up_area']?.toString();
     duration = json['duration']?.toString();

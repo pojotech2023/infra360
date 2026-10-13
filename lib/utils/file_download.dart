@@ -9,16 +9,19 @@ import '../service/shared_preference_service.dart';
 import '../view/widgets/toast.dart';
 
 class CommonFileDownloader {
-  static Future<void> downloadAndOpen({
+  static Future<bool> downloadAndOpen({
     required String urls,
     String? fileName,
     required BuildContext context,
+    bool showToast = true,
   }) async {
     print("URLS :${urls}");
     var myUrl = urls;
     
     try {
-      showToastMessage("⬇️ Download started...");
+      if (showToast) {
+        showToastMessage("⬇️ Download started...");
+      }
 
       // Get temporary directory so other apps (like PDF viewers) can read the file
       final dir = await getTemporaryDirectory();
@@ -68,12 +71,19 @@ class CommonFileDownloader {
         if (result.type != ResultType.done) {
           showToastMessage("⚠️ File saved but could not open: ${result.message}");
         }
+        return true;
       } else {
-        showToastMessage("❌ Download failed (Status: ${response.statusCode})");
+        if (showToast) {
+          showToastMessage("❌ Download failed (Status: ${response.statusCode})");
+        }
+        return false;
       }
     } catch (e) {
       debugPrint("Download error: $e");
-      showToastMessage("❌ Error downloading file");
+      if (showToast) {
+        showToastMessage("❌ Error downloading file");
+      }
+      return false;
     }
   }
 }

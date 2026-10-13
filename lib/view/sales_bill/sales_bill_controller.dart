@@ -7,6 +7,7 @@ import '../../api/api_data.dart';
 import '../../model/unit_master_model.dart';
 import '../../model/sales_bill_model.dart';
 import '../../utils/res/sendWhatsAppMessage.dart';
+import '../widgets/toast.dart';
 
 class SalesBillItem {
   TextEditingController particular = TextEditingController();
@@ -202,49 +203,123 @@ class SalesBillController extends GetxController {
     }
   }
 
+  Future<String?> _promptForEmail() async {
+    final tempEmailCtrl = TextEditingController(text: emailController.text.trim());
+    return await Get.dialog<String>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.mail_outline, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Recipient Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter the email address to receive this Sales Bill:',
+              style: TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tempEmailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'customer@example.com',
+                prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: null),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = tempEmailCtrl.text.trim();
+              if (text.isEmpty || !text.contains('@')) {
+                showToastMessage('Please enter a valid email address.');
+                return;
+              }
+              Get.back(result: text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: const Text('Send', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> sendWhatsApp() async {
     final res = await _submitBill();
     if (res == null || res.status != true) {
-      Get.snackbar('Error', res?.message ?? 'Failed to generate Sales Bill.',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? 'Failed to generate Sales Bill.');
       return;
     }
     final url = res.whatsappUrl;
     if (url != null && url.isNotEmpty) {
       extractAndOpenWhatsApp(url);
     } else {
-      Get.snackbar('Error', 'WhatsApp URL not available.',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage('WhatsApp URL not available.');
     }
   }
 
   Future<void> sendMail() async {
-    final email = emailController.text.trim();
+    String email = emailController.text.trim();
     if (email.isEmpty) {
-      Get.snackbar('Email Required', 'Please enter an email address.',
-          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
-      return;
+      final inputEmail = await _promptForEmail();
+      if (inputEmail == null || inputEmail.trim().isEmpty) {
+        return; // User cancelled
+      }
+      email = inputEmail.trim();
+      emailController.text = email;
     }
+
     final res = await _submitBill(email: email);
     if (res == null || res.status != true) {
-      Get.snackbar('Error', res?.message ?? 'Failed to send mail.',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? 'Failed to generate Sales Bill.');
       return;
     }
+
     if (res.mailSent == true) {
-      Get.snackbar('Success', 'Sales Bill mail sent successfully!',
-          backgroundColor: Colors.green, colorText: Colors.white);
+      showToastMessage('Sales Bill mail sent successfully!');
     } else {
-      Get.snackbar('Info', res.message ?? 'Bill created. Mail status unavailable.',
-          backgroundColor: Colors.blueGrey, colorText: Colors.white);
+      // Fallback: If server SMTP failed, launch device email app with PDF link
+      final pdfUrl = res.pdfUrl ?? '';
+      final billSubj = subjectController.text.trim().isNotEmpty ? subjectController.text.trim() : 'Sales Bill';
+      final Uri mailUri = Uri(
+        scheme: 'mailto',
+        path: email,
+        queryParameters: {
+          'subject': billSubj,
+          'body': 'Dear Sir/Madam,\n\nPlease find your Sales Bill link below:\n$pdfUrl\n\nThank you.',
+        },
+      );
+      try {
+        await launchUrl(mailUri, mode: LaunchMode.externalApplication);
+        showToastMessage('Opening Mail App to send Sales Bill.');
+      } catch (_) {
+        showToastMessage('Sales Bill generated successfully.');
+      }
     }
   }
 
   Future<void> downloadPdf() async {
     final res = await _submitBill();
     if (res == null || res.status != true) {
-      Get.snackbar('Error', res?.message ?? 'Failed to generate PDF.',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? 'Failed to generate PDF.');
       return;
     }
     final pdfUrl = res.pdfUrl;
@@ -253,12 +328,10 @@ class SalesBillController extends GetxController {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        Get.snackbar('Error', 'Cannot open PDF URL.',
-            backgroundColor: Colors.redAccent, colorText: Colors.white);
+        showToastMessage('Cannot open PDF URL.');
       }
     } else {
-      Get.snackbar('Error', 'PDF URL not available.',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage('PDF URL not available.');
     }
   }
 }

@@ -8,6 +8,7 @@ import '../../api/api_data.dart';
 import '../../model/quotation_model.dart';
 import '../../model/quotation_stored_model.dart';
 import '../../utils/res/sendWhatsAppMessage.dart';
+import '../widgets/toast.dart';
 
 class GenerateQuotationController extends GetxController{
 
@@ -91,8 +92,67 @@ class GenerateQuotationController extends GetxController{
     update();
   }
 
+  Future<String?> _promptForEmail() async {
+    final tempEmailCtrl = TextEditingController(text: emailEditingController.text.trim());
+    return await Get.dialog<String>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.mail_outline, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Recipient Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter the email address to receive this Quotation:',
+              style: TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tempEmailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'customer@example.com',
+                prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: null),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = tempEmailCtrl.text.trim();
+              if (text.isEmpty || !text.contains('@')) {
+                showToastMessage('Please enter a valid email address.');
+                return;
+              }
+              Get.back(result: text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: const Text('Send', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Builds the payload and calls quotation/store.
-  /// Optionally pass [email] to trigger mail sending on the backend.
+  /// Backend handles email sending with fail-safe try-catch.
   Future<QuotationStoredModel?> _storeQuotation({String? email}) async {
     try {
       issubmitLoading.value = true;
@@ -134,8 +194,7 @@ class GenerateQuotationController extends GetxController{
   Future<void> sendWhatsAppAction() async {
     final res = await _storeQuotation();
     if (res == null || res.status != true) {
-      Get.snackbar("Error", res?.message ?? "Failed to generate quotation.",
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? "Failed to generate quotation.");
       return;
     }
 
@@ -143,35 +202,50 @@ class GenerateQuotationController extends GetxController{
     if (url != null && url.isNotEmpty) {
       extractAndOpenWhatsApp(url);
     } else {
-      Get.snackbar("Error", "WhatsApp URL not available.",
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage("WhatsApp URL not available.");
     }
   }
 
-  /// Send Mail — stores quotation with email param, backend triggers mail.
+  /// Send Mail — stores quotation, opens device email client with PDF link if SMTP fails.
   Future<void> sendMailAction() async {
-    final email = emailEditingController.text.trim();
+    String email = emailEditingController.text.trim();
     if (email.isEmpty) {
-      Get.snackbar("Email Required",
-          "Please enter an email address to send the quotation.",
-          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
-      return;
+      final inputEmail = await _promptForEmail();
+      if (inputEmail == null || inputEmail.trim().isEmpty) {
+        return; // User cancelled
+      }
+      email = inputEmail.trim();
+      emailEditingController.text = email;
     }
 
     final res = await _storeQuotation(email: email);
     if (res == null || res.status != true) {
-      Get.snackbar("Error", res?.message ?? "Failed to send mail.",
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? "Failed to generate quotation.");
       return;
     }
 
     if (res.mailSent == true) {
-      Get.snackbar("Success", "Quotation mail sent successfully!",
-          backgroundColor: Colors.green, colorText: Colors.white);
+      showToastMessage("Quotation mail sent successfully!");
     } else {
-      Get.snackbar("Info",
-          res.message ?? "Quotation created. Mail status unavailable.",
-          backgroundColor: Colors.blueGrey, colorText: Colors.white);
+      // Fallback: If server SMTP failed / quota exceeded, launch device email app with PDF link
+      final pdfUrl = res.pdfUrl ?? '';
+      final subj = subjectEditingController.text.trim().isNotEmpty
+          ? subjectEditingController.text.trim()
+          : 'Quotation';
+      final Uri mailUri = Uri(
+        scheme: 'mailto',
+        path: email,
+        queryParameters: {
+          'subject': subj,
+          'body': 'Dear Sir/Madam,\n\nPlease find your Quotation link below:\n$pdfUrl\n\nThank you.',
+        },
+      );
+      try {
+        await launchUrl(mailUri, mode: LaunchMode.externalApplication);
+        showToastMessage('Opening Mail App to send Quotation.');
+      } catch (_) {
+        showToastMessage('Quotation generated successfully.');
+      }
     }
   }
 
@@ -179,8 +253,7 @@ class GenerateQuotationController extends GetxController{
   Future<void> downloadPdfAction() async {
     final res = await _storeQuotation();
     if (res == null || res.status != true) {
-      Get.snackbar("Error", res?.message ?? "Failed to generate PDF.",
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage(res?.message ?? "Failed to generate PDF.");
       return;
     }
 
@@ -190,12 +263,10 @@ class GenerateQuotationController extends GetxController{
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        Get.snackbar("Error", "Cannot open PDF URL.",
-            backgroundColor: Colors.redAccent, colorText: Colors.white);
+        showToastMessage("Cannot open PDF URL.");
       }
     } else {
-      Get.snackbar("Error", "PDF URL not available.",
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      showToastMessage("PDF URL not available.");
     }
   }
 

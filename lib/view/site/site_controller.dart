@@ -22,6 +22,7 @@ class SiteController extends GetxController {
   TextEditingController builtupAreaController = TextEditingController();
   TextEditingController flatAreaController = TextEditingController();
   TextEditingController locationEditingController = TextEditingController();
+  TextEditingController contractValueController = TextEditingController();
 
   TextEditingController nameEditingController = TextEditingController();
   TextEditingController mobileNumberEditingController = TextEditingController();
@@ -69,17 +70,25 @@ class SiteController extends GetxController {
       status.value = normalizeStatus(arg.status ?? '');
       selectedStatus.value = normalizeStatus(arg.status ?? '');
 
-
       supervisorID.value = arg.supervisor?.id?.toString() ?? '';
       siteNameEditingController.text = arg.siteName??"";
+      locationEditingController.text = arg.location??"";
       durationEditingController.text = arg.duration??"";
       builtupAreaController.text = arg.builtupArea??"";
       flatAreaController.text = arg.flatArea??"";
-      locationEditingController.text = arg.location??"";
+      final val = arg.value ?? "";
+      contractValueController.text = val.endsWith(".00") ? val.substring(0, val.length - 3) : val;
 
+      if (employeeList.isNotEmpty && supervisorID.value.isNotEmpty) {
+        for (var element in employeeList) {
+          if (element.id.toString() == supervisorID.value) {
+            selectedEmployeeData.value = element;
+            break;
+          }
+        }
+      }
 
-update();
-
+      update();
     }
   }
 
@@ -101,6 +110,17 @@ update();
     emailEditingController.clear();
     dobPickerController.clear();
     addressEditingController.clear();
+  }
+
+  void clearSiteForm() {
+    siteNameEditingController.clear();
+    durationEditingController.clear();
+    builtupAreaController.clear();
+    flatAreaController.clear();
+    locationEditingController.clear();
+    contractValueController.clear();
+    selectedEmployeeData.value = null;
+    resetCustomerFields();
   }
 
   /// Search for an existing customer by mobile number and auto-fill fields
@@ -214,6 +234,7 @@ update();
       email: emailEditingController.text,
       dob: apiDate,
       address: addressEditingController.text,
+      contractValue: contractValueController.text.trim(),
       files: files,
     );
 
@@ -222,31 +243,15 @@ update();
       print("RESPONSE MESSAGE: ${model.message}");
 
       if (model.status == true) {
+        showToastMessage(model.message ?? 'Site created successfully');
         DashboardController dashController = Get.put(DashboardController());
         await dashController.init();
         Get.back();
       } else {
-        // Server returned a failure response (e.g. validation error)
-        Get.snackbar(
-          'Error',
-          model.message ?? 'Something went wrong. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          duration: const Duration(seconds: 4),
-        );
+        showToastMessage(model.message ?? 'Something went wrong. Please try again.');
       }
     } else {
-      // Null means a non-200 response (e.g. 422 validation, 500 server error)
-      // Check if the API returned a validation message
-      Get.snackbar(
-        'Error',
-        'Failed to create site. Please check your details and try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 4),
-      );
+      showToastMessage('Failed to create site. Please check your details and try again.');
     }
 
     isSaveLoading.value = false;
@@ -255,21 +260,15 @@ update();
 
 
   updateSiteApi({File? files}) async {
-    // ── Client-side validation ──────────────────────────────────────────────
-    // Helper to show a red snackbar and stop execution
     void showError(String message) {
-      Get.snackbar(
-        'Required',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
+      showToastMessage(message);
     }
 
     if (siteNameEditingController.text.trim().isEmpty) {
       return showError('Please enter Site Name');
+    }
+    if (locationEditingController.text.trim().isEmpty) {
+      return showError('Please enter Location');
     }
     if (flatAreaController.text.trim().isEmpty) {
       return showError('Please enter Flat Area');
@@ -280,7 +279,8 @@ update();
     if (durationEditingController.text.trim().isEmpty) {
       return showError('Please enter Duration');
     }
-    if (selectedEmployeeData.value == null) {
+    final supId = selectedEmployeeData.value?.id?.toString() ?? supervisorID.value;
+    if (supId.isEmpty) {
       return showError('Please select a Supervisor');
     }
 
@@ -295,8 +295,9 @@ update();
       flatArea: flatAreaController.text,
       builtupArea: builtupAreaController.text,
       duration: durationEditingController.text,
-      supervisorId: selectedEmployeeData.value?.id?.toString() ?? '',
+      supervisorId: supId,
       status: selectedStatus.toString(),
+      contractValue: contractValueController.text.trim(),
       files: files,
     );
 
@@ -310,24 +311,10 @@ update();
         await dashController.init();
         Get.back();
       } else {
-        Get.snackbar(
-          'Error',
-          model.message ?? 'Failed to update site. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          duration: const Duration(seconds: 4),
-        );
+        showToastMessage(model.message ?? 'Failed to update site. Please try again.');
       }
     } else {
-      Get.snackbar(
-        'Error',
-        'Failed to update site. Please check your details and try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 4),
-      );
+      showToastMessage('Failed to update site. Please check your details and try again.');
     }
 
     isSaveLoading.value = false;

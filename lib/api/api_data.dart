@@ -258,6 +258,7 @@ class ApiData {
     required String email,
     required String dob,
     required String address,
+    String? contractValue,
   File? files, // multiple files supported
   }) async {
 
@@ -279,6 +280,20 @@ class ApiData {
       ..fields['email'] = email
       ..fields['dob'] = dob
       ..fields['address'] = address;
+
+    final token = PreferenceUtils().getSessionToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.headers['Accept'] = 'application/json';
+
+    if (contractValue != null && contractValue.isNotEmpty) {
+      request.fields['contract_value'] = contractValue;
+      request.fields['contract_amount'] = contractValue;
+      request.fields['budget_amount'] = contractValue;
+      request.fields['value'] = contractValue;
+      request.fields['amount'] = contractValue;
+    }
 
     if (files != null) {
 
@@ -323,7 +338,8 @@ class ApiData {
     required String builtupArea,
     required String duration,
     required String supervisorId,
-required String status,
+    required String status,
+    String? contractValue,
     File? files, // multiple files supported
   }) async {
 
@@ -335,6 +351,7 @@ required String status,
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['site_id'] = id
+      ..fields['id'] = id
       ..fields['site_name'] = siteName
       ..fields['location'] = location
       ..fields['flat_area'] = flatArea
@@ -342,6 +359,20 @@ required String status,
       ..fields['duration'] = duration
       ..fields['supervisor_id'] = supervisorId
       ..fields['status'] = status;
+
+    final token = PreferenceUtils().getSessionToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.headers['Accept'] = 'application/json';
+
+    if (contractValue != null && contractValue.isNotEmpty) {
+      request.fields['contract_value'] = contractValue;
+      request.fields['contract_amount'] = contractValue;
+      request.fields['budget_amount'] = contractValue;
+      request.fields['value'] = contractValue;
+      request.fields['amount'] = contractValue;
+    }
 
 
     if (files != null) {
@@ -448,8 +479,10 @@ required String status,
     final request = http.MultipartRequest('POST', uri);
 
     // Expand items if it's a JSON array string to bracket notation for Laravel
+    // ONLY for endpoints that expect array notation (like add-order), NOT for request-order which expects a string
+    final isRequestOrder = urls.contains('request-order');
     input.forEach((key, value) {
-      if (key == 'items') {
+      if (key == 'items' && !isRequestOrder) {
         try {
           final decoded = jsonDecode(value);
           if (decoded is List) {
@@ -1422,6 +1455,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> addSubContractor({String ?name,String ?siteUtilities,String ?mobileNo,String ?email,String ?address,String ?gst}) async {
+    final effectiveGst = (gst != null && gst.trim().isNotEmpty) ? gst.trim() : null;
 
     Map<String,dynamic> postData ={
       "name":name,
@@ -1429,7 +1463,7 @@ print("REQUEST HEADER ${request.headers}");
       "mobile_no":mobileNo,
       "email":email,
       "address":address,
-      "gst":gst,
+      "gst":effectiveGst,
     };
 
 
@@ -1450,6 +1484,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> updateSubContractor({int ?id,String ?name,String ?siteUtilities,String ?mobileNo,String ?email,String ?address,String ?gst}) async {
+    final effectiveGst = (gst != null && gst.trim().isNotEmpty) ? gst.trim() : null;
 
     Map<String,dynamic> postData ={
       "name":name,
@@ -1457,7 +1492,7 @@ print("REQUEST HEADER ${request.headers}");
       "mobile_no":mobileNo,
       "email":email,
       "address":address,
-      "gst":gst,
+      "gst":effectiveGst,
     };
 
 
@@ -1532,6 +1567,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> addVendor({String ?name,String ?siteUtilities,String ?mobileNo,String ?email,String ?address,String ?gst}) async {
+    final effectiveGst = (gst != null && gst.trim().isNotEmpty) ? gst.trim() : null;
 
     Map<String,dynamic> postData ={
       "name":name,
@@ -1539,7 +1575,7 @@ print("REQUEST HEADER ${request.headers}");
       "mobile_no":mobileNo,
       "email":email,
       "address":address,
-      "gst":gst,
+      "gst":effectiveGst,
     };
 
 
@@ -1560,6 +1596,7 @@ print("REQUEST HEADER ${request.headers}");
   }
 
   Future<CommonSuccessResponseModel?> updateVendor({int ?id,String ?name,String ?siteUtilities,String ?mobileNo,String ?email,String ?address,String ?gst}) async {
+    final effectiveGst = (gst != null && gst.trim().isNotEmpty) ? gst.trim() : null;
 
     Map<String,dynamic> postData ={
       "name":name,
@@ -1567,7 +1604,7 @@ print("REQUEST HEADER ${request.headers}");
       "mobile_no":mobileNo,
       "email":email,
       "address":address,
-      "gst":gst,
+      "gst":effectiveGst,
     };
 
 
@@ -3000,7 +3037,15 @@ print("REQUEST HEADER ${request.headers}");
   Future<CommonSuccessResponseModel?> deleteAttendanceByDateApi(int siteId, String formattedDate) async {
     final response = await ApiService().sendAsync("DELETE", "attendance-delete-date/$siteId/$formattedDate", null, true);
     if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-      return CommonSuccessResponseModel.fromJson(jsonDecode(response.body));
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return CommonSuccessResponseModel.fromJson(decoded);
+        }
+        return CommonSuccessResponseModel(status: true, success: true, message: "Attendance deleted successfully");
+      } catch (e) {
+        return CommonSuccessResponseModel(status: true, success: true, message: "Attendance deleted successfully");
+      }
     }
     return null;
   }

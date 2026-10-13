@@ -39,7 +39,7 @@ class VendorManagementController extends GetxController{
     VendorManagementData ?vendorManagementData = Get.arguments;
     if(vendorManagementData!=null){
       nameController.text=vendorManagementData.name??"";
-      gstController.text=vendorManagementData.gst??"";
+      gstController.text = (vendorManagementData.gst == "N/A" || vendorManagementData.gst == null) ? "" : vendorManagementData.gst!;
       emailController.text=vendorManagementData.email??"";
       addressController.text=vendorManagementData.address??"";
       mobileController.text=vendorManagementData.mobileNo??"";
@@ -69,44 +69,60 @@ class VendorManagementController extends GetxController{
 
   }
 
-  addVendor()async{
-    isSaveLoading.value=true;
-    CommonSuccessResponseModel ?commonSuccessModel = await ApiData().addVendor(
-      name: nameController.text,
-      mobileNo: mobileController.text,
-      email: emailController.text,
-      gst: gstController.text,
-      address: addressController.text,
-      siteUtilities: selectedSiteUtilities
-    );
+  addVendor({BuildContext? context}) async {
+    isSaveLoading.value = true;
+    try {
+      CommonSuccessResponseModel? commonSuccessModel = await ApiData().addVendor(
+        name: nameController.text,
+        mobileNo: mobileController.text,
+        email: emailController.text,
+        gst: gstController.text,
+        address: addressController.text,
+        siteUtilities: selectedSiteUtilities,
+      );
 
-    if(commonSuccessModel!=null){
-      showToastMessage(commonSuccessModel.message??"Something Went wrong");
-      Get.back();
-      init();
+      if (commonSuccessModel != null) {
+        showToastMessage(commonSuccessModel.message ?? "Vendor created successfully!");
+        clearMethod();
+        if (context != null && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Get.back();
+        }
+        await init();
+      }
+    } finally {
+      isSaveLoading.value = false;
     }
-    isSaveLoading.value=false;
   }
 
-  updateVendor()async{
-    isSaveLoading.value=true;
-    VendorManagementData ?vendorManagementData = Get.arguments;
+  updateVendor({BuildContext? context}) async {
+    isSaveLoading.value = true;
+    try {
+      VendorManagementData? vendorManagementData = Get.arguments;
 
-    CommonSuccessResponseModel ?commonSuccessModel = await ApiData().updateVendor(
+      CommonSuccessResponseModel? commonSuccessModel = await ApiData().updateVendor(
         id: vendorManagementData!.id,
         name: nameController.text,
         mobileNo: mobileController.text,
         email: emailController.text,
         gst: gstController.text,
         address: addressController.text,
-        siteUtilities: selectedSiteUtilities
-    );
+        siteUtilities: selectedSiteUtilities,
+      );
 
-    if(commonSuccessModel!=null){
-      showToastMessage(commonSuccessModel.message??"Something Went wrong");
-      Get.back();
-      init();
+      if (commonSuccessModel != null) {
+        showToastMessage(commonSuccessModel.message ?? "Vendor updated successfully!");
+        clearMethod();
+        if (context != null && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Get.back();
+        }
+        await init();
+      }
+    } finally {
+      isSaveLoading.value = false;
     }
-    isSaveLoading.value=false;
   }
 }

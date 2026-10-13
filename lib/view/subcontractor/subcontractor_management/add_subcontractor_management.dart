@@ -42,7 +42,8 @@ class _AddSubcontractorManagementScreenState extends State<AddSubcontractorManag
       mobileNumberEditingController.text = subcontractorData!.mobileNo??"";
       emailEditingController.text = subcontractorData!.email??"";
       addressEditingController.text = subcontractorData!.address??"";
-      gstEditingController.text = subcontractorData!.gst??"";
+      final existingGst = subcontractorData!.gst ?? "";
+      gstEditingController.text = (existingGst.trim().toUpperCase() == "N/A") ? "" : existingGst;
      controller.selectedSiteUtilities.value = subcontractorData!.subcontractors ??"";
     }
     super.initState();
@@ -180,15 +181,13 @@ class _AddSubcontractorManagementScreenState extends State<AddSubcontractorManag
              ),
 
              VerticalSpacing.d15px(),
-             Text("Gst",style: AppTextStyle.textFieldHeadingStyle,),
+             Text("GST (Optional)",style: AppTextStyle.textFieldHeadingStyle,),
 
              TextFormField(
                controller: gstEditingController,
-               decoration:textBoxDecoration(hint:"Enter your Gst"),
+               textCapitalization: TextCapitalization.characters,
+               decoration:textBoxDecoration(hint:"Enter GST (Optional)"),
                validator: (text){
-                 if (text == null || text.isEmpty) {
-                   return 'Required';
-                 }
                  return null;
                },
              ),
@@ -202,6 +201,7 @@ class _AddSubcontractorManagementScreenState extends State<AddSubcontractorManag
                  if(_formKey.currentState!.validate()){
                    if(Get.arguments==null){
                    controller.addSubcontractor(
+                       context: context,
                        name:nameEditingController.text,
                        mobileNo:mobileNumberEditingController.text,
                        emailId:emailEditingController.text,
@@ -213,6 +213,7 @@ class _AddSubcontractorManagementScreenState extends State<AddSubcontractorManag
                      Subcontractor ?subcontractorData = Get.arguments;
 
                      controller.updateSupervisor(
+                        context: context,
                         id:  subcontractorData!.id!,
                        name:  nameEditingController.text,
                          mobileNo:mobileNumberEditingController.text,

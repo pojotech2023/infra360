@@ -12,6 +12,7 @@ import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
 import 'package:raptor_pro/view/widgets/common_loader.dart';
 import 'package:raptor_pro/view/dashboard/dashboard_controller.dart';
+import 'package:raptor_pro/utils/number_to_words.dart';
 
 class SubcontractorPaymentDetails extends StatefulWidget{
   @override
@@ -129,6 +130,18 @@ class _SubcontractorPaymentDetailsState extends State<SubcontractorPaymentDetail
                 decoration:textBoxDecoration(hint:"Total Amount",
                     fillColor: Colors.grey[200]),
               ),
+              if (controller.totalAmountController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4),
+                  child: Text(
+                    NumberToWords.convert(controller.totalAmountController.text),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                ),
 
               VerticalSpacing.d15px(),
 
@@ -142,6 +155,18 @@ class _SubcontractorPaymentDetailsState extends State<SubcontractorPaymentDetail
                 decoration:textBoxDecoration(hint:"Paid Amount",
                     fillColor: Colors.grey[200]),
               ),
+              if (controller.paidAmountController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4),
+                  child: Text(
+                    NumberToWords.convert(controller.paidAmountController.text),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                ),
 
               VerticalSpacing.d15px(),
 

@@ -373,7 +373,7 @@ class NewRequestController extends GetxController{
     Map<String, String> requestData = {
       "site_id": siteId.toString(),
       "material_type": itemKey,
-      "items": jsonEncode(reqItems),
+      "items": summaryStr.isNotEmpty ? summaryStr : (itemsController.text.isNotEmpty ? itemsController.text : itemKey),
       "item_name": itemsController.text.isNotEmpty ? itemsController.text : itemKey,
       "category": chosenType,
       "category_name": chosenType,

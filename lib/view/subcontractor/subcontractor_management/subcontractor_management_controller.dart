@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/api/api_data.dart';
 import 'package:raptor_pro/model/common_success_model.dart';
@@ -33,14 +34,18 @@ class SubcontractorManagementController extends GetxController{
 
   }
 
-  addSubcontractor({String? name,String? mobileNo,String? emailId,String? contractor,String? address,String? gst})async{
+  addSubcontractor({BuildContext? context, String? name,String? mobileNo,String? emailId,String? contractor,String? address,String? gst})async{
     isSaveLoading.value=true;
 
     CommonSuccessResponseModel ?commonSuccessModel = await ApiData().addSubContractor(name: name,mobileNo:  mobileNo,email:  emailId,siteUtilities: contractor,address: address,gst: gst);
 
     if(commonSuccessModel!=null){
       showToastMessage(commonSuccessModel.message??"Something Went wrong");
-      Get.back();
+      if (context != null && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Get.back();
+      }
       init();
     }
 
@@ -59,14 +64,18 @@ class SubcontractorManagementController extends GetxController{
     isSaveLoading.value=false;
   }
 
-  updateSupervisor({required int id,String? name,String? mobileNo,String? emailId,String? contractor,String? address,String? gst})async{
+  updateSupervisor({BuildContext? context, required int id,String? name,String? mobileNo,String? emailId,String? contractor,String? address,String? gst})async{
     isSaveLoading.value=true;
 
     CommonSuccessResponseModel ?commonSuccessModel = await ApiData().updateSubContractor(id: id,name: name,mobileNo:  mobileNo,email:  emailId,siteUtilities: contractor,address: address,gst: gst);
 
     if(commonSuccessModel!=null){
       showToastMessage(commonSuccessModel.message??"Something Went wrong");
-      Get.back();
+      if (context != null && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Get.back();
+      }
       init();
     }
 

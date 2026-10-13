@@ -238,27 +238,34 @@ Remarks: ${item.remarks ?? 'N/A'}
             width: 135.0, // flex 3 * 45
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    item.remarks ?? '',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF333333)),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (isRejected && item.adminRemark != null && item.adminRemark!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        "Rejection reason: ${item.adminRemark}",
-                        style: const TextStyle(fontSize: 11, color: Colors.redAccent),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final hasRejectionReason = isRejected && item.adminRemark != null && item.adminRemark!.trim().isNotEmpty;
+                  final hasActualRemarks = item.remarks != null && item.remarks!.trim().isNotEmpty && item.remarks!.trim().toUpperCase() != 'N/A';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!hasRejectionReason || hasActualRemarks)
+                        Text(
+                          item.remarks?.isNotEmpty == true ? item.remarks! : 'N/A',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF333333)),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (hasRejectionReason)
+                        Padding(
+                          padding: EdgeInsets.only(top: hasActualRemarks ? 4 : 0),
+                          child: Text(
+                            "Rejection reason: ${item.adminRemark}",
+                            style: const TextStyle(fontSize: 11, color: Colors.redAccent),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -601,15 +608,27 @@ Remarks: ${item.remarks ?? 'N/A'}
           _buildCardRow('Vendor', (item.vendorName?.isNotEmpty == true) ? item.vendorName! : 'N/A'),
           const SizedBox(height: 8),
           
-          const Text('Remarks', style: TextStyle(color: Color(0xFF6E6B7B), fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(item.remarks?.isNotEmpty == true ? item.remarks! : 'N/A', style: const TextStyle(color: Color(0xFF252C58), fontSize: 14)),
-          
-          if (isRejected && item.adminRemark != null && item.adminRemark!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text("Rejection reason: ${item.adminRemark}", style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
-            ),
+          Builder(
+            builder: (context) {
+              final hasRejectionReason = isRejected && item.adminRemark != null && item.adminRemark!.trim().isNotEmpty;
+              final hasActualRemarks = item.remarks != null && item.remarks!.trim().isNotEmpty && item.remarks!.trim().toUpperCase() != 'N/A';
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!hasRejectionReason || hasActualRemarks) ...[
+                    const Text('Remarks', style: TextStyle(color: Color(0xFF6E6B7B), fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text(item.remarks?.isNotEmpty == true ? item.remarks! : 'N/A', style: const TextStyle(color: Color(0xFF252C58), fontSize: 14)),
+                  ],
+                  if (hasRejectionReason)
+                    Padding(
+                      padding: EdgeInsets.only(top: hasActualRemarks ? 8 : 0),
+                      child: Text("Rejection reason: ${item.adminRemark}", style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+                    ),
+                ],
+              );
+            },
+          ),
 
           const SizedBox(height: 16),
           const Divider(height: 1),

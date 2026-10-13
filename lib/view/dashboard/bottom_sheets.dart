@@ -136,6 +136,10 @@ void showCustomerDetailsBottomSheet(BuildContext context,
                         ),
                       ],
                     ),
+                    if (siteManagementList.value != null &&
+                        siteManagementList.value!.isNotEmpty)
+                      titleData(context, 'Contract Value',
+                          '₹ ${siteManagementList.value}'),
                     Row(
                       children: [
                         Expanded(

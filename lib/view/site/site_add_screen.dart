@@ -41,7 +41,8 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
     if (isEditMode) {
       controller.preFillData(widget.siteData!);
     } else {
-      // Reset customer type state for Add mode
+      // Reset site form and customer state for Add mode
+      controller.clearSiteForm();
       controller.customerType.value = 'new';
       controller.searchMobileController.clear();
       controller.searchStatusMessage.value = '';
@@ -203,6 +204,19 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                         },
                       ),
                       VerticalSpacing.d15px(),
+                      Text(
+                        "Contract Value",
+                        style: AppTextStyle.textFieldHeadingStyle,
+                      ),
+                      TextFormField(
+                        controller: controller.contractValueController,
+                        keyboardType: TextInputType.number,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        decoration: textBoxDecoration(hint: "Contract Value"),
+                        validator: (text) {
+                          return null;
+                        },
+                      ),
                       VerticalSpacing.d15px(),
                       Text(
                         "Built-up Area",
@@ -229,7 +243,7 @@ class _SiteAddScreenState extends State<SiteAddScreen> {
                         controller: controller.flatAreaController,
                         keyboardType: TextInputType.number,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
-                        decoration: textBoxDecoration(hint: "Pending Amount"),
+                        decoration: textBoxDecoration(hint: "Flat Area"),
                         onChanged: (value) {
                           print("value");
                         },

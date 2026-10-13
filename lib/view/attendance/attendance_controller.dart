@@ -814,34 +814,33 @@ class AttendanceController extends GetxController {
 
     _purgeDateCache(isoDate);
 
-    bool hasError = false;
     print("🚀 [DELETE BY DATE] site=${siteId.value}, date=$isoDate");
 
     final attendanceRes = await ApiData().deleteAttendanceByDateApi(siteId.value!, isoDate);
-    if (attendanceRes == null) {
-      print("❌ [DELETE BY DATE] Attendance delete failed");
-      hasError = true;
-    }
 
-    final wagesRes = await ApiData().deleteWagesRowApi({
-      "site_id": siteId.value,
-      "date": isoDate,
-    });
-    if (wagesRes == null) {
-      print("❌ [DELETE BY DATE] Wages delete failed");
-      hasError = true;
+    // Attempt to delete associated wages row if any exists (best-effort)
+    try {
+      await ApiData().deleteWagesRowApi({
+        "site_id": siteId.value,
+        "date": isoDate,
+      });
+    } catch (e) {
+      print("⚠️ [DELETE BY DATE] Wages delete attempt error: $e");
     }
 
     selectedDate.value = null;
     await init(siteId.value);
 
-    if (hasError) {
-      showToastMessage("Failed to delete attendance for $isoDate.");
-    }
-
     attendanceSave.value = false;
     update();
-    return !hasError;
+
+    if (attendanceRes != null) {
+      showToastMessage(attendanceRes.message ?? "Attendance deleted successfully.");
+      return true;
+    } else {
+      showToastMessage("Failed to delete attendance for $isoDate.");
+      return false;
+    }
   }
 
   /// Deletes attendance by [attendanceId] (individual record ID).

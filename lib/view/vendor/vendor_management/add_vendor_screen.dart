@@ -1,13 +1,10 @@
-import 'package:collection/collection.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:raptor_pro/utils/app_text_style.dart';
 import 'package:raptor_pro/utils/const_data.dart';
 import 'package:raptor_pro/utils/res/spacing.dart';
 import 'package:raptor_pro/utils/text_form_style.dart';
-import 'package:raptor_pro/view/supervisor_management/supervisor_management_controller.dart';
 import 'package:raptor_pro/view/vendor/vendor_management/vendor_management_controller.dart';
 import 'package:raptor_pro/view/widgets/common_app_bar.dart';
 import 'package:raptor_pro/view/widgets/common_button.dart';
@@ -41,12 +38,16 @@ class _AddVendorScreenState extends State<AddVendorScreen> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
+    final bool isEdit = Get.arguments != null;
     return Scaffold(
       appBar: CommonAppBar.appBar(
-          title: "Add Vendor",
+          title: isEdit ? "Edit Vendor" : "Add Vendor",
           onTap: (){
-            Get.back();
-
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Get.back();
+            }
           }),
       body:  Form(
         key: _formKey,
@@ -182,23 +183,17 @@ class _AddVendorScreenState extends State<AddVendorScreen> {
 
               ),
               VerticalSpacing.d15px(),
-              Text("GST",style: AppTextStyle.textFieldHeadingStyle,),
+              Text("GST (Optional)",style: AppTextStyle.textFieldHeadingStyle,),
               VerticalSpacing.d5px(),
               TextFormField(
                 controller: controller.gstController,
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration:textBoxDecoration(hint:"Enter your GST"),
-                validator: (text){
-                  if (text == null || text.isEmpty) {
-                    return 'Required';
-                  }
-
+                decoration: textBoxDecoration(hint: "ENTER GST NUMBER (OPTIONAL)"),
+                validator: (text) {
                   return null;
                 },
-
-
-
               ),
 
               VerticalSpacing.d30px(),
@@ -211,12 +206,10 @@ class _AddVendorScreenState extends State<AddVendorScreen> {
                     if(_formKey.currentState!.validate()){
 
                       if(Get.arguments==null){
-                        controller.addVendor();
-
+                        controller.addVendor(context: context);
                       }
                       else{
-                        controller.updateVendor();
-
+                        controller.updateVendor(context: context);
                       }
 
 
