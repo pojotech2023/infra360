@@ -437,16 +437,17 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
   }
 
   // ── Brick / Block Type Dropdown (Screenshot 4) ──
+  // ── Primary Material / Brick Type Dropdown (Screenshot 4) ──
   Widget _buildBrickTypeDropdown() {
     return Obx(() {
-      final itemKey = controller.itemKey.value.toLowerCase();
-      final label = itemKey.contains('brick')
-          ? "Brick / Block Type"
+      final cfg = controller.formConfig;
+      final label = cfg.label.isNotEmpty
+          ? cfg.label
           : "${_capitalize(controller.itemKey.value)} Type";
 
       List<String> items = controller.categories.isNotEmpty
           ? controller.categories
-          : NewRequestController.getSubItemsForMaterial(controller.itemKey.value);
+          : (cfg.options.isNotEmpty ? cfg.options : NewRequestController.getSubItemsForMaterial(controller.itemKey.value));
       items = items.toSet().toList();
 
       final effectiveVal = items.contains(controller.selectedBrickType.value)
@@ -590,21 +591,33 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Size / Specification",
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                    Text(
+                      controller.formConfig.specLabel.isNotEmpty
+                          ? controller.formConfig.specLabel
+                          : "Size / Specification",
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                     ),
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: item.specCtrl,
                       decoration: InputDecoration(
-                        hintText: "Select or enter Size / Specification",
+                        hintText: "Select or enter ${controller.formConfig.specLabel.isNotEmpty ? controller.formConfig.specLabel : 'Size / Specification'}",
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                         filled: true,
                         fillColor: Colors.white,
+                        suffixIcon: controller.formConfig.specOptions.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+                                onPressed: () => _showSpecOptionsBottomSheet(
+                                  controller.formConfig.specLabel,
+                                  controller.formConfig.specOptions,
+                                  item.specCtrl,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   ],
@@ -947,19 +960,17 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
 
   Widget _buildRequestMaterialTypeDropdown() {
     return Obx(() {
-      final itemKey = controller.itemKey.value.toLowerCase();
-      final label = itemKey.contains('brick')
-          ? "Brick / Block Type"
-          : "${_capitalize(controller.itemKey.value)} Type";
+      final cfg = controller.formConfig;
+      final label = cfg.label.isNotEmpty ? cfg.label : "${_capitalize(controller.itemKey.value)} Type";
 
       List<String> items = controller.categories.isNotEmpty
           ? controller.categories
-          : NewRequestController.getSubItemsForMaterial(controller.itemKey.value);
+          : (cfg.options.isNotEmpty ? cfg.options : NewRequestController.getSubItemsForMaterial(controller.itemKey.value));
       items = items.toSet().toList();
 
       final effectiveVal = items.contains(controller.selectedBrickType.value)
           ? controller.selectedBrickType.value
-          : null;
+          : (items.contains(controller.selectedCategory.value) ? controller.selectedCategory.value : null);
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -977,7 +988,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                       child: Text(item, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
                     ))
                 .toList(),
-            validator: (value) => value == null ? 'Please select $label' : null,
+            validator: (value) => (items.isNotEmpty && value == null) ? 'Please select $label' : null,
             onChanged: (value) {
               if (value != null) {
                 controller.selectedBrickType.value = value;
@@ -993,24 +1004,286 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
     });
   }
 
-  Widget _buildRequestSpecificationField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Size / Specification", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller.specificationController,
-          decoration: textBoxDecoration(hint: "Select or enter Size / Specification"),
-          onChanged: (value) {
-            controller.syncItemsField();
-            setState(() {});
+  void _showSpecOptionsBottomSheet(
+    String label,
+    List<String> options, [
+    TextEditingController? targetCtrl,
+  ]) {
+    String searchQuery = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = options.where((o) => o.toLowerCase().contains(searchQuery.toLowerCase())).toList();
+            return Container(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 12,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Select $label",
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF94A3B8)),
+                      hintText: "Search $label...",
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                    ),
+                    onChanged: (q) {
+                      setModalState(() {
+                        searchQuery = q;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? const Center(
+                            child: Text("No matching suggestions", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          )
+                        : ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (_, i) {
+                              final opt = filtered[i];
+                              final isSelected = (targetCtrl?.text ?? controller.specificationController.text) == opt;
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                title: Text(
+                                  opt,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                trailing: isSelected
+                                    ? const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 18)
+                                    : const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                                onTap: () {
+                                  if (targetCtrl != null) {
+                                    targetCtrl.text = opt;
+                                  }
+                                  controller.specificationController.text = opt;
+                                  controller.syncItemsField();
+                                  Navigator.pop(ctx);
+                                  setState(() {});
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
           },
-          validator: (_) => null,
-        ),
-        const SizedBox(height: 14),
-      ],
+        );
+      },
     );
+  }
+
+  Widget _buildRequestSpecificationField() {
+    return Obx(() {
+      final cfg = controller.formConfig;
+      final specLabel = cfg.specLabel.isNotEmpty ? cfg.specLabel : "Size / Specification";
+      final specOptions = cfg.specOptions;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                specLabel,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              ),
+              if (specOptions.isNotEmpty)
+                InkWell(
+                  onTap: () => _showSpecOptionsBottomSheet(specLabel, specOptions),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Suggestions (${specOptions.length})",
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
+                        ),
+                        const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF2563EB)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Autocomplete<String>(
+            initialValue: TextEditingValue(text: controller.specificationController.text),
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (specOptions.isEmpty) return const Iterable<String>.empty();
+              if (textEditingValue.text.isEmpty) {
+                return specOptions.take(8);
+              }
+              return specOptions.where(
+                (opt) => opt.toLowerCase().contains(textEditingValue.text.toLowerCase()),
+              );
+            },
+            onSelected: (String selection) {
+              controller.specificationController.text = selection;
+              controller.syncItemsField();
+              setState(() {});
+            },
+            fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+              if (textEditingController.text != controller.specificationController.text &&
+                  controller.specificationController.text.isNotEmpty &&
+                  textEditingController.text.isEmpty) {
+                textEditingController.text = controller.specificationController.text;
+              }
+              return TextFormField(
+                controller: textEditingController,
+                focusNode: focusNode,
+                decoration: textBoxDecoration(
+                  hint: "Select or enter $specLabel",
+                ).copyWith(
+                  suffixIcon: specOptions.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+                          onPressed: () => _showSpecOptionsBottomSheet(specLabel, specOptions, textEditingController),
+                        )
+                      : null,
+                ),
+                onChanged: (value) {
+                  controller.specificationController.text = value;
+                  controller.syncItemsField();
+                  setState(() {});
+                },
+                validator: (_) => null,
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4.0,
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: 220,
+                      maxWidth: MediaQuery.of(context).size.width - 32,
+                    ),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final option = options.elementAt(index);
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            option,
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                          ),
+                          onTap: () => onSelected(option),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          if (specOptions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: specOptions.take(5).map((opt) {
+                  final isSelected = controller.specificationController.text == opt;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: InkWell(
+                      onTap: () {
+                        controller.specificationController.text = opt;
+                        controller.syncItemsField();
+                        setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Text(
+                          opt,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+        ],
+      );
+    });
   }
 
   Widget _buildUnitDropdown() {

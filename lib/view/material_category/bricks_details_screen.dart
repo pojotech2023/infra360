@@ -559,52 +559,56 @@ Date: $dateFormatted
                       child: Image.asset('assets/images/whatsapp.png', width: 16, height: 16),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  // Concept: Web only shows Edit, Delete, PDF action buttons when showAction is true (e.g. Individual Orders).
+                  // Combined / All-Materials orders (ALL-ORD-...) have showAction = false and actions are managed in All Materials.
+                  if (item.showAction == true) ...[
+                    const SizedBox(width: 6),
 
-                  // Edit Icon (Screenshot 2 & 3)
-                  InkWell(
-                    onTap: () => _showEditOrderModal(item),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(5),
+                    // Edit Icon (Screenshot 2 & 3)
+                    InkWell(
+                      onTap: () => _showEditOrderModal(item),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF2563EB)),
                       ),
-                      child: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF2563EB)),
                     ),
-                  ),
-                  const SizedBox(width: 6),
+                    const SizedBox(width: 6),
 
-                  // Delete Icon (red X style, Screenshot 2)
-                  InkWell(
-                    onTap: () => _showConfirmDeleteDialog(item),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(5),
+                    // Delete Icon (red X style, Screenshot 2)
+                    InkWell(
+                      onTap: () => _showConfirmDeleteDialog(item),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
                       ),
-                      child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
                     ),
-                  ),
-                  const SizedBox(width: 6),
+                    const SizedBox(width: 6),
 
-                  // PDF Icon (red pdf, Screenshot 2)
-                  InkWell(
-                    onTap: () {
-                      if (item.id != null) {
-                        controller.materialPdfDownload(context, item.id!);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(5),
+                    // PDF Icon (red pdf, Screenshot 2)
+                    InkWell(
+                      onTap: () {
+                        if (item.id != null) {
+                          controller.materialPdfDownload(context, item.id!);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
                       ),
-                      child: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],

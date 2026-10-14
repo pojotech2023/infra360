@@ -11,6 +11,7 @@ import 'package:raptor_pro/view/widgets/toast.dart';
 import '../../../base_url.dart';
 import '../../../model/login_response.dart';
 import '../../../model/material_details_argument_model.dart';
+import '../../../model/material_form_config.dart';
 import '../../../model/units_model.dart';
 import '../../../service/shared_preference_service.dart';
 import '../../../utils/res/sendWhatsAppMessage.dart';
@@ -23,6 +24,7 @@ class NewRequestController extends GetxController{
   RxList<VendorData> getBricksLists = <VendorData>[].obs;
   RxList<UnitsData> getUnitsLists = <UnitsData>[].obs;
 
+  MaterialFormConfig get formConfig => MaterialFormRegistry.getConfig(itemKey.value);
 
   late LoginResponse userDetails;
   VendorData? selectedVendorData;
@@ -128,6 +130,11 @@ class NewRequestController extends GetxController{
   }
 
   static List<String> getSubItemsForMaterial(String rawKey) {
+    final cfg = MaterialFormRegistry.getConfig(rawKey);
+    if (cfg.options.isNotEmpty) {
+      return cfg.options;
+    }
+
     final key = rawKey.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
     if (key.contains('brick') || key.contains('block')) {
@@ -258,6 +265,11 @@ class NewRequestController extends GetxController{
   }
 
   static String getDefaultUnitForMaterial(String rawKey) {
+    final cfg = MaterialFormRegistry.getConfig(rawKey);
+    if (cfg.units.isNotEmpty) {
+      return cfg.units.first;
+    }
+
     final key = rawKey.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
     if (key.contains('brick') || key.contains('block')) return 'Nos';
     if (key.contains('cement')) return 'Bags';
@@ -305,11 +317,22 @@ class NewRequestController extends GetxController{
       
       // Fallback to our comprehensive catalog for the specific material
       if (categories.isEmpty) {
-        categories.addAll(getSubItemsForMaterial(args.itemKey));
+        if (formConfig.options.isNotEmpty) {
+          categories.addAll(formConfig.options);
+        } else {
+          categories.addAll(getSubItemsForMaterial(args.itemKey));
+        }
       }
       
       // Ensure categories are de-duplicated
       categories = categories.toSet().toList();
+
+      if (formConfig.units.isNotEmpty) {
+        // Put recommended units first
+        final rec = formConfig.units;
+        final others = units.where((u) => !rec.contains(u)).toList();
+        units = [...rec, ...others];
+      }
 
       if (units.isEmpty) {
         units.addAll(['Nos', 'Units', 'Bags', 'Ton', 'Kg', 'Sq.Ft', 'Cft', 'Cum', 'Coil', 'Litre']);

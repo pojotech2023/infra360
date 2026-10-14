@@ -93,6 +93,10 @@ class BricksList {
   double? pricePerItem;
   double? totalAmount;
   dynamic rawItems;
+  bool? showAction;
+  bool? isIndividual;
+  bool? isLastInOrder;
+  String? orderPdfUrl;
 
   BricksList(
       {this.id,
@@ -113,6 +117,10 @@ class BricksList {
         this.pricePerItem,
         this.totalAmount,
         this.rawItems,
+        this.showAction,
+        this.isIndividual,
+        this.isLastInOrder,
+        this.orderPdfUrl,
        // this.availableUnitCount,
         this.status,
         this.createdAt,
@@ -219,6 +227,28 @@ class BricksList {
     status = json['status'] ?? json['approval_status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
+
+    // Concept: Web shows Edit, Delete, PDF only for individual orders (show_action == true)
+    if (json['show_action'] != null) {
+      showAction = json['show_action'] == true || json['show_action'] == 1 || json['show_action'].toString().toLowerCase() == 'true';
+    } else if (json['is_individual'] != null) {
+      showAction = json['is_individual'] == true || json['is_individual'] == 1 || json['is_individual'].toString().toLowerCase() == 'true';
+    } else if (orderNo != null && orderNo!.isNotEmpty) {
+      showAction = !orderNo!.toUpperCase().startsWith('ALL-ORD');
+    } else {
+      showAction = true;
+    }
+
+    if (json['is_individual'] != null) {
+      isIndividual = json['is_individual'] == true || json['is_individual'] == 1 || json['is_individual'].toString().toLowerCase() == 'true';
+    } else if (orderNo != null && orderNo!.isNotEmpty) {
+      isIndividual = !orderNo!.toUpperCase().startsWith('ALL-ORD');
+    } else {
+      isIndividual = true;
+    }
+
+    isLastInOrder = json['is_last_in_order'] == true || json['is_last_in_order'] == 1;
+    orderPdfUrl = (json['order_pdf_url'] ?? json['pdf_url'])?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -237,6 +267,10 @@ class BricksList {
     data['status'] = this.status;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
+    data['show_action'] = showAction;
+    data['is_individual'] = isIndividual;
+    data['is_last_in_order'] = isLastInOrder;
+    data['order_pdf_url'] = orderPdfUrl;
     return data;
   }
 }

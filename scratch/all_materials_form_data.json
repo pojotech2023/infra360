@@ -1,0 +1,614 @@
+{
+  "bricks": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/bricks",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "sand": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/sand",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "cement": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/cement",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "steel": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/steel",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "electricalwire": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/electricalwire",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "wood": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/wood",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "plumbing": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/plumbing",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "tiles": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/tiles",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "paint": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/paint",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "doors_windows": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/doors_windows",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "aggregate": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/aggregate",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "granite_marble": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/granite_marble",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "sanitaryware": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/sanitaryware",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "hardware": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/hardware",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "glass": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/glass",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "roofing": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/roofing",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "readymix_concrete": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/readymix_concrete",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  },
+  "safety": {
+    "url": "http://pojoinfra360.pojotech.in/admin/material-requestForm/51/safety",
+    "labels": [
+      "Vendor Name",
+      "Vendor Mobile No",
+      "Vendor Address",
+      "Items",
+      "Quantity",
+      "Date of Delivery",
+      "Supervisor Name",
+      "Supervisor Phone No",
+      "Price",
+      "${config.label}",
+      "${config.specLabel}",
+      "Unit",
+      "File Attachment / Drawing"
+    ],
+    "fields": [],
+    "selects": {
+      "category_name": [
+        {
+          "value": "",
+          "text": "Select ${config.label}"
+        }
+      ],
+      "unit": [
+        {
+          "value": "",
+          "text": "Select Unit"
+        }
+      ]
+    },
+    "suggestions": {}
+  }
+}
